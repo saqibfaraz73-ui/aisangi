@@ -122,7 +122,8 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
       images: string[],
       styles: AnimationStyle[],
       durations: number[],
-      platform: PlatformPreset
+      platform: PlatformPreset,
+      watermark: boolean = true
     ): Promise<string> => {
       const canvas = canvasRef.current;
       if (!canvas) throw new Error("Canvas not ready");
