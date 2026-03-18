@@ -175,6 +175,7 @@ export function useUsageLimit(section: string) {
       user_id: user.id,
       section,
       tokens_used: tokensUsed,
+    } as any);
     });
   }, [user, section]);
 
