@@ -52,6 +52,10 @@ const AnimatePage = () => {
     setDurations((prev) => prev.map((d, i) => (i === index ? duration : d)));
   };
 
+  const handleStyleChange = (index: number, style: AnimationStyle) => {
+    setStyles((prev) => prev.map((s, i) => (i === index ? style : s)));
+  };
+
   const totalDuration = durations.reduce((sum, d) => sum + d, 0);
 
   const handleGenerate = async () => {
