@@ -110,7 +110,7 @@ const GlobalCapSection = () => {
       supabase.from("global_usage_cap").select("*").limit(1).maybeSingle(),
       supabase.from("image_generation_cap").select("*").limit(1).maybeSingle(),
       supabase.from("script_generation_cap").select("*").limit(1).maybeSingle(),
-      supabase.from("usage_log").select("*", { count: "exact", head: true }).gte("used_at", todayStart.toISOString()),
+      supabase.from("usage_log").select("*", { count: "exact", head: true }).in("section", ["text_to_image", "script_ai"]).gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "text_to_image").gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "script_ai").gte("used_at", todayStart.toISOString()),
     ]);
