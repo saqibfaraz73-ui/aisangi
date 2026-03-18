@@ -38,6 +38,7 @@ const AppRoutes = () => (
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/animate" element={<ProtectedRoute><AnimatePage /></ProtectedRoute>} />
     <Route path="/overlay" element={<ProtectedRoute><OverlayPage /></ProtectedRoute>} />
+    <Route path="/lip-sync" element={<ProtectedRoute><LipSyncPage /></ProtectedRoute>} />
     <Route path="/script-generator" element={<ProtectedRoute><ScriptGeneratorPage /></ProtectedRoute>} />
     <Route path="/voice-generator" element={<ProtectedRoute><VoiceGeneratorPage /></ProtectedRoute>} />
     <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
