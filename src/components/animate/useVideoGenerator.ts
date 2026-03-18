@@ -1,4 +1,4 @@
-import { useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { type AnimationStyle, type PlatformPreset, PLATFORM_PRESETS } from "./types";
 
 function getEased(t: number) {
@@ -105,7 +105,7 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
     async (
       images: string[],
       style: AnimationStyle,
-      durationPerImage: number,
+      durations: number[],
       platform: PlatformPreset
     ): Promise<string> => {
       const canvas = canvasRef.current;
@@ -134,10 +134,11 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
 
       recorder.start();
 
-      // Render each image sequentially
-      for (const imgSrc of images) {
-        const img = await loadImage(imgSrc);
-        const totalFrames = durationPerImage * fps;
+      // Render each image with its own duration
+      for (let i = 0; i < images.length; i++) {
+        const img = await loadImage(images[i]);
+        const imgDuration = durations[i] || 5;
+        const totalFrames = imgDuration * fps;
 
         for (let frame = 0; frame < totalFrames; frame++) {
           const t = frame / totalFrames;

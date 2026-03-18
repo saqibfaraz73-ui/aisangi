@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Play, Download, Loader2, Film } from "lucide-react";
+import { Download, Loader2, Film, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
@@ -11,8 +11,8 @@ import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
 
 const AnimatePage = () => {
   const [images, setImages] = useState<string[]>([]);
+  const [durations, setDurations] = useState<number[]>([]);
   const [style, setStyle] = useState<AnimationStyle>("ken-burns");
-  const [duration, setDuration] = useState(5);
   const [platform, setPlatform] = useState<PlatformPreset>("youtube");
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -29,7 +29,10 @@ const AnimatePage = () => {
     }
     imageFiles.forEach((file) => {
       const reader = new FileReader();
-      reader.onload = () => setImages((prev) => [...prev, reader.result as string]);
+      reader.onload = () => {
+        setImages((prev) => [...prev, reader.result as string]);
+        setDurations((prev) => [...prev, 5]);
+      };
       reader.readAsDataURL(file);
     });
     setVideoUrl(null);
@@ -38,15 +41,22 @@ const AnimatePage = () => {
 
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
+    setDurations((prev) => prev.filter((_, i) => i !== index));
     setVideoUrl(null);
   };
+
+  const handleDurationChange = (index: number, duration: number) => {
+    setDurations((prev) => prev.map((d, i) => (i === index ? duration : d)));
+  };
+
+  const totalDuration = durations.reduce((sum, d) => sum + d, 0);
 
   const handleGenerate = async () => {
     if (images.length === 0) return;
     setIsGenerating(true);
     setVideoUrl(null);
     try {
-      const url = await generate(images, style, duration, platform);
+      const url = await generate(images, style, durations, platform);
       setVideoUrl(url);
       toast({ title: "Video generated successfully!" });
     } catch (err: any) {
@@ -73,14 +83,19 @@ const AnimatePage = () => {
             Animate Still Images
           </h1>
           <p className="text-muted-foreground text-sm max-w-lg mx-auto">
-            Upload one or multiple images to create a cinematic slideshow video. Choose your platform for the perfect aspect ratio.
+            Upload images to create a cinematic slideshow. Set duration per image and choose your platform.
           </p>
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Controls */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="space-y-5">
-            <ImageGallery images={images} onAdd={handleImageUpload} onRemove={removeImage} />
+            <ImageGallery
+              images={images}
+              durations={durations}
+              onAdd={handleImageUpload}
+              onRemove={removeImage}
+              onDurationChange={handleDurationChange}
+            />
 
             {/* Animation Style */}
             <div className="space-y-2">
@@ -103,34 +118,13 @@ const AnimatePage = () => {
               </div>
             </div>
 
-            {/* Duration per image */}
-            <div className="space-y-2">
-              <label className="text-sm font-display font-semibold text-foreground">
-                Duration per Image
-                {images.length > 1 && (
-                  <span className="text-muted-foreground font-normal ml-1">
-                    (total: {duration * images.length}s)
-                  </span>
-                )}
-              </label>
-              <div className="flex gap-2">
-                {[3, 5, 8, 10].map((d) => (
-                  <button
-                    key={d}
-                    onClick={() => setDuration(d)}
-                    className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                      duration === d
-                        ? "border-primary bg-primary/10 text-foreground"
-                        : "border-border bg-card text-muted-foreground hover:border-primary/30"
-                    }`}
-                  >
-                    {d}s
-                  </button>
-                ))}
-              </div>
-            </div>
-
             <PlatformSelector platform={platform} onChange={setPlatform} />
+
+            {images.length > 0 && (
+              <div className="text-xs text-muted-foreground text-center">
+                Total duration: {totalDuration}s across {images.length} image{images.length !== 1 ? "s" : ""}
+              </div>
+            )}
 
             <Button
               onClick={handleGenerate}
@@ -156,17 +150,14 @@ const AnimatePage = () => {
             <div className="rounded-xl border border-border bg-card overflow-hidden">
               <div className="p-4 border-b border-border flex items-center justify-between">
                 <h3 className="font-display font-semibold text-foreground text-sm">Preview</h3>
-                {platform && (
-                  <span className="text-xs text-muted-foreground">
-                    {platform === "youtube" ? "1920×1080" : platform === "tiktok" ? "1080×1920" : platform === "facebook" ? "1080×1080" : "1280×720"}
-                  </span>
-                )}
+                <span className="text-xs text-muted-foreground">
+                  {platform === "youtube" ? "1920×1080" : platform === "tiktok" ? "1080×1920" : platform === "facebook" ? "1080×1080" : "1280×720"}
+                </span>
               </div>
               <div
                 className="bg-muted flex items-center justify-center"
                 style={{
-                  aspectRatio:
-                    platform === "tiktok" ? "9/16" : platform === "facebook" ? "1/1" : "16/9",
+                  aspectRatio: platform === "tiktok" ? "9/16" : platform === "facebook" ? "1/1" : "16/9",
                   maxHeight: "480px",
                 }}
               >
