@@ -8,6 +8,7 @@ import ImageGallery from "@/components/animate/ImageGallery";
 import PlatformSelector from "@/components/animate/PlatformSelector";
 import { ANIMATION_STYLES, type AnimationStyle, type PlatformPreset } from "@/components/animate/types";
 import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
+import AudioOverlaySection from "@/components/animate/AudioOverlaySection";
 
 const AnimatePage = () => {
   const [images, setImages] = useState<string[]>([]);
