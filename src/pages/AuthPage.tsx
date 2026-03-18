@@ -104,7 +104,7 @@ const AuthPage = () => {
           </div>
           <h1 className="font-display font-bold text-2xl text-foreground">SangiAI</h1>
           <p className="text-muted-foreground text-sm mt-1">
-            {isLogin ? "Sign in to your account" : "Create your account"}
+            {isForgotPassword ? "Reset your password" : isLogin ? "Sign in to your account" : "Create your account"}
           </p>
         </div>
 
