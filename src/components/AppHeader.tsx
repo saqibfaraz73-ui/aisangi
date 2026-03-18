@@ -6,6 +6,7 @@ const NAV_ITEMS = [
   { to: "/", label: "Text to Image" },
   { to: "/animate", label: "Image to Video" },
   { to: "/overlay", label: "Audio Overlay" },
+  { to: "/script-generator", label: "Script AI" },
 ];
 
 const AppHeader = () => {

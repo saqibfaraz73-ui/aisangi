@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import AnimatePage from "./pages/AnimatePage.tsx";
 import OverlayPage from "./pages/OverlayPage.tsx";
+import ScriptGeneratorPage from "./pages/ScriptGeneratorPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -20,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/animate" element={<AnimatePage />} />
           <Route path="/overlay" element={<OverlayPage />} />
+          <Route path="/script-generator" element={<ScriptGeneratorPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
