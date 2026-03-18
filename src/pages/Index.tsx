@@ -131,9 +131,11 @@ const Index = () => {
                 className="min-h-[120px] bg-card border-border text-foreground placeholder:text-muted-foreground resize-none focus:ring-2 focus:ring-primary/50"
               />
               <p className="text-xs text-muted-foreground">
-                {characterImage
-                  ? "Your AI character will be placed in the scene you describe."
-                  : "Be descriptive — include style, lighting, colors, and mood."}
+                {characterImages.length > 1
+                  ? "Reference each person as Person 1, Person 2, etc. in your prompt."
+                  : characterImages.length === 1
+                    ? "Your AI character will be placed in the scene you describe."
+                    : "Be descriptive — include style, lighting, colors, and mood."}
               </p>
             </div>
 
