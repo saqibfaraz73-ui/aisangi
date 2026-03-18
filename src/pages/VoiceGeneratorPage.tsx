@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import { VOICES } from "@/components/SceneVoiceButton";
+import { useUsageLimit } from "@/hooks/use-usage-limit";
 
 const VoiceGeneratorPage = () => {
   const [text, setText] = useState("");
