@@ -41,7 +41,7 @@ const ScriptGeneratorPage = () => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [sceneVoices, setSceneVoices] = useState<Record<number, string>>({});
   const { toast } = useToast();
-  const { checkAndTrack } = useUsageLimit("script_ai");
+  const { checkLimit, trackUsage } = useUsageLimit("script_ai");
   const navigate = useNavigate();
 
   const getSceneVoice = (sceneNum: number) => sceneVoices[sceneNum] || "Kore";
