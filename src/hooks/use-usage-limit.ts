@@ -13,26 +13,35 @@ export function useUsageLimit(section: string) {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    // Check global daily cap first
-    const { data: capData } = await supabase
-      .from("global_usage_cap")
-      .select("enabled, daily_limit")
-      .limit(1)
-      .maybeSingle();
+    // Sections that are processed entirely client-side and do NOT use Gemini credits
+    const clientOnlySections = ["image_to_video", "audio_overlay"];
+    const usesGeminiCredits = !clientOnlySections.includes(section);
 
-    if (capData?.enabled) {
-      const { count: globalCount } = await supabase
-        .from("usage_log")
-        .select("*", { count: "exact", head: true })
-        .gte("used_at", todayStart.toISOString());
+    // Only check global/image/script caps for features that actually use API credits
+    if (usesGeminiCredits) {
+      // Check global daily cap
+      const { data: capData } = await supabase
+        .from("global_usage_cap")
+        .select("enabled, daily_limit")
+        .limit(1)
+        .maybeSingle();
 
-      if ((globalCount ?? 0) >= capData.daily_limit) {
-        toast({
-          title: "Global daily limit reached",
-          description: `The platform has reached its daily limit of ${capData.daily_limit} total requests. Try again tomorrow.`,
-          variant: "destructive",
-        });
-        return false;
+      if (capData?.enabled) {
+        // Count only API-consuming sections for global cap
+        const { count: globalCount } = await supabase
+          .from("usage_log")
+          .select("*", { count: "exact", head: true })
+          .in("section", ["text_to_image", "script_ai"])
+          .gte("used_at", todayStart.toISOString());
+
+        if ((globalCount ?? 0) >= capData.daily_limit) {
+          toast({
+            title: "Global daily limit reached",
+            description: `The platform has reached its daily limit of ${capData.daily_limit} total requests. Try again tomorrow.`,
+            variant: "destructive",
+          });
+          return false;
+        }
       }
     }
 
