@@ -40,7 +40,7 @@ const ApiSettingsSection = () => {
 
   const [apiKey, setApiKey] = useState("");
   const [provider, setProvider] = useState("gemini");
-  const [model, setModel] = useState("gemini-2.0-flash");
+  const [model, setModel] = useState("gemini-2.0-flash-exp");
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
