@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -75,24 +75,28 @@ const Index = () => {
   const [prompt, setPrompt] = usePersistedState("sangi_prompt", "");
   const [images, setImages] = usePersistedState<ImageResult[]>("sangi_images", []);
   const [isGenerating, setIsGenerating] = useState(false);
+  const generationInFlightRef = useRef(false);
   const [characterImages, setCharacterImages] = usePersistedState<string[]>("sangi_characters", []);
   const [sceneCount, setSceneCount] = usePersistedState("sangi_sceneCount", 1);
   const { toast } = useToast();
   const { checkAndTrack } = useUsageLimit("text_to_image");
 
   const handleGenerate = async () => {
+    if (generationInFlightRef.current || isGenerating) return;
+
     if (!prompt.trim()) {
       toast({ title: "Please enter a prompt", variant: "destructive" });
       return;
     }
 
-    const allowed = await checkAndTrack();
-    if (!allowed) return;
-
+    generationInFlightRef.current = true;
     setIsGenerating(true);
     setImages([]);
 
     try {
+      const allowed = await checkAndTrack();
+      if (!allowed) return;
+
       const { data, error } = await supabase.functions.invoke("generate-image", {
         body: {
           prompt: prompt.trim(),
@@ -118,6 +122,7 @@ const Index = () => {
         variant: "destructive",
       });
     } finally {
+      generationInFlightRef.current = false;
       setIsGenerating(false);
     }
   };

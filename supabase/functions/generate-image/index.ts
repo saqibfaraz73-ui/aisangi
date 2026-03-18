@@ -144,34 +144,54 @@ CRITICAL RULES:
         ];
       }
 
-      console.log(`Calling AI gateway for image ${index + 1}...`);
-      const response = await fetch(
-        "https://ai.gateway.lovable.dev/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${LOVABLE_API_KEY}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            model: "google/gemini-3.1-flash-image-preview",
-            messages,
-            modalities: ["image", "text"],
-          }),
-        }
-      );
-      console.log(`AI gateway responded with status: ${response.status}`);
+      let response: Response | null = null;
+      let lastErrorText = "";
 
-      if (!response.ok) {
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        console.log(`Calling AI gateway for image ${index + 1} (attempt ${attempt})...`);
+        response = await fetch(
+          "https://ai.gateway.lovable.dev/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${LOVABLE_API_KEY}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model: "google/gemini-3.1-flash-image-preview",
+              messages,
+              modalities: ["image", "text"],
+            }),
+          }
+        );
+
+        console.log(`AI gateway responded with status: ${response.status}`);
+
+        if (response.ok) break;
+
         if (response.status === 429) {
-          throw { status: 429, message: "Rate limit reached. Please wait a moment and try again." };
+          lastErrorText = await response.text();
+          if (attempt < 3) {
+            const retryDelay = attempt * 2000;
+            console.warn(`AI gateway rate limited request. Retrying in ${retryDelay}ms...`);
+            await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            continue;
+          }
+          throw { status: 429, message: "Too many image requests right now. Please wait a few seconds and try again." };
         }
+
         if (response.status === 402) {
           throw { status: 402, message: "AI credits exhausted. Please add funds in Settings → Workspace → Usage." };
         }
-        const errorText = await response.text();
-        console.error("AI gateway error:", response.status, errorText);
+
+        lastErrorText = await response.text();
+        console.error("AI gateway error:", response.status, lastErrorText);
         throw { status: 500, message: "Failed to generate image. Please try again." };
+      }
+
+      if (!response || !response.ok) {
+        console.error("AI gateway failed after retries:", lastErrorText);
+        throw { status: 500, message: "Image generation is temporarily unavailable. Please try again." };
       }
 
       const data = await response.json();
