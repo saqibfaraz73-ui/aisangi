@@ -26,7 +26,7 @@ const FullScriptVoiceButton = ({ fullNarration, title }: FullScriptVoiceButtonPr
   });
   const [editingName, setEditingName] = useState(false);
   const { toast } = useToast();
-  const { checkAndTrack } = useUsageLimit("voice_tts");
+  const { checkLimit, trackUsage } = useUsageLimit("voice_tts");
 
   const handleGenerate = async () => {
     if (!fullNarration.trim()) return;
