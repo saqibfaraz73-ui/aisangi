@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
