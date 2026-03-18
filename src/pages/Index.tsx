@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, Wand2 } from "lucide-react";
+import { Sparkles, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import CharacterUpload from "@/components/CharacterUpload";
 import SceneCountSelector from "@/components/SceneCountSelector";
 import ImageResults from "@/components/ImageResults";
+import AppHeader from "@/components/AppHeader";
 
 const EXAMPLE_PROMPTS = [
   "A cyberpunk city at night with neon lights reflecting on wet streets",
@@ -70,21 +71,7 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border px-4 py-3">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
-              <Wand2 className="h-4.5 w-4.5 text-primary-foreground" />
-            </div>
-            <h1 className="font-display font-bold text-xl text-foreground tracking-tight">
-              SangiAI
-            </h1>
-          </div>
-          <span className="text-xs text-muted-foreground font-medium px-3 py-1 rounded-full bg-muted">
-            Text to Image
-          </span>
-        </div>
-      </header>
+      <AppHeader />
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         <motion.div
