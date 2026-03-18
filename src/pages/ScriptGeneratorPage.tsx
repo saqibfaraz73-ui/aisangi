@@ -54,7 +54,7 @@ const ScriptGeneratorPage = () => {
       return;
     }
 
-    const allowed = await checkAndTrack();
+    const allowed = await checkLimit();
     if (!allowed) return;
 
     setIsGenerating(true);
@@ -69,6 +69,7 @@ const ScriptGeneratorPage = () => {
       if (data?.error) throw new Error(data.error);
       if (!data?.scenes?.length) throw new Error("No script generated");
 
+      await trackUsage(data?.tokensUsed || 0);
       setScript(data);
     } catch (err: any) {
       toast({
