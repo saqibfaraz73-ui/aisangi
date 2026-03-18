@@ -7,16 +7,41 @@ import AppHeader from "@/components/AppHeader";
 import ImageGallery from "@/components/animate/ImageGallery";
 import PlatformSelector from "@/components/animate/PlatformSelector";
 import AudioInputSection, { type AudioTrackInput } from "@/components/animate/AudioInputSection";
-import { ANIMATION_STYLES, type AnimationStyle, type PlatformPreset } from "@/components/animate/types";
+import { ANIMATION_STYLES, type AnimationStyle, type PlatformPreset, type MediaItem } from "@/components/animate/types";
 import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
 import { useWatermark } from "@/hooks/use-watermark";
 
+function extractVideoThumbnail(file: File): Promise<{ thumbnail: string; duration: number }> {
+  return new Promise((resolve, reject) => {
+    const video = document.createElement("video");
+    video.preload = "metadata";
+    video.muted = true;
+    const url = URL.createObjectURL(file);
+    video.src = url;
+    video.onloadeddata = () => {
+      video.currentTime = 0.5;
+    };
+    video.onseeked = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d")!.drawImage(video, 0, 0);
+      const thumbnail = canvas.toDataURL("image/jpeg", 0.7);
+      const duration = video.duration;
+      URL.revokeObjectURL(url);
+      resolve({ thumbnail, duration: Math.round(duration * 10) / 10 });
+    };
+    video.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("Failed to load video"));
+    };
+  });
+}
+
 const AnimatePage = () => {
-  const [images, setImages] = usePersistedState<string[]>("sangi_anim_images", []);
-  const [durations, setDurations] = usePersistedState<number[]>("sangi_anim_durations", []);
-  const [styles, setStyles] = usePersistedState<AnimationStyle[]>("sangi_anim_styles", []);
+  const [items, setItems] = usePersistedState<MediaItem[]>("sangi_anim_items", []);
   const [defaultStyle, setDefaultStyle] = usePersistedState<AnimationStyle>("sangi_anim_defaultStyle", "ken-burns");
   const [platform, setPlatform] = usePersistedState<PlatformPreset>("sangi_anim_platform", "youtube");
   const [isGenerating, setIsGenerating] = useState(false);
@@ -28,51 +53,92 @@ const AnimatePage = () => {
   const { checkAndTrack } = useUsageLimit("image_to_video");
   const { watermarkEnabled, watermarkColor } = useWatermark();
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // We need to store video files separately since they can't be persisted as JSON
+  const [videoFiles, setVideoFiles] = useState<Map<number, File>>(new Map());
+
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
-    if (imageFiles.length === 0) {
-      toast({ title: "Please upload image files", variant: "destructive" });
-      return;
+    if (files.length === 0) return;
+
+    for (const file of files) {
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const src = reader.result as string;
+          setItems((prev) => [...prev, {
+            type: "image",
+            src,
+            thumbnail: src,
+            duration: 5,
+            style: defaultStyle,
+            fileName: file.name,
+            audio: null,
+          }]);
+        };
+        reader.readAsDataURL(file);
+      } else if (file.type.startsWith("video/")) {
+        try {
+          const { thumbnail, duration } = await extractVideoThumbnail(file);
+          setItems((prev) => {
+            const newIndex = prev.length;
+            setVideoFiles((vf) => new Map(vf).set(newIndex, file));
+            return [...prev, {
+              type: "video",
+              src: URL.createObjectURL(file),
+              thumbnail,
+              duration,
+              style: "none",
+              fileName: file.name,
+              audio: null,
+              videoFile: file,
+            }];
+          });
+        } catch {
+          toast({ title: `Failed to load video: ${file.name}`, variant: "destructive" });
+        }
+      }
     }
-    imageFiles.forEach((file) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImages((prev) => [...prev, reader.result as string]);
-        setDurations((prev) => [...prev, 5]);
-        setStyles((prev) => [...prev, defaultStyle]);
-      };
-      reader.readAsDataURL(file);
-    });
     setVideoUrl(null);
     e.target.value = "";
   };
 
-  const removeImage = (index: number) => {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-    setDurations((prev) => prev.filter((_, i) => i !== index));
-    setStyles((prev) => prev.filter((_, i) => i !== index));
+  const removeItem = (index: number) => {
+    const item = items[index];
+    if (item?.audio) URL.revokeObjectURL(item.audio.url);
+    if (item?.type === "video") URL.revokeObjectURL(item.src);
+    setItems((prev) => prev.filter((_, i) => i !== index));
     setVideoUrl(null);
   };
 
   const handleDurationChange = (index: number, duration: number) => {
-    setDurations((prev) => prev.map((d, i) => (i === index ? duration : d)));
+    setItems((prev) => prev.map((item, i) => i === index ? { ...item, duration } : item));
   };
 
   const handleStyleChange = (index: number, style: AnimationStyle) => {
-    setStyles((prev) => prev.map((s, i) => (i === index ? style : s)));
+    setItems((prev) => prev.map((item, i) => i === index ? { ...item, style } : item));
   };
 
-  const totalDuration = durations.reduce((sum, d) => sum + d, 0);
+  const handleAudioChange = (index: number, file: File | null) => {
+    setItems((prev) => prev.map((item, i) => {
+      if (i !== index) return item;
+      if (item.audio) URL.revokeObjectURL(item.audio.url);
+      return {
+        ...item,
+        audio: file ? { file, url: URL.createObjectURL(file) } : null,
+      };
+    }));
+  };
+
+  const totalDuration = items.reduce((sum, item) => sum + item.duration, 0);
 
   const handleGenerate = async () => {
-    if (images.length === 0) return;
+    if (items.length === 0) return;
     const allowed = await checkAndTrack();
     if (!allowed) return;
     setIsGenerating(true);
     setVideoUrl(null);
     try {
-      const url = await generate(images, styles, durations, platform, watermarkEnabled, watermarkColor, audioTracks);
+      const url = await generate(items, platform, watermarkEnabled, watermarkColor, audioTracks);
       setVideoUrl(url);
       toast({ title: "Video generated successfully!" });
     } catch (err: any) {
@@ -91,14 +157,17 @@ const AnimatePage = () => {
   };
 
   const handleClear = () => {
-    setImages([]);
-    setDurations([]);
-    setStyles([]);
+    items.forEach((item) => {
+      if (item.audio) URL.revokeObjectURL(item.audio.url);
+      if (item.type === "video") URL.revokeObjectURL(item.src);
+    });
+    setItems([]);
     setVideoUrl(null);
     setDefaultStyle("ken-burns");
     setPlatform("youtube");
     audioTracks.forEach((t) => URL.revokeObjectURL(t.url));
     setAudioTracks([]);
+    setVideoFiles(new Map());
     toast({ title: "Cleared all data" });
   };
 
@@ -111,20 +180,19 @@ const AnimatePage = () => {
             Animate Still Images
           </h1>
           <p className="text-muted-foreground text-sm max-w-lg mx-auto">
-            Upload images to create a cinematic slideshow. Set duration per image and choose your platform.
+            Upload images or video clips to create a cinematic slideshow. Add voice per clip optionally.
           </p>
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-8">
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="space-y-5">
             <ImageGallery
-              images={images}
-              durations={durations}
-              styles={styles}
-              onAdd={handleImageUpload}
-              onRemove={removeImage}
+              items={items}
+              onAdd={handleMediaUpload}
+              onRemove={removeItem}
               onDurationChange={handleDurationChange}
               onStyleChange={handleStyleChange}
+              onAudioChange={handleAudioChange}
             />
 
             <div className="space-y-2">
@@ -153,16 +221,16 @@ const AnimatePage = () => {
 
             <PlatformSelector platform={platform} onChange={setPlatform} />
 
-            {images.length > 0 && (
+            {items.length > 0 && (
               <div className="text-xs text-muted-foreground text-center">
-                Total duration: {totalDuration}s across {images.length} image{images.length !== 1 ? "s" : ""}
+                Total duration: {totalDuration.toFixed(1)}s across {items.length} clip{items.length !== 1 ? "s" : ""}
               </div>
             )}
 
             <div className="flex gap-3">
               <Button
                 onClick={handleGenerate}
-                disabled={images.length === 0 || isGenerating}
+                disabled={items.length === 0 || isGenerating}
                 className="flex-1 h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
               >
                 {isGenerating ? (
@@ -173,11 +241,11 @@ const AnimatePage = () => {
                 ) : (
                   <>
                     <Film className="h-5 w-5 mr-2" />
-                    Generate Video ({images.length} image{images.length !== 1 ? "s" : ""})
+                    Generate Video ({items.length} clip{items.length !== 1 ? "s" : ""})
                   </>
                 )}
               </Button>
-              {(images.length > 0 || videoUrl) && (
+              {(items.length > 0 || videoUrl) && (
                 <Button
                   onClick={handleClear}
                   variant="outline"
@@ -215,7 +283,7 @@ const AnimatePage = () => {
                 ) : (
                   <div className="text-center p-4">
                     <Play className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-30" />
-                    <p className="text-sm text-muted-foreground">Upload images and generate to preview</p>
+                    <p className="text-sm text-muted-foreground">Upload media and generate to preview</p>
                   </div>
                 )}
               </div>
@@ -232,7 +300,6 @@ const AnimatePage = () => {
         </div>
 
         <canvas ref={canvasRef} className="hidden" />
-
       </main>
     </div>
   );
