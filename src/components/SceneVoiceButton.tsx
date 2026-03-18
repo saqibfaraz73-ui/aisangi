@@ -49,9 +49,10 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
 
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-voice", {
-        body: { text: narration, voice },
-      });
+      const isClone = voice === "__clone__";
+      const fnName = isClone ? "generate-voice-elevenlabs" : "generate-voice";
+      const body = isClone ? { text: narration } : { text: narration, voice };
+      const { data, error } = await supabase.functions.invoke(fnName, { body });
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
