@@ -104,7 +104,7 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
   const generate = useCallback(
     async (
       images: string[],
-      style: AnimationStyle,
+      styles: AnimationStyle[],
       durations: number[],
       platform: PlatformPreset
     ): Promise<string> => {
