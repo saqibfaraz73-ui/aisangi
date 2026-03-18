@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
 import PlatformSelector from "@/components/animate/PlatformSelector";
 import { type PlatformPreset, PLATFORM_PRESETS } from "@/components/animate/types";
+import { useUsageLimit } from "@/hooks/use-usage-limit";
 
 interface AudioTrack {
   file: File;
