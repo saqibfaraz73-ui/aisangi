@@ -38,6 +38,7 @@ const ScriptGeneratorPage = () => {
   const [script, setScript] = usePersistedState<GeneratedScript | null>("sangi_script_result", null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const { toast } = useToast();
+  const { checkAndTrack } = useUsageLimit("script_ai");
   const navigate = useNavigate();
 
   const handleGenerate = async () => {
