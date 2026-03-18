@@ -120,8 +120,10 @@ const Index = () => {
               </label>
               <Textarea
                 placeholder={
-                  characterImage
-                    ? "Describe the scene... e.g. 'playing football in a stadium'"
+                  characterImages.length > 0
+                    ? characterImages.length > 1
+                      ? "Describe the scene with Person 1, Person 2... e.g. 'Person 1 and Person 2 playing football'"
+                      : "Describe the scene... e.g. 'playing football in a stadium'"
                     : "Describe the image you want to create..."
                 }
                 value={prompt}
