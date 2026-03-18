@@ -39,6 +39,7 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
   const [editingName, setEditingName] = useState(false);
   const { toast } = useToast();
   const { checkLimit, trackUsage } = useUsageLimit("voice_tts");
+  const elevenLabs = useElevenLabsVoice();
 
   const handleGenerate = async () => {
     if (!narration.trim()) return;
