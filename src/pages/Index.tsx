@@ -49,7 +49,7 @@ const Index = () => {
       const { data, error } = await supabase.functions.invoke("generate-image", {
         body: {
           prompt: prompt.trim(),
-          characterImageUrl: characterImage || undefined,
+          characterImageUrls: characterImages.length > 0 ? characterImages : undefined,
           sceneCount,
         },
       });
