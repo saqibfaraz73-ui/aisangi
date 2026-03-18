@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Download, Loader2, Film, Play } from "lucide-react";
+import { Download, Loader2, Film, Play, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
@@ -9,15 +9,16 @@ import PlatformSelector from "@/components/animate/PlatformSelector";
 import { ANIMATION_STYLES, type AnimationStyle, type PlatformPreset } from "@/components/animate/types";
 import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
 import AudioOverlaySection from "@/components/animate/AudioOverlaySection";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 
 const AnimatePage = () => {
-  const [images, setImages] = useState<string[]>([]);
-  const [durations, setDurations] = useState<number[]>([]);
-  const [styles, setStyles] = useState<AnimationStyle[]>([]);
-  const [defaultStyle, setDefaultStyle] = useState<AnimationStyle>("ken-burns");
-  const [platform, setPlatform] = useState<PlatformPreset>("youtube");
+  const [images, setImages] = usePersistedState<string[]>("sangi_anim_images", []);
+  const [durations, setDurations] = usePersistedState<number[]>("sangi_anim_durations", []);
+  const [styles, setStyles] = usePersistedState<AnimationStyle[]>("sangi_anim_styles", []);
+  const [defaultStyle, setDefaultStyle] = usePersistedState<AnimationStyle>("sangi_anim_defaultStyle", "ken-burns");
+  const [platform, setPlatform] = usePersistedState<PlatformPreset>("sangi_anim_platform", "youtube");
   const [isGenerating, setIsGenerating] = useState(false);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = usePersistedState<string | null>("sangi_anim_videoUrl", null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
   const { generate } = useVideoGenerator(canvasRef);
@@ -82,6 +83,16 @@ const AnimatePage = () => {
     a.click();
   };
 
+  const handleClear = () => {
+    setImages([]);
+    setDurations([]);
+    setStyles([]);
+    setVideoUrl(null);
+    setDefaultStyle("ken-burns");
+    setPlatform("youtube");
+    toast({ title: "Cleared all data" });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -107,7 +118,6 @@ const AnimatePage = () => {
               onStyleChange={handleStyleChange}
             />
 
-            {/* Default Animation Style */}
             <div className="space-y-2">
               <label className="text-sm font-display font-semibold text-foreground">
                 Default Style <span className="text-muted-foreground font-normal text-xs">(for new images)</span>
@@ -138,23 +148,34 @@ const AnimatePage = () => {
               </div>
             )}
 
-            <Button
-              onClick={handleGenerate}
-              disabled={images.length === 0 || isGenerating}
-              className="w-full h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Generating Video...
-                </>
-              ) : (
-                <>
-                  <Film className="h-5 w-5 mr-2" />
-                  Generate Video ({images.length} image{images.length !== 1 ? "s" : ""})
-                </>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleGenerate}
+                disabled={images.length === 0 || isGenerating}
+                className="flex-1 h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Generating Video...
+                  </>
+                ) : (
+                  <>
+                    <Film className="h-5 w-5 mr-2" />
+                    Generate Video ({images.length} image{images.length !== 1 ? "s" : ""})
+                  </>
+                )}
+              </Button>
+              {(images.length > 0 || videoUrl) && (
+                <Button
+                  onClick={handleClear}
+                  variant="outline"
+                  className="h-12 px-4 border-destructive/30 text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               )}
-            </Button>
+            </div>
           </motion.div>
 
           {/* Preview */}
@@ -201,7 +222,6 @@ const AnimatePage = () => {
 
         <canvas ref={canvasRef} className="hidden" />
 
-        {/* Audio Overlay Section - appears after video is generated */}
         {videoUrl && (
           <AudioOverlaySection
             videoUrl={videoUrl}

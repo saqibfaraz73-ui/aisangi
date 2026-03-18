@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2 } from "lucide-react";
+import { Sparkles, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import CharacterUpload from "@/components/CharacterUpload";
 import SceneCountSelector from "@/components/SceneCountSelector";
 import ImageResults from "@/components/ImageResults";
 import AppHeader from "@/components/AppHeader";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 
 const EXAMPLE_PROMPTS = [
   "A cyberpunk city at night with neon lights reflecting on wet streets",
@@ -23,11 +24,11 @@ interface ImageResult {
 }
 
 const Index = () => {
-  const [prompt, setPrompt] = useState("");
-  const [images, setImages] = useState<ImageResult[]>([]);
+  const [prompt, setPrompt] = usePersistedState("sangi_prompt", "");
+  const [images, setImages] = usePersistedState<ImageResult[]>("sangi_images", []);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [characterImage, setCharacterImage] = useState<string | null>(null);
-  const [sceneCount, setSceneCount] = useState(1);
+  const [characterImage, setCharacterImage] = usePersistedState<string | null>("sangi_character", null);
+  const [sceneCount, setSceneCount] = usePersistedState("sangi_sceneCount", 1);
   const { toast } = useToast();
 
   const handleGenerate = async () => {
@@ -69,6 +70,14 @@ const Index = () => {
     }
   };
 
+  const handleClear = () => {
+    setPrompt("");
+    setImages([]);
+    setCharacterImage(null);
+    setSceneCount(1);
+    toast({ title: "Cleared all data" });
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -95,13 +104,11 @@ const Index = () => {
             transition={{ delay: 0.1 }}
             className="space-y-5"
           >
-            {/* Character Upload */}
             <CharacterUpload
               characterImage={characterImage}
               onCharacterChange={setCharacterImage}
             />
 
-            {/* Prompt */}
             <div className="space-y-2">
               <label className="text-sm font-display font-semibold text-foreground">
                 Your Prompt
@@ -123,29 +130,37 @@ const Index = () => {
               </p>
             </div>
 
-            {/* Scene Count */}
             <SceneCountSelector count={sceneCount} onChange={setSceneCount} />
 
-            {/* Generate Button */}
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating || !prompt.trim()}
-              className="w-full h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Generating {sceneCount > 1 ? `${sceneCount} scenes` : ""}...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-5 w-5 mr-2" />
-                  Generate {sceneCount > 1 ? `${sceneCount} Scenes` : "Image"}
-                </>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating || !prompt.trim()}
+                className="flex-1 h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Generating {sceneCount > 1 ? `${sceneCount} scenes` : ""}...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    Generate {sceneCount > 1 ? `${sceneCount} Scenes` : "Image"}
+                  </>
+                )}
+              </Button>
+              {(images.length > 0 || prompt || characterImage) && (
+                <Button
+                  onClick={handleClear}
+                  variant="outline"
+                  className="h-12 px-4 border-destructive/30 text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               )}
-            </Button>
+            </div>
 
-            {/* Example prompts */}
             <div className="space-y-2">
               <p className="text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">
                 Try these prompts

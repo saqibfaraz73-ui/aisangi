@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Copy, Check, Film, Mic, Hash, ArrowRight } from "lucide-react";
+import { Sparkles, Loader2, Copy, Check, Film, Mic, Hash, ArrowRight, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import SceneCountSelector from "@/components/SceneCountSelector";
 import { useNavigate } from "react-router-dom";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 
 interface Scene {
   sceneNumber: number;
@@ -30,10 +31,10 @@ const EXAMPLE_IDEAS = [
 ];
 
 const ScriptGeneratorPage = () => {
-  const [idea, setIdea] = useState("");
-  const [sceneCount, setSceneCount] = useState(3);
+  const [idea, setIdea] = usePersistedState("sangi_script_idea", "");
+  const [sceneCount, setSceneCount] = usePersistedState("sangi_script_sceneCount", 3);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [script, setScript] = useState<GeneratedScript | null>(null);
+  const [script, setScript] = usePersistedState<GeneratedScript | null>("sangi_script_result", null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -77,12 +78,18 @@ const ScriptGeneratorPage = () => {
 
   const usePromptsForImageGen = () => {
     if (!script) return;
-    // Store scene prompts in sessionStorage so Index page can pick them up
     const prompts = script.scenes.map((s) => s.imagePrompt);
     sessionStorage.setItem("ai_scene_prompts", JSON.stringify(prompts));
     sessionStorage.setItem("ai_narration", script.fullNarration);
     toast({ title: "Scene prompts ready! Redirecting to image generator..." });
     navigate("/");
+  };
+
+  const handleClear = () => {
+    setIdea("");
+    setScript(null);
+    setSceneCount(3);
+    toast({ title: "Cleared all data" });
   };
 
   return (
@@ -128,23 +135,34 @@ const ScriptGeneratorPage = () => {
 
             <SceneCountSelector count={sceneCount} onChange={setSceneCount} />
 
-            <Button
-              onClick={handleGenerate}
-              disabled={isGenerating || !idea.trim()}
-              className="w-full h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
-            >
-              {isGenerating ? (
-                <>
-                  <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Generating Script...
-                </>
-              ) : (
-                <>
-                  <Sparkles className="h-5 w-5 mr-2" />
-                  Generate Script
-                </>
+            <div className="flex gap-3">
+              <Button
+                onClick={handleGenerate}
+                disabled={isGenerating || !idea.trim()}
+                className="flex-1 h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="h-5 w-5 mr-2 animate-spin" />
+                    Generating Script...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="h-5 w-5 mr-2" />
+                    Generate Script
+                  </>
+                )}
+              </Button>
+              {(script || idea) && (
+                <Button
+                  onClick={handleClear}
+                  variant="outline"
+                  className="h-12 px-4 border-destructive/30 text-destructive hover:bg-destructive/10"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
               )}
-            </Button>
+            </div>
 
             {/* Example ideas */}
             <div className="space-y-2">
@@ -237,7 +255,6 @@ const ScriptGeneratorPage = () => {
                           Scene {scene.sceneNumber}
                         </p>
 
-                        {/* Image Prompt */}
                         <div className="space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
@@ -263,7 +280,6 @@ const ScriptGeneratorPage = () => {
                           </p>
                         </div>
 
-                        {/* Narration */}
                         <div className="space-y-1">
                           <div className="flex items-center justify-between">
                             <span className="text-xs font-medium text-muted-foreground flex items-center gap-1">
@@ -317,7 +333,6 @@ const ScriptGeneratorPage = () => {
                     </p>
                   </div>
 
-                  {/* Use prompts button */}
                   <Button
                     onClick={usePromptsForImageGen}
                     className="w-full h-11 gradient-primary text-primary-foreground font-display font-semibold hover:opacity-90 transition-opacity"
