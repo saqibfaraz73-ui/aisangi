@@ -233,7 +233,7 @@ const Index = () => {
                             onClick={() => setPrompt(p)}
                             className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors text-left"
                           >
-                            {p.length > 45 ? p.substring(0, 45) + "…" : p}
+                            {p}
                           </button>
                         ))}
                       </div>
