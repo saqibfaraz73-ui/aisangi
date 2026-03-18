@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import CharacterUpload from "@/components/CharacterUpload";
 import SceneCountSelector from "@/components/SceneCountSelector";
 import ImageResults from "@/components/ImageResults";
+import AppHeader from "@/components/AppHeader";
 
 const EXAMPLE_PROMPTS = [
   "A cyberpunk city at night with neon lights reflecting on wet streets",
