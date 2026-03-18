@@ -10,6 +10,9 @@ export function useUsageLimit(section: string) {
   const checkAndTrack = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
 
+    const todayStart = new Date();
+    todayStart.setHours(0, 0, 0, 0);
+
     // Check global daily cap first
     const { data: capData } = await supabase
       .from("global_usage_cap")
@@ -18,9 +21,6 @@ export function useUsageLimit(section: string) {
       .maybeSingle();
 
     if (capData?.enabled) {
-      const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
-
       const { count: globalCount } = await supabase
         .from("usage_log")
         .select("*", { count: "exact", head: true })
@@ -33,6 +33,32 @@ export function useUsageLimit(section: string) {
           variant: "destructive",
         });
         return false;
+      }
+    }
+
+    // Check image generation daily cap (for text_to_image section only)
+    if (section === "text_to_image") {
+      const { data: imageCapData } = await supabase
+        .from("image_generation_cap")
+        .select("enabled, daily_limit")
+        .limit(1)
+        .maybeSingle();
+
+      if (imageCapData?.enabled) {
+        const { count: imageCount } = await supabase
+          .from("usage_log")
+          .select("*", { count: "exact", head: true })
+          .eq("section", "text_to_image")
+          .gte("used_at", todayStart.toISOString());
+
+        if ((imageCount ?? 0) >= imageCapData.daily_limit) {
+          toast({
+            title: "Image generation limit reached",
+            description: `The platform has reached its daily limit of ${imageCapData.daily_limit} image generations. Try again tomorrow.`,
+            variant: "destructive",
+          });
+          return false;
+        }
       }
     }
 
