@@ -58,6 +58,11 @@ function renderFrame(
   let sx = 0, sy = 0, sw = drawW, sh = drawH;
 
   switch (style) {
+    case "none": {
+      sx = (img.width - drawW) / 2;
+      sy = (img.height - drawH) / 2;
+      break;
+    }
     case "zoom-in": {
       const scale = 1 + eased * 0.35;
       const cw = drawW / scale, ch = drawH / scale;
