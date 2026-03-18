@@ -84,17 +84,17 @@ const AnimatePage = () => {
       recorder.start();
 
       for (let frame = 0; frame < totalFrames; frame++) {
-        const t = frame / totalFrames; // 0 → 1
+        const t = frame / totalFrames;
+        // Eased progress for smoother motion
+        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
         ctx.clearRect(0, 0, W, H);
         ctx.save();
 
-        // Calculate source rect based on animation style
         let sx = 0, sy = 0, sw = img.width, sh = img.height;
         const aspect = W / H;
         const imgAspect = img.width / img.height;
 
-        // Fill canvas maintaining aspect ratio
         let drawW = img.width, drawH = img.height;
         if (imgAspect > aspect) {
           drawH = img.height;
@@ -109,54 +109,68 @@ const AnimatePage = () => {
 
         switch (style) {
           case "zoom-in": {
-            const scale = 1 + t * 0.3;
+            const scale = 1 + eased * 0.35;
             const cw = drawW / scale;
             const ch = drawH / scale;
             sx = (img.width - cw) / 2;
             sy = (img.height - ch) / 2;
-            sw = cw;
-            sh = ch;
+            sw = cw; sh = ch;
             break;
           }
           case "zoom-out": {
-            const scale = 1.3 - t * 0.3;
+            const scale = 1.35 - eased * 0.35;
             const cw = drawW / scale;
             const ch = drawH / scale;
             sx = (img.width - cw) / 2;
             sy = (img.height - ch) / 2;
-            sw = cw;
-            sh = ch;
+            sw = cw; sh = ch;
             break;
           }
           case "pan-left": {
-            sx = maxOffsetX * (1 - t);
+            sx = maxOffsetX * (1 - eased);
             sy = (img.height - drawH) / 2;
-            sw = drawW;
-            sh = drawH;
+            sw = drawW; sh = drawH;
             break;
           }
           case "pan-right": {
-            sx = maxOffsetX * t;
+            sx = maxOffsetX * eased;
             sy = (img.height - drawH) / 2;
-            sw = drawW;
-            sh = drawH;
+            sw = drawW; sh = drawH;
             break;
           }
           case "pan-up": {
             sx = (img.width - drawW) / 2;
-            sy = maxOffsetY * (1 - t);
-            sw = drawW;
-            sh = drawH;
+            sy = maxOffsetY * (1 - eased);
+            sw = drawW; sh = drawH;
             break;
           }
           case "ken-burns": {
-            const scale = 1 + t * 0.25;
+            const scale = 1 + eased * 0.3;
             const cw = drawW / scale;
             const ch = drawH / scale;
-            sx = (img.width - cw) * t * 0.5;
-            sy = (img.height - ch) * (1 - t) * 0.5;
-            sw = cw;
-            sh = ch;
+            sx = (img.width - cw) * eased * 0.4;
+            sy = (img.height - ch) * (1 - eased) * 0.4;
+            sw = cw; sh = ch;
+            break;
+          }
+          case "drift": {
+            const scale = 1 + eased * 0.15;
+            const cw = drawW / scale;
+            const ch = drawH / scale;
+            sx = (img.width - cw) * eased * 0.6;
+            sy = (img.height - ch) * eased * 0.4;
+            sw = cw; sh = ch;
+            break;
+          }
+          case "dramatic-zoom": {
+            // Fast start, slow end with cubic ease-out
+            const dramatic = 1 - Math.pow(1 - t, 3);
+            const scale = 1 + dramatic * 0.5;
+            const cw = drawW / scale;
+            const ch = drawH / scale;
+            sx = (img.width - cw) / 2;
+            sy = (img.height - ch) / 2;
+            sw = cw; sh = ch;
             break;
           }
         }
