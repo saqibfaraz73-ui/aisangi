@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useUsageLimit } from "@/hooks/use-usage-limit";
 import CharacterUpload from "@/components/CharacterUpload";
 import SceneCountSelector from "@/components/SceneCountSelector";
 import ImageResults from "@/components/ImageResults";
