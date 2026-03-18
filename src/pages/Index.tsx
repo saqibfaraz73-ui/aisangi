@@ -12,11 +12,41 @@ import ImageResults from "@/components/ImageResults";
 import AppHeader from "@/components/AppHeader";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 
-const EXAMPLE_PROMPTS = [
+const GENERAL_PROMPTS = [
   "A cyberpunk city at night with neon lights reflecting on wet streets",
   "A golden retriever puppy sitting in a field of sunflowers at sunset",
   "An astronaut floating in space with Earth in the background, photorealistic",
   "A cozy cabin in a snowy mountain forest with warm light from windows",
+];
+
+const CHARACTER_PROMPTS = [
+  // Cinematic
+  { category: "🎬 Cinematic", prompts: [
+    "Standing on a rooftop at golden hour, cinematic lighting, dramatic sky, film grain, 35mm lens",
+    "Walking through fog in a dimly lit alley, neon signs reflecting on wet ground, moody cinematic scene",
+    "Close-up portrait with dramatic side lighting, shallow depth of field, cinematic color grading",
+    "Sitting in a vintage car at sunset, warm golden light streaming through the window, movie still",
+  ]},
+  // Wedding
+  { category: "💒 Wedding", prompts: [
+    "Wearing elegant wedding attire in a beautiful garden with soft bokeh lights, romantic sunset",
+    "Standing under a floral wedding arch with rose petals falling, dreamy soft lighting",
+    "Holding a bouquet of white roses in a grand palace ballroom, chandelier lighting, elegant",
+    "Walking down a flower-lined aisle at a beach wedding, golden hour, waves in background",
+  ]},
+  // Travel
+  { category: "✈️ Travel", prompts: [
+    "Standing in front of the Eiffel Tower at sunrise, warm golden light, travel photography",
+    "Exploring ancient ruins in Greece with blue sky and white buildings in background",
+    "Walking through colorful streets of Tokyo with cherry blossoms falling, vibrant scene",
+    "Standing at the edge of Grand Canyon at sunset, dramatic landscape, adventure photography",
+  ]},
+  // Professional
+  { category: "💼 Professional", prompts: [
+    "Professional headshot in a modern office, clean background, confident pose, studio lighting",
+    "Giving a keynote speech on stage with spotlights, large audience, professional event",
+    "Working at a sleek desk with a city skyline view through floor-to-ceiling windows",
+  ]},
 ];
 
 interface ImageResult {
