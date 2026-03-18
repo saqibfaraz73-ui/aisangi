@@ -1,101 +1,171 @@
 import { useState, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Upload, X, Sparkles } from "lucide-react";
+import { User, Upload, X, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface CharacterUploadProps {
-  characterImage: string | null;
-  onCharacterChange: (imageDataUrl: string | null) => void;
+  characterImages: string[];
+  onCharacterImagesChange: (images: string[]) => void;
+  maxImages?: number;
 }
 
-const CharacterUpload = ({ characterImage, onCharacterChange }: CharacterUploadProps) => {
+const CharacterUpload = ({
+  characterImages,
+  onCharacterImagesChange,
+  maxImages = 4,
+}: CharacterUploadProps) => {
   const [isDragging, setIsDragging] = useState(false);
 
-  const handleFile = useCallback((file: File) => {
-    if (!file.type.startsWith("image/")) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      onCharacterChange(e.target?.result as string);
-    };
-    reader.readAsDataURL(file);
-  }, [onCharacterChange]);
+  const handleFile = useCallback(
+    (file: File) => {
+      if (!file.type.startsWith("image/")) return;
+      if (characterImages.length >= maxImages) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const dataUrl = e.target?.result as string;
+        onCharacterImagesChange([...characterImages, dataUrl]);
+      };
+      reader.readAsDataURL(file);
+    },
+    [characterImages, onCharacterImagesChange, maxImages]
+  );
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const file = e.dataTransfer.files[0];
-    if (file) handleFile(file);
-  }, [handleFile]);
+  const handleFiles = useCallback(
+    (files: FileList) => {
+      const remaining = maxImages - characterImages.length;
+      const toAdd = Array.from(files).slice(0, remaining);
+      toAdd.forEach((file) => handleFile(file));
+    },
+    [handleFile, characterImages.length, maxImages]
+  );
 
-  const handleChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) handleFile(file);
-  }, [handleFile]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      if (e.dataTransfer.files.length > 0) {
+        handleFiles(e.dataTransfer.files);
+      }
+    },
+    [handleFiles]
+  );
+
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      if (e.target.files && e.target.files.length > 0) {
+        handleFiles(e.target.files);
+      }
+      // Reset so same file can be re-selected
+      e.target.value = "";
+    },
+    [handleFiles]
+  );
+
+  const removeImage = useCallback(
+    (index: number) => {
+      onCharacterImagesChange(characterImages.filter((_, i) => i !== index));
+    },
+    [characterImages, onCharacterImagesChange]
+  );
 
   return (
     <div className="space-y-2">
       <label className="text-sm font-display font-semibold text-foreground flex items-center gap-2">
         <User className="h-4 w-4 text-primary" />
-        AI Character (Optional)
+        AI Characters (Optional — up to {maxImages} faces)
       </label>
-      
-      <AnimatePresence mode="wait">
-        {characterImage ? (
-          <motion.div
-            key="preview"
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
-            className="flex items-center gap-3 p-3 rounded-xl bg-card border border-border"
-          >
-            <img
-              src={characterImage}
-              alt="AI Character"
-              className="h-16 w-16 rounded-full object-cover ring-2 ring-primary"
+
+      {/* Show uploaded character previews */}
+      {characterImages.length > 0 && (
+        <div className="flex flex-wrap gap-2">
+          {characterImages.map((img, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="relative group"
+            >
+              <img
+                src={img}
+                alt={`Character ${index + 1}`}
+                className="h-16 w-16 rounded-full object-cover ring-2 ring-primary"
+              />
+              <button
+                onClick={() => removeImage(index)}
+                className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              >
+                <X className="h-3 w-3" />
+              </button>
+              <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 text-[10px] bg-primary text-primary-foreground rounded-full px-1.5 font-bold">
+                {index + 1}
+              </span>
+            </motion.div>
+          ))}
+
+          {/* Add more button */}
+          {characterImages.length < maxImages && (
+            <label className="h-16 w-16 rounded-full border-2 border-dashed border-border hover:border-primary/50 flex items-center justify-center cursor-pointer transition-colors">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleChange}
+                className="hidden"
+                multiple
+              />
+              <Plus className="h-5 w-5 text-muted-foreground" />
+            </label>
+          )}
+        </div>
+      )}
+
+      {/* Upload zone when no images */}
+      {characterImages.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className={`relative rounded-xl border-2 border-dashed transition-colors cursor-pointer ${
+            isDragging
+              ? "border-primary bg-primary/10"
+              : "border-border hover:border-primary/50 bg-card"
+          }`}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setIsDragging(true);
+          }}
+          onDragLeave={() => setIsDragging(false)}
+          onDrop={handleDrop}
+        >
+          <label className="flex items-center gap-3 p-4 cursor-pointer">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleChange}
+              className="hidden"
+              multiple
             />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-display font-semibold text-foreground">Character Active</p>
+            <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center shrink-0">
+              <Upload className="h-5 w-5 text-muted-foreground" />
+            </div>
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Upload photos of people to include
+              </p>
               <p className="text-xs text-muted-foreground">
-                This face will appear in generated images
+                Upload up to {maxImages} face photos — AI will preserve each face exactly
               </p>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onCharacterChange(null)}
-              className="shrink-0 text-muted-foreground hover:text-destructive"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </motion.div>
-        ) : (
-          <motion.div
-            key="upload"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className={`relative rounded-xl border-2 border-dashed transition-colors cursor-pointer ${
-              isDragging ? "border-primary bg-primary/10" : "border-border hover:border-primary/50 bg-card"
-            }`}
-            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
-            onDragLeave={() => setIsDragging(false)}
-            onDrop={handleDrop}
-          >
-            <label className="flex items-center gap-3 p-4 cursor-pointer">
-              <input type="file" accept="image/*" onChange={handleChange} className="hidden" />
-              <div className="h-12 w-12 rounded-xl bg-muted flex items-center justify-center shrink-0">
-                <Upload className="h-5 w-5 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-foreground">Upload a selfie or photo</p>
-                <p className="text-xs text-muted-foreground">
-                  AI will use this face as the character in generated images
-                </p>
-              </div>
-            </label>
-          </motion.div>
-        )}
-      </AnimatePresence>
+          </label>
+        </motion.div>
+      )}
+
+      {characterImages.length > 0 && (
+        <p className="text-xs text-muted-foreground">
+          {characterImages.length === 1
+            ? "Person 1 uploaded. Add more people or describe your scene below."
+            : `${characterImages.length} people uploaded. Reference them as Person 1, Person 2, etc. in your prompt.`}
+        </p>
+      )}
     </div>
   );
 };

@@ -28,7 +28,7 @@ const Index = () => {
   const [prompt, setPrompt] = usePersistedState("sangi_prompt", "");
   const [images, setImages] = usePersistedState<ImageResult[]>("sangi_images", []);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [characterImage, setCharacterImage] = usePersistedState<string | null>("sangi_character", null);
+  const [characterImages, setCharacterImages] = usePersistedState<string[]>("sangi_characters", []);
   const [sceneCount, setSceneCount] = usePersistedState("sangi_sceneCount", 1);
   const { toast } = useToast();
   const { checkAndTrack } = useUsageLimit("text_to_image");
@@ -49,7 +49,7 @@ const Index = () => {
       const { data, error } = await supabase.functions.invoke("generate-image", {
         body: {
           prompt: prompt.trim(),
-          characterImageUrl: characterImage || undefined,
+          characterImageUrls: characterImages.length > 0 ? characterImages : undefined,
           sceneCount,
         },
       });
@@ -78,7 +78,7 @@ const Index = () => {
   const handleClear = () => {
     setPrompt("");
     setImages([]);
-    setCharacterImage(null);
+    setCharacterImages([]);
     setSceneCount(1);
     toast({ title: "Cleared all data" });
   };
@@ -110,8 +110,8 @@ const Index = () => {
             className="space-y-5"
           >
             <CharacterUpload
-              characterImage={characterImage}
-              onCharacterChange={setCharacterImage}
+              characterImages={characterImages}
+              onCharacterImagesChange={setCharacterImages}
             />
 
             <div className="space-y-2">
@@ -120,8 +120,10 @@ const Index = () => {
               </label>
               <Textarea
                 placeholder={
-                  characterImage
-                    ? "Describe the scene... e.g. 'playing football in a stadium'"
+                  characterImages.length > 0
+                    ? characterImages.length > 1
+                      ? "Describe the scene with Person 1, Person 2... e.g. 'Person 1 and Person 2 playing football'"
+                      : "Describe the scene... e.g. 'playing football in a stadium'"
                     : "Describe the image you want to create..."
                 }
                 value={prompt}
@@ -129,9 +131,11 @@ const Index = () => {
                 className="min-h-[120px] bg-card border-border text-foreground placeholder:text-muted-foreground resize-none focus:ring-2 focus:ring-primary/50"
               />
               <p className="text-xs text-muted-foreground">
-                {characterImage
-                  ? "Your AI character will be placed in the scene you describe."
-                  : "Be descriptive — include style, lighting, colors, and mood."}
+                {characterImages.length > 1
+                  ? "Reference each person as Person 1, Person 2, etc. in your prompt."
+                  : characterImages.length === 1
+                    ? "Your AI character will be placed in the scene you describe."
+                    : "Be descriptive — include style, lighting, colors, and mood."}
               </p>
             </div>
 
@@ -155,7 +159,7 @@ const Index = () => {
                   </>
                 )}
               </Button>
-              {(images.length > 0 || prompt || characterImage) && (
+              {(images.length > 0 || prompt || characterImages.length > 0) && (
                 <Button
                   onClick={handleClear}
                   variant="outline"

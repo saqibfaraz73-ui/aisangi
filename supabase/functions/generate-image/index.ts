@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { prompt, characterImageUrl, sceneCount = 1 } = await req.json();
+    const { prompt, characterImageUrl, characterImageUrls, sceneCount = 1 } = await req.json();
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
       return new Response(
@@ -26,23 +26,30 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    // Support both legacy single image and new multi-image
+    const allCharacterUrls: string[] = [];
+    if (characterImageUrls && Array.isArray(characterImageUrls)) {
+      allCharacterUrls.push(...characterImageUrls);
+    } else if (characterImageUrl) {
+      allCharacterUrls.push(characterImageUrl);
+    }
+
     const count = Math.min(Math.max(1, Number(sceneCount) || 1), 4);
-    console.log(`Generating ${count} image(s) for prompt:`, prompt.substring(0, 100));
+    console.log(`Generating ${count} image(s) with ${allCharacterUrls.length} character ref(s)`);
 
     const generateOne = async (index: number) => {
       const variationHint = count > 1 ? ` (variation ${index + 1} of ${count}, create a unique composition)` : "";
 
       let messages: any[];
 
-      if (characterImageUrl) {
-        // Use the character image as reference for the generation
-        messages = [
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: `CRITICAL INSTRUCTION: You MUST use the EXACT face from the reference photo below. Do NOT alter, stylize, or change ANY facial features. The generated image must preserve the IDENTICAL face — same eyes, nose, mouth, jawline, skin tone, facial structure, and all distinguishing features. It should look like a real photograph of this exact same person.
+      if (allCharacterUrls.length > 0) {
+        // Build person labels
+        const personLabels = allCharacterUrls
+          .map((_, i) => `Person ${i + 1}`)
+          .join(", ");
+
+        const faceRules = allCharacterUrls.length === 1
+          ? `CRITICAL INSTRUCTION: You MUST use the EXACT face from the reference photo below. Do NOT alter, stylize, or change ANY facial features. The generated image must preserve the IDENTICAL face — same eyes, nose, mouth, jawline, skin tone, facial structure, and all distinguishing features.
 
 Scene to generate: ${prompt}${variationHint}
 
@@ -51,15 +58,37 @@ Rules:
 2. Do NOT change age, ethnicity, skin color, or facial proportions
 3. Keep the same facial hair, eyebrow shape, and facial marks if visible
 4. Only change clothing/pose/background to match the scene description
-5. The result should be photorealistic and look like a real unedited photo of this person`,
-              },
-              {
-                type: "image_url",
-                image_url: { url: characterImageUrl },
-              },
-            ],
-          },
+5. The result should be photorealistic and look like a real unedited photo of this person`
+          : `CRITICAL INSTRUCTION: There are ${allCharacterUrls.length} reference photos below (${personLabels}). You MUST use the EXACT face from EACH reference photo for the corresponding person in the generated image. Do NOT alter, stylize, or change ANY facial features of ANY person.
+
+Scene to generate: ${prompt}${variationHint}
+
+Rules:
+1. EVERY person's face MUST be an exact match to their reference photo — same eyes, nose, mouth, jawline, skin tone, facial structure
+2. Do NOT swap, merge, or blend faces between people — each person keeps their OWN unique face
+3. Do NOT change age, ethnicity, skin color, or facial proportions of ANY person
+4. Keep facial hair, eyebrow shape, and facial marks exactly as shown in each reference
+5. Person 1 = first reference image, Person 2 = second reference image, etc.
+6. Both/all people must appear clearly in the scene
+7. The result should be photorealistic and look like a real unedited photo of these exact people together`;
+
+        const contentParts: any[] = [
+          { type: "text", text: faceRules },
         ];
+
+        // Add each character image with a label
+        allCharacterUrls.forEach((url, i) => {
+          contentParts.push({
+            type: "text",
+            text: `--- Reference photo for Person ${i + 1}: ---`,
+          });
+          contentParts.push({
+            type: "image_url",
+            image_url: { url },
+          });
+        });
+
+        messages = [{ role: "user", content: contentParts }];
       } else {
         messages = [
           {
@@ -109,7 +138,6 @@ Rules:
       return { imageUrl, description: textContent };
     };
 
-    // Generate images sequentially to avoid rate limits
     const results = [];
     for (let i = 0; i < count; i++) {
       try {
@@ -124,16 +152,14 @@ Rules:
         }
         throw err;
       }
-      // Small delay between requests to avoid rate limiting
       if (i < count - 1) {
         await new Promise(r => setTimeout(r, 1000));
       }
     }
 
     return new Response(
-      JSON.stringify({ 
+      JSON.stringify({
         images: results,
-        // Keep backward compat
         imageUrl: results[0]?.imageUrl,
         description: results[0]?.description,
       }),
