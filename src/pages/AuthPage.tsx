@@ -29,6 +29,23 @@ const AuthPage = () => {
       return;
     }
 
+    if (isForgotPassword) {
+      setLoading(true);
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/reset-password`,
+        });
+        if (error) throw error;
+        toast({ title: "Reset link sent!", description: "Check your email for a password reset link." });
+        setIsForgotPassword(false);
+      } catch (err: any) {
+        toast({ title: "Failed to send reset link", description: err.message, variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
     if (password.length < 8) {
       toast({ title: "Password must be at least 8 characters", variant: "destructive" });
       return;
