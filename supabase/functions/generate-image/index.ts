@@ -81,6 +81,13 @@ function extractGeminiImageResponse(data: any) {
   return { imageUrl, textContent };
 }
 
+const CHARACTER_PRESERVATION_PROMPT = `CRITICAL INSTRUCTIONS FOR FACE PRESERVATION:
+- You MUST preserve the EXACT facial features from the reference photo(s): face shape, eye shape, eye color, nose shape, lip shape, skin tone, jawline, and any distinctive features (moles, dimples, scars).
+- Do NOT idealize, beautify, age, or modify the face in any way.
+- The person in the generated image must be immediately recognizable as the SAME person from the reference.
+- Maintain the same ethnicity, skin color, and facial proportions exactly.
+- Hair color and style should match unless the prompt explicitly requests a change.`;
+
 function buildGeminiParts(
   allCharacterUrls: string[],
   prompt: string,
@@ -91,8 +98,9 @@ function buildGeminiParts(
   const parts: any[] = [];
 
   if (allCharacterUrls.length > 0) {
+    // Place ALL reference images FIRST so the model anchors on them
     allCharacterUrls.forEach((url, index) => {
-      parts.push({ text: `[Reference face ${index + 1}]` });
+      parts.push({ text: `[Reference photo of Person ${index + 1} - PRESERVE THIS EXACT FACE]` });
 
       if (url.startsWith("data:")) {
         const [meta, b64] = url.split(",");
@@ -104,7 +112,7 @@ function buildGeminiParts(
     });
 
     parts.push({
-      text: `Generate image of this exact person in: ${prompt}${variationHint}${watermarkInstruction}`,
+      text: `${CHARACTER_PRESERVATION_PROMPT}\n\nNow generate an image placing this EXACT person (with identical face from reference above) in the following scene: ${prompt}${variationHint}${watermarkInstruction}`,
     });
     return parts;
   }
@@ -329,7 +337,7 @@ serve(async (req) => {
         : "";
 
       const fullPrompt = allCharacterUrls.length > 0
-        ? `Generate image with the person(s) from reference photo(s) in this scene: ${prompt}${variationHint}. Keep faces identical to references.${watermarkInstruction}`
+        ? `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image with the EXACT person(s) from the reference photo(s) in this scene: ${prompt}${variationHint}. The face must be identical to the reference - same features, same skin tone, same structure. Do NOT change or idealize the face.${watermarkInstruction}`
         : `${prompt}${variationHint}${watermarkInstruction}`;
 
       if (useDalle) {
@@ -353,10 +361,10 @@ serve(async (req) => {
       if (allCharacterUrls.length > 0 && apiConfig.provider !== "openai") {
         const contentParts: any[] = [];
         allCharacterUrls.forEach((url, i) => {
-          contentParts.push({ type: "text", text: `[Reference face ${i + 1}]` });
+          contentParts.push({ type: "text", text: `[Reference photo of Person ${i + 1} - PRESERVE THIS EXACT FACE]` });
           contentParts.push({ type: "image_url", image_url: { url } });
         });
-        contentParts.push({ type: "text", text: `Generate image of this exact person in: ${prompt}${variationHint}${watermarkInstruction}` });
+        contentParts.push({ type: "text", text: `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image placing this EXACT person (identical face from reference) in: ${prompt}${variationHint}${watermarkInstruction}` });
         messages = [{ role: "user", content: contentParts }];
       } else {
         messages = [{ role: "user", content: `Generate a high-quality image: ${fullPrompt}` }];
