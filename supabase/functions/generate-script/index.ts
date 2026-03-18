@@ -163,7 +163,10 @@ serve(async (req) => {
     );
     const apiConfig = await getApiConfig(supabase);
 
-    const count = sceneCount || 3;
+    const sceneInstruction = sceneCount
+      ? `Generate exactly ${sceneCount} scenes.`
+      : `Decide the optimal number of scenes based on the idea (typically 3-10 scenes). Use as many scenes as needed to tell the story effectively.`;
+
     const systemPrompt = `You are an expert viral video scriptwriter. Given a video idea, generate:
 1. Scene descriptions (visual prompts for AI image generation) — vivid, detailed, realistic.
 2. A voiceover narration script across all scenes.
@@ -176,7 +179,7 @@ Respond ONLY with valid JSON:
   "hashtags": ["relevant", "hashtags"]
 }
 
-Generate exactly ${count} scenes. Detailed image prompts with lighting, style, colors, mood. Engaging narration for viral short-form content.`;
+${sceneInstruction} Detailed image prompts with lighting, style, colors, mood. Engaging narration for viral short-form content.`;
 
     let response: Response;
     let activeModel = apiConfig.model;

@@ -35,7 +35,7 @@ const EXAMPLE_IDEAS = [
 
 const ScriptGeneratorPage = () => {
   const [idea, setIdea] = usePersistedState("sangi_script_idea", "");
-  const [sceneCount, setSceneCount] = usePersistedState("sangi_script_sceneCount", 3);
+  const [sceneCount, setSceneCount] = usePersistedState<number | null>("sangi_script_sceneCount", null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [script, setScript] = usePersistedState<GeneratedScript | null>("sangi_script_result", null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -62,7 +62,7 @@ const ScriptGeneratorPage = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-script", {
-        body: { idea: idea.trim(), sceneCount },
+        body: { idea: idea.trim(), sceneCount: sceneCount ?? undefined },
       });
 
       if (error) throw new Error(error.message);
@@ -101,7 +101,7 @@ const ScriptGeneratorPage = () => {
   const handleClear = () => {
     setIdea("");
     setScript(null);
-    setSceneCount(3);
+    setSceneCount(null);
     toast({ title: "Cleared all data" });
   };
 
