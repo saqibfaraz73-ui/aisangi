@@ -29,13 +29,13 @@ serve(async (req) => {
 
     // Check watermark setting for the user
     let watermarkEnabled = true;
+    let watermarkColor = "white";
     try {
       const authHeader = req.headers.get("authorization");
       const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
       const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
       const supabase = createClient(supabaseUrl, supabaseKey);
 
-      // Get user ID from JWT
       let userId: string | null = null;
       if (authHeader) {
         const token = authHeader.replace("Bearer ", "");
@@ -43,35 +43,35 @@ serve(async (req) => {
         userId = user?.id || null;
       }
 
-      // Check per-user override first
       if (userId) {
         const { data: userSetting } = await supabase
           .from("watermark_settings")
-          .select("enabled")
+          .select("enabled, color")
           .eq("user_id", userId)
           .maybeSingle();
         if (userSetting) {
           watermarkEnabled = userSetting.enabled;
+          watermarkColor = userSetting.color || "white";
         } else {
-          // Fall back to global setting
           const { data: globalSetting } = await supabase
             .from("watermark_settings")
-            .select("enabled")
+            .select("enabled, color")
             .is("user_id", null)
             .maybeSingle();
           watermarkEnabled = globalSetting?.enabled ?? true;
+          watermarkColor = globalSetting?.color || "white";
         }
       } else {
         const { data: globalSetting } = await supabase
           .from("watermark_settings")
-          .select("enabled")
+          .select("enabled, color")
           .is("user_id", null)
           .maybeSingle();
         watermarkEnabled = globalSetting?.enabled ?? true;
+        watermarkColor = globalSetting?.color || "white";
       }
     } catch (e) {
       console.error("Error checking watermark setting:", e);
-      // Default to enabled if check fails
     }
 
     // Support both legacy single image and new multi-image
@@ -90,7 +90,7 @@ serve(async (req) => {
 
       // Add watermark instruction if enabled
       const watermarkInstruction = watermarkEnabled
-        ? `\n\nIMPORTANT: Add a subtle semi-transparent watermark text "SANGIAi" in the upper-left corner of the image. The watermark should be visible but not distracting — use white text with ~40% opacity, slightly tilted, medium font size.`
+        ? `\n\nIMPORTANT: Add a subtle semi-transparent watermark text "SANGIAi" in the upper-left corner of the image. The watermark should be visible but not distracting — use ${watermarkColor} colored text with ~40% opacity, slightly tilted, medium font size.`
         : "";
 
       let messages: any[];

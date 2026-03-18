@@ -1,0 +1,1 @@
+ALTER TABLE public.watermark_settings ADD COLUMN color text NOT NULL DEFAULT 'white';

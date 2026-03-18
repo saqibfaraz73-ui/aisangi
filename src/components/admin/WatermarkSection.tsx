@@ -22,15 +22,25 @@ interface WatermarkSetting {
   id: string;
   enabled: boolean;
   user_id: string | null;
+  color: string;
 }
 
 interface WatermarkSectionProps {
   users: Profile[];
 }
 
+const WATERMARK_COLORS = [
+  { value: "white", label: "White", preview: "bg-white border border-border" },
+  { value: "black", label: "Black", preview: "bg-black" },
+  { value: "blue", label: "Blue", preview: "bg-blue-500" },
+  { value: "green", label: "Green", preview: "bg-green-500" },
+  { value: "yellow", label: "Yellow", preview: "bg-yellow-500" },
+];
+
 const WatermarkSection = ({ users }: WatermarkSectionProps) => {
   const { toast } = useToast();
   const [globalEnabled, setGlobalEnabled] = useState(true);
+  const [globalColor, setGlobalColor] = useState("white");
   const [globalId, setGlobalId] = useState<string | null>(null);
   const [userOverrides, setUserOverrides] = useState<WatermarkSetting[]>([]);
   const [saving, setSaving] = useState(false);
@@ -46,6 +56,7 @@ const WatermarkSection = ({ users }: WatermarkSectionProps) => {
       const global = data.find((s: any) => s.user_id === null);
       if (global) {
         setGlobalEnabled(global.enabled);
+        setGlobalColor(global.color || "white");
         setGlobalId(global.id);
       }
       setUserOverrides(data.filter((s: any) => s.user_id !== null) as WatermarkSetting[]);
@@ -72,9 +83,27 @@ const WatermarkSection = ({ users }: WatermarkSectionProps) => {
     }
   };
 
+  const updateGlobalColor = async (color: string) => {
+    setSaving(true);
+    try {
+      if (globalId) {
+        const { error } = await supabase
+          .from("watermark_settings")
+          .update({ color, updated_at: new Date().toISOString() })
+          .eq("id", globalId);
+        if (error) throw error;
+      }
+      setGlobalColor(color);
+      toast({ title: `Watermark color changed to ${color}` });
+    } catch (err: any) {
+      toast({ title: "Failed to update color", description: err.message, variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const addUserOverride = async () => {
     if (!selectedUserId) return;
-    // Check if override already exists
     if (userOverrides.find((o) => o.user_id === selectedUserId)) {
       toast({ title: "Override already exists for this user", variant: "destructive" });
       return;
@@ -154,6 +183,28 @@ const WatermarkSection = ({ users }: WatermarkSectionProps) => {
           onCheckedChange={toggleGlobal}
           disabled={saving}
         />
+      </div>
+
+      {/* Color picker */}
+      <div className="p-3 rounded-lg bg-muted mb-4">
+        <p className="text-sm font-semibold text-foreground mb-2">Watermark Color</p>
+        <div className="flex gap-2 flex-wrap">
+          {WATERMARK_COLORS.map((c) => (
+            <button
+              key={c.value}
+              onClick={() => updateGlobalColor(c.value)}
+              disabled={saving}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm transition-all ${
+                globalColor === c.value
+                  ? "border-primary ring-2 ring-primary/30 bg-primary/10"
+                  : "border-border bg-background hover:border-primary/50"
+              }`}
+            >
+              <span className={`w-4 h-4 rounded-full ${c.preview}`} />
+              <span className="text-foreground">{c.label}</span>
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Per-user overrides */}

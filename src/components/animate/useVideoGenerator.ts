@@ -5,11 +5,19 @@ function getEased(t: number) {
   return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 }
 
-function drawWatermark(ctx: CanvasRenderingContext2D, W: number, H: number) {
+const COLOR_MAP: Record<string, string> = {
+  white: "rgba(255, 255, 255, 0.4)",
+  black: "rgba(0, 0, 0, 0.4)",
+  blue: "rgba(59, 130, 246, 0.5)",
+  green: "rgba(34, 197, 94, 0.5)",
+  yellow: "rgba(234, 179, 8, 0.5)",
+};
+
+function drawWatermark(ctx: CanvasRenderingContext2D, W: number, H: number, color: string = "white") {
   ctx.save();
   const fontSize = Math.max(16, Math.min(W, H) * 0.04);
   ctx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
-  ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+  ctx.fillStyle = COLOR_MAP[color] || COLOR_MAP.white;
   ctx.textAlign = "left";
   ctx.textBaseline = "top";
   const x = fontSize * 0.5;
@@ -122,7 +130,8 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
       styles: AnimationStyle[],
       durations: number[],
       platform: PlatformPreset,
-      watermark: boolean = true
+      watermark: boolean = true,
+      watermarkColor: string = "white"
     ): Promise<string> => {
       const canvas = canvasRef.current;
       if (!canvas) throw new Error("Canvas not ready");
@@ -150,7 +159,6 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
 
       recorder.start();
 
-      // Render each image with its own duration
       for (let i = 0; i < images.length; i++) {
         const img = await loadImage(images[i]);
         const imgDuration = durations[i] || 5;
@@ -161,7 +169,7 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
           const t = frame / totalFrames;
           renderFrame(ctx, img, W, H, t, imgStyle);
           if (watermark) {
-            drawWatermark(ctx, W, H);
+            drawWatermark(ctx, W, H, watermarkColor);
           }
           await new Promise((r) => setTimeout(r, 1000 / fps));
         }

@@ -25,7 +25,7 @@ const AnimatePage = () => {
   const { toast } = useToast();
   const { generate } = useVideoGenerator(canvasRef);
   const { checkAndTrack } = useUsageLimit("image_to_video");
-  const { watermarkEnabled } = useWatermark();
+  const { watermarkEnabled, watermarkColor } = useWatermark();
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -71,7 +71,7 @@ const AnimatePage = () => {
     setIsGenerating(true);
     setVideoUrl(null);
     try {
-      const url = await generate(images, styles, durations, platform, watermarkEnabled);
+      const url = await generate(images, styles, durations, platform, watermarkEnabled, watermarkColor);
       setVideoUrl(url);
       toast({ title: "Video generated successfully!" });
     } catch (err: any) {
