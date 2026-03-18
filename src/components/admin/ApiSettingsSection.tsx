@@ -13,15 +13,21 @@ const PROVIDERS = [
   { value: "openai", label: "OpenAI (ChatGPT)" },
 ];
 
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash-image";
+
 const GEMINI_MODELS = [
-  { value: "gemini-2.0-flash-exp", label: "Gemini 2.0 Flash Exp (Images, script falls back)" },
-  { value: "gemini-2.5-flash-preview-05-20", label: "Gemini 2.5 Flash Preview (Images, script falls back)" },
-  { value: "gemini-2.5-pro-preview-05-06", label: "Gemini 2.5 Pro Preview (Images, script falls back)" },
-  { value: "gemini-2.0-flash", label: "Gemini 2.0 Flash (Best for scripts)" },
-  { value: "gemini-2.0-flash-lite", label: "Gemini 2.0 Flash Lite (Text only)" },
+  { value: "gemini-2.5-flash-image", label: "Gemini 2.5 Flash Image (Best free-tier for images)" },
+  { value: "gemini-3.1-flash-image-preview", label: "Gemini 3.1 Flash Image Preview (Higher-quality images)" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Best for scripts)" },
+  { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite (Cheaper text)" },
   { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Text only)" },
   { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Text only)" },
 ];
+
+const GEMINI_MODEL_VALUES = new Set(GEMINI_MODELS.map(({ value }) => value));
+
+const normalizeGeminiModel = (value?: string | null) =>
+  value && GEMINI_MODEL_VALUES.has(value) ? value : DEFAULT_GEMINI_MODEL;
 
 const OPENAI_MODELS = [
   { value: "gpt-4o", label: "GPT-4o (Recommended)" },
@@ -40,7 +46,7 @@ const ApiSettingsSection = () => {
 
   const [apiKey, setApiKey] = useState("");
   const [provider, setProvider] = useState("gemini");
-  const [model, setModel] = useState("gemini-2.0-flash-exp");
+  const [model, setModel] = useState(DEFAULT_GEMINI_MODEL);
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
@@ -56,18 +62,18 @@ const ApiSettingsSection = () => {
       .maybeSingle();
 
     if (data) {
+      const nextProvider = data.provider || "gemini";
       setApiKey(data.api_key || "");
-      setProvider(data.provider || "gemini");
-      setModel(data.model || "gemini-2.0-flash");
-      setEnabled(data.enabled || false);
+      setProvider(nextProvider);
+      setModel(nextProvider === "gemini" ? normalizeGeminiModel(data.model) : data.model || "gpt-4o");
+      setEnabled(Boolean(data.enabled));
     }
     setLoading(false);
   };
 
   const handleProviderChange = (newProvider: string) => {
     setProvider(newProvider);
-    // Reset model to default for selected provider
-    if (newProvider === "gemini") setModel("gemini-2.0-flash-exp");
+    if (newProvider === "gemini") setModel(DEFAULT_GEMINI_MODEL);
     else setModel("gpt-4o");
   };
 
