@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { UserCog, Save, Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { SECTION_LABELS, LIMIT_TYPE_LABELS } from "./GlobalLimitsSection";
+import UserSearch from "./UserSearch";
 
 interface Profile {
   id: string;
@@ -33,7 +34,14 @@ const UserLimitsSection = ({ users, userLimits, onRefresh }: Props) => {
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [editedUserLimits, setEditedUserLimits] = useState<Record<string, { limit: number; type: string }>>({});
+  const [userSearch, setUserSearch] = useState("");
   const { toast } = useToast();
+
+  const filteredUsers = useMemo(() => {
+    if (!userSearch.trim()) return users;
+    const q = userSearch.toLowerCase();
+    return users.filter(u => u.email.toLowerCase().includes(q) || (u.full_name || "").toLowerCase().includes(q));
+  }, [users, userSearch]);
 
   const selectedUserLimits = userLimits.filter((l) => l.user_id === selectedUser);
 
@@ -99,13 +107,14 @@ const UserLimitsSection = ({ users, userLimits, onRefresh }: Props) => {
         <h2 className="font-display font-bold text-lg text-foreground">Per-User Limits</h2>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 space-y-2">
+        <UserSearch value={userSearch} onChange={setUserSearch} />
         <Select value={selectedUser} onValueChange={setSelectedUser}>
           <SelectTrigger className="bg-background border-border">
             <SelectValue placeholder="Select a user..." />
           </SelectTrigger>
           <SelectContent>
-            {users.map((u) => (
+            {filteredUsers.map((u) => (
               <SelectItem key={u.id} value={u.id}>
                 {u.full_name || u.email} — {u.email}
               </SelectItem>

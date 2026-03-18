@@ -338,6 +338,19 @@ const ScriptGeneratorPage = () => {
                     </p>
                   </div>
 
+                  {/* Copy Full Script */}
+                  <Button
+                    onClick={() => {
+                      const full = `${script.title}\n\n${script.scenes.map(s => `Scene ${s.sceneNumber}:\nImage Prompt: ${s.imagePrompt}\nVoiceover: ${s.narration}`).join("\n\n")}\n\nFull Narration:\n${script.fullNarration}\n\nHashtags: ${script.hashtags?.map(t => `#${t}`).join(" ") || ""}`;
+                      copyToClipboard(full, "full-script");
+                    }}
+                    variant="outline"
+                    className="w-full h-11 font-display font-semibold"
+                  >
+                    {copiedField === "full-script" ? <Check className="h-4 w-4 mr-2" /> : <Copy className="h-4 w-4 mr-2" />}
+                    Copy Full Script
+                  </Button>
+
                   <Button
                     onClick={usePromptsForImageGen}
                     className="w-full h-11 gradient-primary text-primary-foreground font-display font-semibold hover:opacity-90 transition-opacity"

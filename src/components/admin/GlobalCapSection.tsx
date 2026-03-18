@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Globe, Image, Save, Loader2 } from "lucide-react";
+import { Globe, Image, FileText, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -92,8 +92,10 @@ const GlobalCapSection = () => {
   const [loading, setLoading] = useState(true);
   const [savingGlobal, setSavingGlobal] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
+  const [savingScript, setSavingScript] = useState(false);
   const [globalCap, setGlobalCap] = useState<CapState>(defaultCap(1400));
   const [imageCap, setImageCap] = useState<CapState>(defaultCap(240));
+  const [scriptCap, setScriptCap] = useState<CapState>(defaultCap(1160));
 
   useEffect(() => {
     fetchData();
@@ -104,11 +106,13 @@ const GlobalCapSection = () => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [capRes, imageCapRes, totalUsageRes, imageUsageRes] = await Promise.all([
+    const [capRes, imageCapRes, scriptCapRes, totalUsageRes, imageUsageRes, scriptUsageRes] = await Promise.all([
       supabase.from("global_usage_cap").select("*").limit(1).maybeSingle(),
       supabase.from("image_generation_cap").select("*").limit(1).maybeSingle(),
+      supabase.from("script_generation_cap").select("*").limit(1).maybeSingle(),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "text_to_image").gte("used_at", todayStart.toISOString()),
+      supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "script_ai").gte("used_at", todayStart.toISOString()),
     ]);
 
     if (capRes.data) {
@@ -123,44 +127,36 @@ const GlobalCapSection = () => {
       setImageCap((p) => ({ ...p, todayUsage: imageUsageRes.count ?? 0 }));
     }
 
+    if (scriptCapRes.data) {
+      setScriptCap({ id: scriptCapRes.data.id, enabled: scriptCapRes.data.enabled, dailyLimit: scriptCapRes.data.daily_limit, todayUsage: scriptUsageRes.count ?? 0 });
+    } else {
+      setScriptCap((p) => ({ ...p, todayUsage: scriptUsageRes.count ?? 0 }));
+    }
+
     setLoading(false);
   };
 
-  const saveGlobal = async () => {
-    setSavingGlobal(true);
+  const saveCap = async (
+    table: "global_usage_cap" | "image_generation_cap" | "script_generation_cap",
+    cap: CapState,
+    setSaving: (v: boolean) => void,
+    label: string
+  ) => {
+    setSaving(true);
     try {
-      if (globalCap.id) {
-        const { error } = await supabase.from("global_usage_cap").update({ enabled: globalCap.enabled, daily_limit: globalCap.dailyLimit, updated_at: new Date().toISOString() }).eq("id", globalCap.id);
+      if (cap.id) {
+        const { error } = await supabase.from(table).update({ enabled: cap.enabled, daily_limit: cap.dailyLimit, updated_at: new Date().toISOString() }).eq("id", cap.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from("global_usage_cap").insert({ enabled: globalCap.enabled, daily_limit: globalCap.dailyLimit });
+        const { error } = await supabase.from(table).insert({ enabled: cap.enabled, daily_limit: cap.dailyLimit });
         if (error) throw error;
       }
-      toast({ title: "Global cap saved!" });
+      toast({ title: `${label} saved!` });
       fetchData();
     } catch (err: any) {
       toast({ title: "Failed to save", description: err.message, variant: "destructive" });
     } finally {
-      setSavingGlobal(false);
-    }
-  };
-
-  const saveImage = async () => {
-    setSavingImage(true);
-    try {
-      if (imageCap.id) {
-        const { error } = await supabase.from("image_generation_cap").update({ enabled: imageCap.enabled, daily_limit: imageCap.dailyLimit, updated_at: new Date().toISOString() }).eq("id", imageCap.id);
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.from("image_generation_cap").insert({ enabled: imageCap.enabled, daily_limit: imageCap.dailyLimit });
-        if (error) throw error;
-      }
-      toast({ title: "Image generation cap saved!" });
-      fetchData();
-    } catch (err: any) {
-      toast({ title: "Failed to save", description: err.message, variant: "destructive" });
-    } finally {
-      setSavingImage(false);
+      setSaving(false);
     }
   };
 
@@ -179,14 +175,14 @@ const GlobalCapSection = () => {
         <h2 className="font-display font-bold text-lg text-foreground">Daily Caps (Gemini Quota Protection)</h2>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         <CapCard
           icon={Globe}
           title="Global Request Cap"
           description="Limits total API requests across all users combined per day."
           state={globalCap}
           onChange={(s) => setGlobalCap((p) => ({ ...p, ...s }))}
-          onSave={saveGlobal}
+          onSave={() => saveCap("global_usage_cap", globalCap, setSavingGlobal, "Global cap")}
           saving={savingGlobal}
         />
         <CapCard
@@ -195,8 +191,17 @@ const GlobalCapSection = () => {
           description="Limits total image generations across all users per day (Gemini allows ~250/day)."
           state={imageCap}
           onChange={(s) => setImageCap((p) => ({ ...p, ...s }))}
-          onSave={saveImage}
+          onSave={() => saveCap("image_generation_cap", imageCap, setSavingImage, "Image generation cap")}
           saving={savingImage}
+        />
+        <CapCard
+          icon={FileText}
+          title="Script Generation Cap"
+          description="Limits total script generations across all users per day (default 1160/day)."
+          state={scriptCap}
+          onChange={(s) => setScriptCap((p) => ({ ...p, ...s }))}
+          onSave={() => saveCap("script_generation_cap", scriptCap, setSavingScript, "Script generation cap")}
+          saving={savingScript}
         />
       </div>
     </motion.div>

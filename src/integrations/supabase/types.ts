@@ -104,6 +104,27 @@ export type Database = {
         }
         Relationships: []
       }
+      script_generation_cap: {
+        Row: {
+          daily_limit: number
+          enabled: boolean
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          daily_limit?: number
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          daily_limit?: number
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       usage_limits: {
         Row: {
           daily_limit: number
