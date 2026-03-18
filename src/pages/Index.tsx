@@ -12,11 +12,41 @@ import ImageResults from "@/components/ImageResults";
 import AppHeader from "@/components/AppHeader";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 
-const EXAMPLE_PROMPTS = [
+const GENERAL_PROMPTS = [
   "A cyberpunk city at night with neon lights reflecting on wet streets",
   "A golden retriever puppy sitting in a field of sunflowers at sunset",
   "An astronaut floating in space with Earth in the background, photorealistic",
   "A cozy cabin in a snowy mountain forest with warm light from windows",
+];
+
+const CHARACTER_PROMPTS = [
+  // Cinematic
+  { category: "🎬 Cinematic", prompts: [
+    "Standing on a rooftop at golden hour, cinematic lighting, dramatic sky, film grain, 35mm lens",
+    "Walking through fog in a dimly lit alley, neon signs reflecting on wet ground, moody cinematic scene",
+    "Close-up portrait with dramatic side lighting, shallow depth of field, cinematic color grading",
+    "Sitting in a vintage car at sunset, warm golden light streaming through the window, movie still",
+  ]},
+  // Wedding
+  { category: "💒 Wedding", prompts: [
+    "Wearing elegant wedding attire in a beautiful garden with soft bokeh lights, romantic sunset",
+    "Standing under a floral wedding arch with rose petals falling, dreamy soft lighting",
+    "Holding a bouquet of white roses in a grand palace ballroom, chandelier lighting, elegant",
+    "Walking down a flower-lined aisle at a beach wedding, golden hour, waves in background",
+  ]},
+  // Travel
+  { category: "✈️ Travel", prompts: [
+    "Standing in front of the Eiffel Tower at sunrise, warm golden light, travel photography",
+    "Exploring ancient ruins in Greece with blue sky and white buildings in background",
+    "Walking through colorful streets of Tokyo with cherry blossoms falling, vibrant scene",
+    "Standing at the edge of Grand Canyon at sunset, dramatic landscape, adventure photography",
+  ]},
+  // Professional
+  { category: "💼 Professional", prompts: [
+    "Professional headshot in a modern office, clean background, confident pose, studio lighting",
+    "Giving a keynote speech on stage with spotlights, large audience, professional event",
+    "Working at a sleek desk with a city skyline view through floor-to-ceiling windows",
+  ]},
 ];
 
 interface ImageResult {
@@ -170,21 +200,42 @@ const Index = () => {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <p className="text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">
-                Try these prompts
+                {characterImages.length > 0 ? "Try these scene prompts" : "Try these prompts"}
               </p>
-              <div className="flex flex-wrap gap-2">
-                {EXAMPLE_PROMPTS.map((p, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setPrompt(p)}
-                    className="text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors text-left"
-                  >
-                    {p.length > 50 ? p.substring(0, 50) + "…" : p}
-                  </button>
-                ))}
-              </div>
+              {characterImages.length > 0 ? (
+                <div className="space-y-2">
+                  {CHARACTER_PROMPTS.map((cat) => (
+                    <div key={cat.category}>
+                      <p className="text-xs font-semibold text-foreground mb-1">{cat.category}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {cat.prompts.map((p, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setPrompt(p)}
+                            className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors text-left"
+                          >
+                            {p.length > 45 ? p.substring(0, 45) + "…" : p}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {GENERAL_PROMPTS.map((p, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPrompt(p)}
+                      className="text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors text-left"
+                    >
+                      {p.length > 50 ? p.substring(0, 50) + "…" : p}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
 
