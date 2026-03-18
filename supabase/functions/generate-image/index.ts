@@ -7,12 +7,110 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+const DEFAULT_CUSTOM_GEMINI_IMAGE_MODEL = "gemini-2.5-flash-image";
+const DEFAULT_LOVABLE_IMAGE_MODEL = "google/gemini-3.1-flash-image-preview";
+const FALLBACK_GEMINI_IMAGE_MODELS = [
+  "gemini-2.5-flash-image",
+  "gemini-3.1-flash-image-preview",
+] as const;
+
 interface ApiConfig {
   apiKey: string;
   model: string;
-  baseUrl: string;
+  baseUrl?: string;
   provider: string;
   useCustom: boolean;
+}
+
+function normalizeCustomGeminiImageModel(model?: string | null) {
+  const selectedModel = (model || DEFAULT_CUSTOM_GEMINI_IMAGE_MODEL).trim();
+
+  return FALLBACK_GEMINI_IMAGE_MODELS.includes(
+    selectedModel as (typeof FALLBACK_GEMINI_IMAGE_MODELS)[number],
+  )
+    ? selectedModel
+    : DEFAULT_CUSTOM_GEMINI_IMAGE_MODEL;
+}
+
+function buildGeminiImageUrl(model: string, apiKey: string) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+}
+
+async function readErrorMessage(response: Response) {
+  const rawText = await response.text();
+
+  try {
+    const parsed = JSON.parse(rawText);
+    return parsed?.error?.message || parsed?.message || rawText;
+  } catch {
+    return rawText;
+  }
+}
+
+function shouldRetryGeminiImageModel(status: number, message: string) {
+  const msg = message.toLowerCase();
+
+  return (
+    status === 404 ||
+    msg.includes("not found") ||
+    msg.includes("not supported") ||
+    msg.includes("no longer available") ||
+    msg.includes("response modalities")
+  );
+}
+
+function extractGeminiImageResponse(data: any) {
+  let imageUrl = "";
+  let textContent = "";
+  const parts = data?.candidates?.[0]?.content?.parts;
+
+  if (Array.isArray(parts)) {
+    for (const part of parts) {
+      if (part.inlineData?.data) {
+        imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+      }
+      if (part.inline_data?.data) {
+        imageUrl = `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
+      }
+      if (part.text) {
+        textContent = part.text;
+      }
+    }
+  }
+
+  return { imageUrl, textContent };
+}
+
+function buildGeminiParts(
+  allCharacterUrls: string[],
+  prompt: string,
+  variationHint: string,
+  watermarkInstruction: string,
+  fullPrompt: string,
+) {
+  const parts: any[] = [];
+
+  if (allCharacterUrls.length > 0) {
+    allCharacterUrls.forEach((url, index) => {
+      parts.push({ text: `[Reference face ${index + 1}]` });
+
+      if (url.startsWith("data:")) {
+        const [meta, b64] = url.split(",");
+        const mime = meta.match(/data:(.*?);/)?.[1] || "image/png";
+        parts.push({ inline_data: { mime_type: mime, data: b64 } });
+      } else {
+        parts.push({ text: `(reference image URL: ${url})` });
+      }
+    });
+
+    parts.push({
+      text: `Generate image of this exact person in: ${prompt}${variationHint}${watermarkInstruction}`,
+    });
+    return parts;
+  }
+
+  parts.push({ text: `Generate a high-quality image: ${fullPrompt}` });
+  return parts;
 }
 
 async function getApiConfig(supabase: any): Promise<ApiConfig> {
@@ -24,16 +122,26 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
 
   if (data?.enabled && data?.api_key) {
     const provider = data.provider || "gemini";
-    const model = data.model || (provider === "openai" ? "gpt-4o" : "gemini-2.0-flash-exp");
+    const model = provider === "openai"
+      ? data.model || "gpt-4o"
+      : normalizeCustomGeminiImageModel(data.model);
 
-    let baseUrl: string;
     if (provider === "openai") {
-      baseUrl = "https://api.openai.com/v1/chat/completions";
-    } else {
-      baseUrl = "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+      return {
+        apiKey: data.api_key,
+        model,
+        baseUrl: "https://api.openai.com/v1/chat/completions",
+        provider,
+        useCustom: true,
+      };
     }
 
-    return { apiKey: data.api_key, model, baseUrl, provider, useCustom: true };
+    return {
+      apiKey: data.api_key,
+      model,
+      provider: "gemini",
+      useCustom: true,
+    };
   }
 
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
@@ -41,14 +149,13 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
 
   return {
     apiKey: lovableKey,
-    model: "google/gemini-3.1-flash-image-preview",
+    model: DEFAULT_LOVABLE_IMAGE_MODEL,
     baseUrl: "https://ai.gateway.lovable.dev/v1/chat/completions",
     provider: "lovable",
     useCustom: false,
   };
 }
 
-// For OpenAI DALL-E image generation
 async function generateWithDalle(apiKey: string, prompt: string): Promise<{ imageUrl: string; description: string }> {
   const response = await fetch("https://api.openai.com/v1/images/generations", {
     method: "POST",
@@ -83,6 +190,77 @@ async function generateWithDalle(apiKey: string, prompt: string): Promise<{ imag
   };
 }
 
+async function generateWithCustomGemini(
+  apiKey: string,
+  selectedModel: string,
+  fullPrompt: string,
+  prompt: string,
+  allCharacterUrls: string[],
+  variationHint: string,
+  watermarkInstruction: string,
+): Promise<{ imageUrl: string; description: string }> {
+  const modelsToTry = [
+    normalizeCustomGeminiImageModel(selectedModel),
+    ...FALLBACK_GEMINI_IMAGE_MODELS.filter((model) => model !== normalizeCustomGeminiImageModel(selectedModel)),
+  ];
+
+  for (let index = 0; index < modelsToTry.length; index++) {
+    const activeModel = modelsToTry[index];
+    const response = await fetch(buildGeminiImageUrl(activeModel, apiKey), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{
+          parts: buildGeminiParts(
+            allCharacterUrls,
+            prompt,
+            variationHint,
+            watermarkInstruction,
+            fullPrompt,
+          ),
+        }],
+        generationConfig: {
+          responseModalities: ["TEXT", "IMAGE"],
+        },
+      }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const { imageUrl, textContent } = extractGeminiImageResponse(data);
+
+      if (imageUrl) {
+        return { imageUrl, description: textContent };
+      }
+
+      console.error(`Gemini model ${activeModel} returned no image data.`, JSON.stringify(data));
+      if (index === modelsToTry.length - 1) {
+        throw { status: 500, message: "No image generated. Try a different prompt or model." };
+      }
+      continue;
+    }
+
+    const errorMessage = await readErrorMessage(response);
+    console.error("Gemini native API error:", response.status, errorMessage);
+
+    if (response.status === 429) {
+      throw { status: 429, message: "Rate limited. Please wait and try again." };
+    }
+    if (response.status === 401 || response.status === 403) {
+      throw { status: 401, message: "Invalid Gemini API key. Check Admin settings." };
+    }
+
+    const shouldRetry = shouldRetryGeminiImageModel(response.status, errorMessage);
+    if (!shouldRetry || index === modelsToTry.length - 1) {
+      throw { status: 500, message: errorMessage || "Image generation failed." };
+    }
+
+    console.log(`Retrying image generation with fallback Gemini model: ${modelsToTry[index + 1]}`);
+  }
+
+  throw { status: 500, message: "Image generation failed." };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -105,10 +283,8 @@ serve(async (req) => {
     const apiConfig = await getApiConfig(supabase);
     console.log(`Using ${apiConfig.provider} with model: ${apiConfig.model}`);
 
-    // Check if OpenAI with DALL-E model (separate image API)
     const useDalle = apiConfig.useCustom && apiConfig.provider === "openai" && apiConfig.model === "dall-e-3";
 
-    // Check watermark setting
     let watermarkEnabled = true;
     let watermarkColor = "white";
     try {
@@ -137,7 +313,6 @@ serve(async (req) => {
       console.error("Error checking watermark:", e);
     }
 
-    // Character URLs
     const allCharacterUrls: string[] = [];
     if (characterImageUrls && Array.isArray(characterImageUrls)) {
       allCharacterUrls.push(...characterImageUrls);
@@ -157,87 +332,22 @@ serve(async (req) => {
         ? `Generate image with the person(s) from reference photo(s) in this scene: ${prompt}${variationHint}. Keep faces identical to references.${watermarkInstruction}`
         : `${prompt}${variationHint}${watermarkInstruction}`;
 
-      // DALL-E path
       if (useDalle) {
         return generateWithDalle(apiConfig.apiKey, fullPrompt);
       }
 
-      // Custom Gemini: use native Gemini API with responseModalities
       if (apiConfig.useCustom && apiConfig.provider === "gemini") {
-        // Models that support image generation via responseModalities
-        // Only gemini-2.0-flash-exp is reliably available for image generation
-        const IMAGE_CAPABLE_MODELS = [
-          "gemini-2.0-flash-exp",
-        ];
-        let geminiModel = apiConfig.model;
-        // Auto-switch any non-image-capable model to gemini-2.0-flash-exp
-        if (!IMAGE_CAPABLE_MODELS.includes(geminiModel)) {
-          console.log(`Model ${geminiModel} doesn't support image gen, switching to gemini-2.0-flash-exp`);
-          geminiModel = "gemini-2.0-flash-exp";
-        }
-        const nativeUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiConfig.apiKey}`;
-
-        const parts: any[] = [];
-        if (allCharacterUrls.length > 0) {
-          allCharacterUrls.forEach((url, i) => {
-            parts.push({ text: `[Reference face ${i + 1}]` });
-            // If it's a data URL, extract base64
-            if (url.startsWith("data:")) {
-              const [meta, b64] = url.split(",");
-              const mime = meta.match(/data:(.*?);/)?.[1] || "image/png";
-              parts.push({ inline_data: { mime_type: mime, data: b64 } });
-            } else {
-              parts.push({ text: `(reference image URL: ${url})` });
-            }
-          });
-          parts.push({ text: `Generate image of this exact person in: ${prompt}${variationHint}${watermarkInstruction}` });
-        } else {
-          parts.push({ text: `Generate a high-quality image: ${fullPrompt}` });
-        }
-
-        let response: Response | null = null;
-        for (let attempt = 1; attempt <= 3; attempt++) {
-          response = await fetch(nativeUrl, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              contents: [{ parts }],
-              generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
-            }),
-          });
-
-          if (response.ok) break;
-          if (response.status === 429 && attempt < 3) {
-            await new Promise(r => setTimeout(r, attempt * 2000));
-            continue;
-          }
-          if (response.status === 429) throw { status: 429, message: "Rate limited. Please wait and try again." };
-          if (response.status === 401 || response.status === 403) throw { status: 401, message: "Invalid Gemini API key. Check Admin settings." };
-
-          const errText = await response.text();
-          console.error("Gemini native API error:", response.status, errText);
-          throw { status: 500, message: "Image generation failed." };
-        }
-
-        if (!response || !response.ok) throw { status: 500, message: "Generation unavailable." };
-
-        const data = await response.json();
-        let imageUrl = "";
-        let textContent = "";
-        const resParts = data.candidates?.[0]?.content?.parts;
-        if (resParts) {
-          for (const part of resParts) {
-            if (part.inlineData?.data) imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
-            if (part.inline_data?.data) imageUrl = `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
-            if (part.text) textContent = part.text;
-          }
-        }
-
-        if (!imageUrl) throw { status: 500, message: "No image generated. Try a different prompt or a different model." };
-        return { imageUrl, description: textContent };
+        return generateWithCustomGemini(
+          apiConfig.apiKey,
+          apiConfig.model,
+          fullPrompt,
+          prompt,
+          allCharacterUrls,
+          variationHint,
+          watermarkInstruction,
+        );
       }
 
-      // Lovable AI gateway / OpenAI chat completions path
       let messages: any[];
 
       if (allCharacterUrls.length > 0 && apiConfig.provider !== "openai") {
@@ -259,7 +369,7 @@ serve(async (req) => {
           body.modalities = ["image", "text"];
         }
 
-        response2 = await fetch(apiConfig.baseUrl, {
+        response2 = await fetch(apiConfig.baseUrl!, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${apiConfig.apiKey}`,
