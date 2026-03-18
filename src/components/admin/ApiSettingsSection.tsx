@@ -67,7 +67,7 @@ const ApiSettingsSection = () => {
   const handleProviderChange = (newProvider: string) => {
     setProvider(newProvider);
     // Reset model to default for selected provider
-    if (newProvider === "gemini") setModel("gemini-2.0-flash");
+    if (newProvider === "gemini") setModel("gemini-2.0-flash-exp");
     else setModel("gpt-4o");
   };
 
