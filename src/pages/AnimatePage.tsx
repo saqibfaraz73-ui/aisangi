@@ -11,6 +11,7 @@ import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
 import AudioOverlaySection from "@/components/animate/AudioOverlaySection";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
+import { useWatermark } from "@/hooks/use-watermark";
 
 const AnimatePage = () => {
   const [images, setImages] = usePersistedState<string[]>("sangi_anim_images", []);
@@ -24,6 +25,7 @@ const AnimatePage = () => {
   const { toast } = useToast();
   const { generate } = useVideoGenerator(canvasRef);
   const { checkAndTrack } = useUsageLimit("image_to_video");
+  const { watermarkEnabled } = useWatermark();
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -69,7 +71,7 @@ const AnimatePage = () => {
     setIsGenerating(true);
     setVideoUrl(null);
     try {
-      const url = await generate(images, styles, durations, platform);
+      const url = await generate(images, styles, durations, platform, watermarkEnabled);
       setVideoUrl(url);
       toast({ title: "Video generated successfully!" });
     } catch (err: any) {

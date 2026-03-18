@@ -5,6 +5,22 @@ function getEased(t: number) {
   return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 }
 
+function drawWatermark(ctx: CanvasRenderingContext2D, W: number, H: number) {
+  ctx.save();
+  const fontSize = Math.max(16, Math.min(W, H) * 0.04);
+  ctx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
+  ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
+  ctx.textAlign = "right";
+  ctx.textBaseline = "bottom";
+  // Slight rotation
+  const x = W - fontSize * 0.5;
+  const y = H - fontSize * 0.4;
+  ctx.translate(x, y);
+  ctx.rotate(-0.05);
+  ctx.fillText("SANGIAi", 0, 0);
+  ctx.restore();
+}
+
 function renderFrame(
   ctx: CanvasRenderingContext2D,
   img: HTMLImageElement,
@@ -106,7 +122,8 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
       images: string[],
       styles: AnimationStyle[],
       durations: number[],
-      platform: PlatformPreset
+      platform: PlatformPreset,
+      watermark: boolean = true
     ): Promise<string> => {
       const canvas = canvasRef.current;
       if (!canvas) throw new Error("Canvas not ready");
@@ -144,6 +161,9 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
         for (let frame = 0; frame < totalFrames; frame++) {
           const t = frame / totalFrames;
           renderFrame(ctx, img, W, H, t, imgStyle);
+          if (watermark) {
+            drawWatermark(ctx, W, H);
+          }
           await new Promise((r) => setTimeout(r, 1000 / fps));
         }
       }

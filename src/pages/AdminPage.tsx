@@ -12,6 +12,7 @@ import type { UsageLimit } from "@/components/admin/GlobalLimitsSection";
 import UserLimitsSection from "@/components/admin/UserLimitsSection";
 import type { UserUsageLimit } from "@/components/admin/UserLimitsSection";
 import AdminPasswordSection from "@/components/admin/AdminPasswordSection";
+import WatermarkSection from "@/components/admin/WatermarkSection";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -122,6 +123,8 @@ const AdminPage = () => {
         </motion.div>
 
         <AdminPasswordSection />
+
+        <WatermarkSection users={users} />
 
         <GlobalLimitsSection
           limits={limits}
