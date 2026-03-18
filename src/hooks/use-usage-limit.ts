@@ -97,6 +97,32 @@ export function useUsageLimit(section: string) {
       }
     }
 
+    // Check voice generation daily cap (for voice_tts section only)
+    if (section === "voice_tts") {
+      const { data: voiceCapData } = await supabase
+        .from("voice_generation_cap")
+        .select("enabled, daily_limit")
+        .limit(1)
+        .maybeSingle();
+
+      if (voiceCapData?.enabled) {
+        const { count: voiceCount } = await supabase
+          .from("usage_log")
+          .select("*", { count: "exact", head: true })
+          .eq("section", "voice_tts")
+          .gte("used_at", todayStart.toISOString());
+
+        if ((voiceCount ?? 0) >= voiceCapData.daily_limit) {
+          toast({
+            title: "Voice generation limit reached",
+            description: `The platform has reached its daily limit of ${voiceCapData.daily_limit} voice generations. Try again tomorrow.`,
+            variant: "destructive",
+          });
+          return false;
+        }
+      }
+    }
+
     // Check for per-user limit first
     const { data: userLimitData } = await supabase
       .from("user_usage_limits")
