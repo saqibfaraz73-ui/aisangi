@@ -90,7 +90,7 @@ serve(async (req) => {
 
       // Add watermark instruction if enabled
       const watermarkInstruction = watermarkEnabled
-        ? `\n\nIMPORTANT: Add a subtle semi-transparent watermark text "SANGIAi" in the upper-left corner of the image. The watermark should be visible but not distracting — use white text with ~40% opacity, slightly tilted, medium font size.`
+        ? `\n\nIMPORTANT: Add a subtle semi-transparent watermark text "SANGIAi" in the upper-left corner of the image. The watermark should be visible but not distracting — use ${watermarkColor} colored text with ~40% opacity, slightly tilted, medium font size.`
         : "";
 
       let messages: any[];
