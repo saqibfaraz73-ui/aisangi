@@ -78,7 +78,7 @@ export function useUsageLimit(section: string) {
     const capTable = sectionCapMap[section];
     if (capTable) {
       const { data: sectionCapData } = await supabase
-        .from(capTable as any)
+        .from(capTable as "image_generation_cap" | "script_generation_cap" | "voice_generation_cap")
         .select("enabled, daily_limit")
         .limit(1)
         .maybeSingle();
