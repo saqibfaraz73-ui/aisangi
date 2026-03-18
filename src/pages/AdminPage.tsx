@@ -139,6 +139,8 @@ const AdminPage = () => {
 
         <UserLimitsSection users={users} userLimits={userLimits} onRefresh={fetchData} />
 
+        <UsageStatsSection users={users} />
+
         {/* Users Table */}
         <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-xl border border-border bg-card overflow-hidden">
           <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center gap-3">
