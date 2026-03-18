@@ -161,6 +161,9 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
         for (let frame = 0; frame < totalFrames; frame++) {
           const t = frame / totalFrames;
           renderFrame(ctx, img, W, H, t, imgStyle);
+          if (watermark) {
+            drawWatermark(ctx, W, H);
+          }
           await new Promise((r) => setTimeout(r, 1000 / fps));
         }
       }
