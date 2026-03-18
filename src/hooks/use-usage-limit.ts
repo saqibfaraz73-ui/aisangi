@@ -62,6 +62,32 @@ export function useUsageLimit(section: string) {
       }
     }
 
+    // Check script generation daily cap (for script_ai section only)
+    if (section === "script_ai") {
+      const { data: scriptCapData } = await supabase
+        .from("script_generation_cap")
+        .select("enabled, daily_limit")
+        .limit(1)
+        .maybeSingle();
+
+      if (scriptCapData?.enabled) {
+        const { count: scriptCount } = await supabase
+          .from("usage_log")
+          .select("*", { count: "exact", head: true })
+          .eq("section", "script_ai")
+          .gte("used_at", todayStart.toISOString());
+
+        if ((scriptCount ?? 0) >= scriptCapData.daily_limit) {
+          toast({
+            title: "Script generation limit reached",
+            description: `The platform has reached its daily limit of ${scriptCapData.daily_limit} script generations. Try again tomorrow.`,
+            variant: "destructive",
+          });
+          return false;
+        }
+      }
+    }
+
     // Check for per-user limit first
     const { data: userLimitData } = await supabase
       .from("user_usage_limits")
