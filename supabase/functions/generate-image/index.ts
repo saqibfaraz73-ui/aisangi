@@ -81,6 +81,13 @@ function extractGeminiImageResponse(data: any) {
   return { imageUrl, textContent };
 }
 
+const CHARACTER_PRESERVATION_PROMPT = `CRITICAL INSTRUCTIONS FOR FACE PRESERVATION:
+- You MUST preserve the EXACT facial features from the reference photo(s): face shape, eye shape, eye color, nose shape, lip shape, skin tone, jawline, and any distinctive features (moles, dimples, scars).
+- Do NOT idealize, beautify, age, or modify the face in any way.
+- The person in the generated image must be immediately recognizable as the SAME person from the reference.
+- Maintain the same ethnicity, skin color, and facial proportions exactly.
+- Hair color and style should match unless the prompt explicitly requests a change.`;
+
 function buildGeminiParts(
   allCharacterUrls: string[],
   prompt: string,
@@ -91,8 +98,9 @@ function buildGeminiParts(
   const parts: any[] = [];
 
   if (allCharacterUrls.length > 0) {
+    // Place ALL reference images FIRST so the model anchors on them
     allCharacterUrls.forEach((url, index) => {
-      parts.push({ text: `[Reference face ${index + 1}]` });
+      parts.push({ text: `[Reference photo of Person ${index + 1} - PRESERVE THIS EXACT FACE]` });
 
       if (url.startsWith("data:")) {
         const [meta, b64] = url.split(",");
@@ -104,7 +112,7 @@ function buildGeminiParts(
     });
 
     parts.push({
-      text: `Generate image of this exact person in: ${prompt}${variationHint}${watermarkInstruction}`,
+      text: `${CHARACTER_PRESERVATION_PROMPT}\n\nNow generate an image placing this EXACT person (with identical face from reference above) in the following scene: ${prompt}${variationHint}${watermarkInstruction}`,
     });
     return parts;
   }
