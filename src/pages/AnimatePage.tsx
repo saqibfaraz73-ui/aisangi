@@ -99,9 +99,11 @@ const AnimatePage = () => {
             <ImageGallery
               images={images}
               durations={durations}
+              styles={styles}
               onAdd={handleImageUpload}
               onRemove={removeImage}
               onDurationChange={handleDurationChange}
+              onStyleChange={handleStyleChange}
             />
 
             {/* Animation Style */}
