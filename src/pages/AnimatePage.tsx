@@ -10,6 +10,7 @@ import { ANIMATION_STYLES, type AnimationStyle, type PlatformPreset } from "@/co
 import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
 import AudioOverlaySection from "@/components/animate/AudioOverlaySection";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { useUsageLimit } from "@/hooks/use-usage-limit";
 
 const AnimatePage = () => {
   const [images, setImages] = usePersistedState<string[]>("sangi_anim_images", []);
@@ -22,6 +23,7 @@ const AnimatePage = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
   const { generate } = useVideoGenerator(canvasRef);
+  const { checkAndTrack } = useUsageLimit("image_to_video");
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
@@ -62,6 +64,8 @@ const AnimatePage = () => {
 
   const handleGenerate = async () => {
     if (images.length === 0) return;
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
     setIsGenerating(true);
     setVideoUrl(null);
     try {

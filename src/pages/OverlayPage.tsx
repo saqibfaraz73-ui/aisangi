@@ -6,6 +6,7 @@ import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
 import PlatformSelector from "@/components/animate/PlatformSelector";
 import { type PlatformPreset, PLATFORM_PRESETS } from "@/components/animate/types";
+import { useUsageLimit } from "@/hooks/use-usage-limit";
 
 interface AudioTrack {
   file: File;
@@ -24,6 +25,7 @@ const OverlayPage = () => {
   const [sceneCount, setSceneCount] = useState(1);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+  const { checkAndTrack } = useUsageLimit("audio_overlay");
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -76,6 +78,8 @@ const OverlayPage = () => {
 
   const combineVideoAudio = useCallback(async () => {
     if (!videoFile || audioTracks.length === 0 || !videoRef.current) return;
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
     setIsProcessing(true);
     setOutputUrl(null);
 
