@@ -15,6 +15,7 @@ interface ImageGalleryProps {
 const DURATION_OPTIONS = [3, 5, 8, 10];
 
 const PREVIEW_ANIMATION: Record<AnimationStyle, string> = {
+  "none": "",
   "zoom-in": "animate-preview-zoom-in",
   "zoom-out": "animate-preview-zoom-out",
   "pan-left": "animate-preview-pan-left",
