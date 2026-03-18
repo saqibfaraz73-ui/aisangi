@@ -62,6 +62,33 @@ export type Database = {
         }
         Relationships: []
       }
+      elevenlabs_settings: {
+        Row: {
+          api_key: string
+          enabled: boolean
+          id: string
+          updated_at: string
+          voice_id: string
+          voice_name: string
+        }
+        Insert: {
+          api_key?: string
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+          voice_id?: string
+          voice_name?: string
+        }
+        Update: {
+          api_key?: string
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+          voice_id?: string
+          voice_name?: string
+        }
+        Relationships: []
+      }
       global_usage_cap: {
         Row: {
           daily_limit: number
