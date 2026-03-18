@@ -21,7 +21,7 @@ const VoiceGeneratorPage = () => {
   const [fileName, setFileName] = useState("My_Voice");
   const [editingName, setEditingName] = useState(false);
   const { toast } = useToast();
-  const { checkAndTrack } = useUsageLimit("voice_tts");
+  const { checkLimit, trackUsage } = useUsageLimit("voice_tts");
 
   const handleGenerate = async () => {
     if (!text.trim()) {
