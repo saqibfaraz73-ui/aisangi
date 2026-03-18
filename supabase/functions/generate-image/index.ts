@@ -337,7 +337,7 @@ serve(async (req) => {
         : "";
 
       const fullPrompt = allCharacterUrls.length > 0
-        ? `Generate image with the person(s) from reference photo(s) in this scene: ${prompt}${variationHint}. Keep faces identical to references.${watermarkInstruction}`
+        ? `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image with the EXACT person(s) from the reference photo(s) in this scene: ${prompt}${variationHint}. The face must be identical to the reference - same features, same skin tone, same structure. Do NOT change or idealize the face.${watermarkInstruction}`
         : `${prompt}${variationHint}${watermarkInstruction}`;
 
       if (useDalle) {
