@@ -8,6 +8,7 @@ import Index from "./pages/Index.tsx";
 import AnimatePage from "./pages/AnimatePage.tsx";
 import OverlayPage from "./pages/OverlayPage.tsx";
 import ScriptGeneratorPage from "./pages/ScriptGeneratorPage.tsx";
+import VoiceGeneratorPage from "./pages/VoiceGeneratorPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
