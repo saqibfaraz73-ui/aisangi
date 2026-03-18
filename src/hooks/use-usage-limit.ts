@@ -17,7 +17,7 @@ export function useUsageLimit(section: string) {
     const clientOnlySections = ["image_to_video", "audio_overlay"];
     const usesGeminiCredits = !clientOnlySections.includes(section);
 
-    // Only check global/image/script caps for features that actually use API credits
+    // Only check global/image/script/voice caps for features that actually use API credits
     if (usesGeminiCredits) {
       // Check global daily cap
       const { data: capData } = await supabase
@@ -31,7 +31,7 @@ export function useUsageLimit(section: string) {
         const { count: globalCount } = await supabase
           .from("usage_log")
           .select("*", { count: "exact", head: true })
-          .in("section", ["text_to_image", "script_ai"])
+          .in("section", ["text_to_image", "script_ai", "voice_tts"])
           .gte("used_at", todayStart.toISOString());
 
         if ((globalCount ?? 0) >= capData.daily_limit) {
