@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
+import { useElevenLabsVoice } from "@/hooks/use-elevenlabs-voice";
 
 const VOICES = [
   { value: "Kore", label: "Kore (Female, Warm)" },
