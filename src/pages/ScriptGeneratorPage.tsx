@@ -38,9 +38,14 @@ const ScriptGeneratorPage = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [script, setScript] = usePersistedState<GeneratedScript | null>("sangi_script_result", null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [sceneVoices, setSceneVoices] = useState<Record<number, string>>({});
   const { toast } = useToast();
   const { checkAndTrack } = useUsageLimit("script_ai");
   const navigate = useNavigate();
+
+  const getSceneVoice = (sceneNum: number) => sceneVoices[sceneNum] || "Kore";
+  const setSceneVoice = (sceneNum: number, voice: string) =>
+    setSceneVoices((prev) => ({ ...prev, [sceneNum]: voice }));
 
   const handleGenerate = async () => {
     if (!idea.trim()) {
