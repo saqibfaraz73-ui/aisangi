@@ -1,0 +1,188 @@
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+};
+
+const TTS_MODEL = "gemini-2.5-flash-preview-tts";
+
+const AVAILABLE_VOICES = [
+  "Zephyr", "Puck", "Charon", "Kore", "Fenrir", "Aoede",
+  "Leda", "Orus", "Perseus", "Schedar", "Vega",
+];
+
+function buildGeminiTtsUrl(apiKey: string) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${apiKey}`;
+}
+
+async function getGeminiApiKey(supabase: any): Promise<string> {
+  const { data } = await supabase
+    .from("api_settings")
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+
+  if (data?.enabled && data?.api_key && data?.provider === "gemini") {
+    return data.api_key;
+  }
+
+  throw new Error(
+    "Text-to-Speech requires a custom Gemini API key. Please configure one in Admin → Custom AI API settings."
+  );
+}
+
+serve(async (req) => {
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+
+  try {
+    const { text, voice = "Kore" } = await req.json();
+
+    if (!text || typeof text !== "string" || text.trim().length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Please provide text to convert to speech." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    if (text.length > 5000) {
+      return new Response(
+        JSON.stringify({ error: "Text is too long. Maximum 5000 characters." }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const selectedVoice = AVAILABLE_VOICES.includes(voice) ? voice : "Kore";
+
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const apiKey = await getGeminiApiKey(supabase);
+
+    console.log(`Generating TTS with voice: ${selectedVoice}, text length: ${text.length}`);
+
+    const response = await fetch(buildGeminiTtsUrl(apiKey), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [{ parts: [{ text: text.trim() }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName: selectedVoice,
+              },
+            },
+          },
+        },
+      }),
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error("Gemini TTS error:", response.status, errText);
+
+      if (response.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "Rate limited. Please wait and try again." }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      if (response.status === 401 || response.status === 403) {
+        return new Response(
+          JSON.stringify({ error: "Invalid Gemini API key. Check Admin settings." }),
+          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      let errorMsg = "Voice generation failed.";
+      try {
+        const parsed = JSON.parse(errText);
+        errorMsg = parsed?.error?.message || errorMsg;
+      } catch {}
+
+      return new Response(
+        JSON.stringify({ error: errorMsg }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const data = await response.json();
+    const parts = data?.candidates?.[0]?.content?.parts;
+
+    if (!Array.isArray(parts)) {
+      throw new Error("No audio data in response");
+    }
+
+    let audioData: string | null = null;
+    let mimeType = "audio/L16;rate=24000";
+
+    for (const part of parts) {
+      if (part.inlineData?.data) {
+        audioData = part.inlineData.data;
+        mimeType = part.inlineData.mimeType || mimeType;
+      }
+      if (part.inline_data?.data) {
+        audioData = part.inline_data.data;
+        mimeType = part.inline_data.mime_type || mimeType;
+      }
+    }
+
+    if (!audioData) {
+      throw new Error("No audio generated. Try different text.");
+    }
+
+    // Convert raw PCM to WAV for browser playback
+    const pcmBytes = Uint8Array.from(atob(audioData), (c) => c.charCodeAt(0));
+    const sampleRate = 24000;
+    const numChannels = 1;
+    const bitsPerSample = 16;
+    const wavHeader = new ArrayBuffer(44);
+    const view = new DataView(wavHeader);
+
+    // RIFF header
+    view.setUint32(0, 0x52494646, false); // "RIFF"
+    view.setUint32(4, 36 + pcmBytes.length, true);
+    view.setUint32(8, 0x57415645, false); // "WAVE"
+    // fmt chunk
+    view.setUint32(12, 0x666d7420, false); // "fmt "
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true); // PCM
+    view.setUint16(22, numChannels, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * numChannels * (bitsPerSample / 8), true);
+    view.setUint16(32, numChannels * (bitsPerSample / 8), true);
+    view.setUint16(34, bitsPerSample, true);
+    // data chunk
+    view.setUint32(36, 0x64617461, false); // "data"
+    view.setUint32(40, pcmBytes.length, true);
+
+    const wavBytes = new Uint8Array(44 + pcmBytes.length);
+    wavBytes.set(new Uint8Array(wavHeader), 0);
+    wavBytes.set(pcmBytes, 44);
+
+    const wavBase64 = base64Encode(wavBytes);
+
+    return new Response(
+      JSON.stringify({
+        audioContent: wavBase64,
+        mimeType: "audio/wav",
+        voice: selectedVoice,
+      }),
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  } catch (e) {
+    console.error("generate-voice error:", e);
+    return new Response(
+      JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
+  }
+});

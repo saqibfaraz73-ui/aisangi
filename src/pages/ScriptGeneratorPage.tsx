@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
 import AppHeader from "@/components/AppHeader";
 import SceneCountSelector from "@/components/SceneCountSelector";
+import { SceneVoiceButton } from "@/components/SceneVoiceButton";
 import { useNavigate } from "react-router-dom";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 
@@ -37,9 +38,14 @@ const ScriptGeneratorPage = () => {
   const [isGenerating, setIsGenerating] = useState(false);
   const [script, setScript] = usePersistedState<GeneratedScript | null>("sangi_script_result", null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [sceneVoices, setSceneVoices] = useState<Record<number, string>>({});
   const { toast } = useToast();
   const { checkAndTrack } = useUsageLimit("script_ai");
   const navigate = useNavigate();
+
+  const getSceneVoice = (sceneNum: number) => sceneVoices[sceneNum] || "Kore";
+  const setSceneVoice = (sceneNum: number, voice: string) =>
+    setSceneVoices((prev) => ({ ...prev, [sceneNum]: voice }));
 
   const handleGenerate = async () => {
     if (!idea.trim()) {
@@ -308,6 +314,12 @@ const ScriptGeneratorPage = () => {
                           <p className="text-sm text-foreground italic bg-accent/30 rounded-lg p-2.5">
                             "{scene.narration}"
                           </p>
+                          <SceneVoiceButton
+                            sceneNumber={scene.sceneNumber}
+                            narration={scene.narration}
+                            voice={getSceneVoice(scene.sceneNumber)}
+                            onVoiceChange={(v) => setSceneVoice(scene.sceneNumber, v)}
+                          />
                         </div>
                       </motion.div>
                     ))}
