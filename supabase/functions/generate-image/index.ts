@@ -42,7 +42,16 @@ serve(async (req) => {
             content: [
               {
                 type: "text",
-                text: `Use the person in this reference photo as the main character. Generate a high-quality, realistic image based on this description: ${prompt}${variationHint}. The character in the generated image MUST look like the person in the reference photo - same face, features, and appearance. Place them naturally in the scene described.`,
+                text: `CRITICAL INSTRUCTION: You MUST use the EXACT face from the reference photo below. Do NOT alter, stylize, or change ANY facial features. The generated image must preserve the IDENTICAL face — same eyes, nose, mouth, jawline, skin tone, facial structure, and all distinguishing features. It should look like a real photograph of this exact same person.
+
+Scene to generate: ${prompt}${variationHint}
+
+Rules:
+1. The face MUST be an exact match to the reference photo — as if it's the same person in a different photo
+2. Do NOT change age, ethnicity, skin color, or facial proportions
+3. Keep the same facial hair, eyebrow shape, and facial marks if visible
+4. Only change clothing/pose/background to match the scene description
+5. The result should be photorealistic and look like a real unedited photo of this person`,
               },
               {
                 type: "image_url",
