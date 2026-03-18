@@ -127,7 +127,7 @@ const AdminPage = () => {
 
         <ApiSettingsSection />
 
-        <AdminPasswordSection />
+        <GlobalCapSection />
 
         <WatermarkSection users={users} />
 
