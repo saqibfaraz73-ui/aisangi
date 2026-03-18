@@ -33,6 +33,23 @@ const CHARACTER_PROMPTS = [
     "Standing under a floral wedding arch with rose petals falling, dreamy soft lighting",
     "Holding a bouquet of white roses in a grand palace ballroom, chandelier lighting, elegant",
     "Walking down a flower-lined aisle at a beach wedding, golden hour, waves in background",
+    "Couple dancing their first dance under fairy lights in an outdoor reception, romantic evening",
+    "Standing in front of a vintage church entrance with a long flowing veil, soft natural light",
+    "Exchanging rings at an altar decorated with white lilies and candles, emotional close-up",
+    "Posing on a grand staircase in a luxury hotel wearing bridal attire, elegant and classy",
+    "Tossing the bouquet at a garden wedding reception, joyful guests in the background, golden hour",
+    "Walking hand in hand through a lavender field in wedding attire, dreamy purple tones, sunset",
+  ]},
+  // Party & Celebration
+  { category: "🎉 Party & Celebration", prompts: [
+    "Dancing at a rooftop party with city skyline at night, neon lights, vibrant energy, confetti",
+    "Posing at a glamorous masquerade ball wearing an ornate mask, dramatic chandelier lighting",
+    "Celebrating at a pool party with tropical decorations, splashing water, sunny vibes",
+    "Standing at a red carpet event in a designer outfit, paparazzi flashes, VIP atmosphere",
+    "Blowing out candles on a birthday cake surrounded by balloons and sparklers, warm cozy lighting",
+    "At a New Year's Eve party with fireworks in the background, champagne toast, glittering outfit",
+    "Dancing at a colorful Holi festival covered in vibrant powder colors, joyful celebration",
+    "Enjoying a beach bonfire party at night with friends, guitar, warm glow, starry sky",
   ]},
   // Travel
   { category: "✈️ Travel", prompts: [
@@ -216,7 +233,7 @@ const Index = () => {
                             onClick={() => setPrompt(p)}
                             className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors text-left"
                           >
-                            {p.length > 45 ? p.substring(0, 45) + "…" : p}
+                            {p}
                           </button>
                         ))}
                       </div>
@@ -231,7 +248,7 @@ const Index = () => {
                       onClick={() => setPrompt(p)}
                       className="text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors text-left"
                     >
-                      {p.length > 50 ? p.substring(0, 50) + "…" : p}
+                      {p}
                     </button>
                   ))}
                 </div>
