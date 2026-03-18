@@ -13,6 +13,7 @@ import UserLimitsSection from "@/components/admin/UserLimitsSection";
 import type { UserUsageLimit } from "@/components/admin/UserLimitsSection";
 import AdminPasswordSection from "@/components/admin/AdminPasswordSection";
 import WatermarkSection from "@/components/admin/WatermarkSection";
+import UsageStatsSection from "@/components/admin/UsageStatsSection";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
