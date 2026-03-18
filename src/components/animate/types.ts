@@ -1,4 +1,4 @@
-export type AnimationStyle = "zoom-in" | "zoom-out" | "pan-left" | "pan-right" | "pan-up" | "ken-burns" | "drift" | "dramatic-zoom";
+export type AnimationStyle = "none" | "zoom-in" | "zoom-out" | "pan-left" | "pan-right" | "pan-up" | "ken-burns" | "drift" | "dramatic-zoom";
 
 export type PlatformPreset = "youtube" | "tiktok" | "facebook" | "custom";
 
@@ -10,6 +10,7 @@ export interface PlatformConfig {
 }
 
 export const ANIMATION_STYLES: { value: AnimationStyle; label: string; desc: string }[] = [
+  { value: "none", label: "None", desc: "No animation, static display" },
   { value: "zoom-in", label: "Zoom In", desc: "Smooth zoom into focal point" },
   { value: "zoom-out", label: "Zoom Out", desc: "Reveal zoom from center" },
   { value: "pan-left", label: "Pan Left", desc: "Cinematic horizontal sweep" },
