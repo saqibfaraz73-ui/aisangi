@@ -103,6 +103,11 @@ const FullScriptVoiceButton = ({ fullNarration, title }: FullScriptVoiceButtonPr
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            {elevenLabs.enabled && (
+              <SelectItem value="__clone__" className="text-xs font-semibold text-primary">
+                🎤 {elevenLabs.voiceName}
+              </SelectItem>
+            )}
             {VOICES.map((v) => (
               <SelectItem key={v.value} value={v.value} className="text-xs">
                 {v.label}

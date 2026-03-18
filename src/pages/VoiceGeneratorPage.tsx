@@ -137,6 +137,11 @@ const VoiceGeneratorPage = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                {elevenLabs.enabled && (
+                  <SelectItem value="__clone__" className="font-semibold text-primary">
+                    🎤 {elevenLabs.voiceName}
+                  </SelectItem>
+                )}
                 {VOICES.map((v) => (
                   <SelectItem key={v.value} value={v.value}>
                     {v.label}
