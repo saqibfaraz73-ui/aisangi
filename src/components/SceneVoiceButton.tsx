@@ -37,9 +37,14 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
   const [fileName, setFileName] = useState(`Scene_${sceneNumber}_Voice`);
   const [editingName, setEditingName] = useState(false);
   const { toast } = useToast();
+  const { checkAndTrack } = useUsageLimit("voice_tts");
 
   const handleGenerate = async () => {
     if (!narration.trim()) return;
+
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
+
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-voice", {

@@ -21,12 +21,16 @@ const VoiceGeneratorPage = () => {
   const [fileName, setFileName] = useState("My_Voice");
   const [editingName, setEditingName] = useState(false);
   const { toast } = useToast();
+  const { checkAndTrack } = useUsageLimit("voice_tts");
 
   const handleGenerate = async () => {
     if (!text.trim()) {
       toast({ title: "Please enter some text", variant: "destructive" });
       return;
     }
+
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
 
     setGenerating(true);
     setAudioUrl(null);
