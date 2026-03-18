@@ -12,7 +12,8 @@ import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
 const AnimatePage = () => {
   const [images, setImages] = useState<string[]>([]);
   const [durations, setDurations] = useState<number[]>([]);
-  const [style, setStyle] = useState<AnimationStyle>("ken-burns");
+  const [styles, setStyles] = useState<AnimationStyle[]>([]);
+  const [defaultStyle, setDefaultStyle] = useState<AnimationStyle>("ken-burns");
   const [platform, setPlatform] = useState<PlatformPreset>("youtube");
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
@@ -32,6 +33,7 @@ const AnimatePage = () => {
       reader.onload = () => {
         setImages((prev) => [...prev, reader.result as string]);
         setDurations((prev) => [...prev, 5]);
+        setStyles((prev) => [...prev, defaultStyle]);
       };
       reader.readAsDataURL(file);
     });
@@ -42,11 +44,16 @@ const AnimatePage = () => {
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
     setDurations((prev) => prev.filter((_, i) => i !== index));
+    setStyles((prev) => prev.filter((_, i) => i !== index));
     setVideoUrl(null);
   };
 
   const handleDurationChange = (index: number, duration: number) => {
     setDurations((prev) => prev.map((d, i) => (i === index ? duration : d)));
+  };
+
+  const handleStyleChange = (index: number, style: AnimationStyle) => {
+    setStyles((prev) => prev.map((s, i) => (i === index ? style : s)));
   };
 
   const totalDuration = durations.reduce((sum, d) => sum + d, 0);
@@ -56,7 +63,7 @@ const AnimatePage = () => {
     setIsGenerating(true);
     setVideoUrl(null);
     try {
-      const url = await generate(images, style, durations, platform);
+      const url = await generate(images, styles, durations, platform);
       setVideoUrl(url);
       toast({ title: "Video generated successfully!" });
     } catch (err: any) {
@@ -92,21 +99,25 @@ const AnimatePage = () => {
             <ImageGallery
               images={images}
               durations={durations}
+              styles={styles}
               onAdd={handleImageUpload}
               onRemove={removeImage}
               onDurationChange={handleDurationChange}
+              onStyleChange={handleStyleChange}
             />
 
-            {/* Animation Style */}
+            {/* Default Animation Style */}
             <div className="space-y-2">
-              <label className="text-sm font-display font-semibold text-foreground">Animation Style</label>
+              <label className="text-sm font-display font-semibold text-foreground">
+                Default Style <span className="text-muted-foreground font-normal text-xs">(for new images)</span>
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 {ANIMATION_STYLES.map((s) => (
                   <button
                     key={s.value}
-                    onClick={() => setStyle(s.value)}
+                    onClick={() => setDefaultStyle(s.value)}
                     className={`text-left p-3 rounded-lg border transition-colors ${
-                      style === s.value
+                      defaultStyle === s.value
                         ? "border-primary bg-primary/10 text-foreground"
                         : "border-border bg-card text-muted-foreground hover:border-primary/30"
                     }`}

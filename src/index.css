@@ -89,4 +89,63 @@
   .shadow-card {
     box-shadow: var(--shadow-card);
   }
+
+  /* Animation previews for image thumbnails */
+  .animate-preview-zoom-in {
+    animation: preview-zoom-in 2s ease-in-out infinite alternate;
+  }
+  .animate-preview-zoom-out {
+    animation: preview-zoom-out 2s ease-in-out infinite alternate;
+  }
+  .animate-preview-pan-left {
+    animation: preview-pan-left 2s ease-in-out infinite alternate;
+  }
+  .animate-preview-pan-right {
+    animation: preview-pan-right 2s ease-in-out infinite alternate;
+  }
+  .animate-preview-pan-up {
+    animation: preview-pan-up 2s ease-in-out infinite alternate;
+  }
+  .animate-preview-ken-burns {
+    animation: preview-ken-burns 3s ease-in-out infinite alternate;
+  }
+  .animate-preview-drift {
+    animation: preview-drift 3s ease-in-out infinite alternate;
+  }
+  .animate-preview-dramatic-zoom {
+    animation: preview-dramatic-zoom 2s cubic-bezier(0.22, 1, 0.36, 1) infinite alternate;
+  }
+}
+
+@keyframes preview-zoom-in {
+  from { transform: scale(1); }
+  to { transform: scale(1.25); }
+}
+@keyframes preview-zoom-out {
+  from { transform: scale(1.25); }
+  to { transform: scale(1); }
+}
+@keyframes preview-pan-left {
+  from { transform: translateX(8%) scale(1.15); }
+  to { transform: translateX(-8%) scale(1.15); }
+}
+@keyframes preview-pan-right {
+  from { transform: translateX(-8%) scale(1.15); }
+  to { transform: translateX(8%) scale(1.15); }
+}
+@keyframes preview-pan-up {
+  from { transform: translateY(8%) scale(1.15); }
+  to { transform: translateY(-8%) scale(1.15); }
+}
+@keyframes preview-ken-burns {
+  from { transform: scale(1) translate(0, 0); }
+  to { transform: scale(1.2) translate(-3%, -3%); }
+}
+@keyframes preview-drift {
+  from { transform: scale(1) translate(0, 0); }
+  to { transform: scale(1.1) translate(-4%, -2%); }
+}
+@keyframes preview-dramatic-zoom {
+  from { transform: scale(1); }
+  to { transform: scale(1.4); }
 }
