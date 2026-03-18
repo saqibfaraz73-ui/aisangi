@@ -64,6 +64,8 @@ const AnimatePage = () => {
 
   const handleGenerate = async () => {
     if (images.length === 0) return;
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
     setIsGenerating(true);
     setVideoUrl(null);
     try {

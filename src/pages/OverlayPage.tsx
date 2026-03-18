@@ -77,6 +77,8 @@ const OverlayPage = () => {
 
   const combineVideoAudio = useCallback(async () => {
     if (!videoFile || audioTracks.length === 0 || !videoRef.current) return;
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
     setIsProcessing(true);
     setOutputUrl(null);
 
