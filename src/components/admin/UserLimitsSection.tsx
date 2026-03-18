@@ -34,7 +34,14 @@ const UserLimitsSection = ({ users, userLimits, onRefresh }: Props) => {
   const [selectedUser, setSelectedUser] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [editedUserLimits, setEditedUserLimits] = useState<Record<string, { limit: number; type: string }>>({});
+  const [userSearch, setUserSearch] = useState("");
   const { toast } = useToast();
+
+  const filteredUsers = useMemo(() => {
+    if (!userSearch.trim()) return users;
+    const q = userSearch.toLowerCase();
+    return users.filter(u => u.email.toLowerCase().includes(q) || (u.full_name || "").toLowerCase().includes(q));
+  }, [users, userSearch]);
 
   const selectedUserLimits = userLimits.filter((l) => l.user_id === selectedUser);
 
