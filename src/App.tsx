@@ -9,6 +9,7 @@ import AnimatePage from "./pages/AnimatePage.tsx";
 import OverlayPage from "./pages/OverlayPage.tsx";
 import ScriptGeneratorPage from "./pages/ScriptGeneratorPage.tsx";
 import VoiceGeneratorPage from "./pages/VoiceGeneratorPage.tsx";
+import LipSyncPage from "./pages/LipSyncPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
@@ -37,6 +38,7 @@ const AppRoutes = () => (
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/animate" element={<ProtectedRoute><AnimatePage /></ProtectedRoute>} />
     <Route path="/overlay" element={<ProtectedRoute><OverlayPage /></ProtectedRoute>} />
+    <Route path="/lip-sync" element={<ProtectedRoute><LipSyncPage /></ProtectedRoute>} />
     <Route path="/script-generator" element={<ProtectedRoute><ScriptGeneratorPage /></ProtectedRoute>} />
     <Route path="/voice-generator" element={<ProtectedRoute><VoiceGeneratorPage /></ProtectedRoute>} />
     <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
