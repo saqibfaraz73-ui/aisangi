@@ -6,15 +6,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
 
-type AnimationStyle = "zoom-in" | "zoom-out" | "pan-left" | "pan-right" | "pan-up" | "ken-burns";
+type AnimationStyle = "zoom-in" | "zoom-out" | "pan-left" | "pan-right" | "pan-up" | "ken-burns" | "drift" | "dramatic-zoom";
 
 const ANIMATION_STYLES: { value: AnimationStyle; label: string; desc: string }[] = [
-  { value: "zoom-in", label: "Zoom In", desc: "Slowly zoom into the image" },
-  { value: "zoom-out", label: "Zoom Out", desc: "Slowly zoom out from center" },
-  { value: "pan-left", label: "Pan Left", desc: "Horizontal pan left to right" },
-  { value: "pan-right", label: "Pan Right", desc: "Horizontal pan right to left" },
-  { value: "pan-up", label: "Pan Up", desc: "Vertical pan upward" },
-  { value: "ken-burns", label: "Ken Burns", desc: "Classic zoom + pan combo" },
+  { value: "zoom-in", label: "Zoom In", desc: "Smooth zoom into focal point" },
+  { value: "zoom-out", label: "Zoom Out", desc: "Reveal zoom from center" },
+  { value: "pan-left", label: "Pan Left", desc: "Cinematic horizontal sweep" },
+  { value: "pan-right", label: "Pan Right", desc: "Reverse horizontal sweep" },
+  { value: "pan-up", label: "Pan Up", desc: "Vertical rise reveal" },
+  { value: "ken-burns", label: "Ken Burns", desc: "Classic zoom + drift combo" },
+  { value: "drift", label: "Drift", desc: "Gentle diagonal float" },
+  { value: "dramatic-zoom", label: "Dramatic", desc: "Fast zoom with slow ease" },
 ];
 
 const AnimatePage = () => {
@@ -82,17 +84,17 @@ const AnimatePage = () => {
       recorder.start();
 
       for (let frame = 0; frame < totalFrames; frame++) {
-        const t = frame / totalFrames; // 0 → 1
+        const t = frame / totalFrames;
+        // Eased progress for smoother motion
+        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
         ctx.clearRect(0, 0, W, H);
         ctx.save();
 
-        // Calculate source rect based on animation style
         let sx = 0, sy = 0, sw = img.width, sh = img.height;
         const aspect = W / H;
         const imgAspect = img.width / img.height;
 
-        // Fill canvas maintaining aspect ratio
         let drawW = img.width, drawH = img.height;
         if (imgAspect > aspect) {
           drawH = img.height;
@@ -107,54 +109,68 @@ const AnimatePage = () => {
 
         switch (style) {
           case "zoom-in": {
-            const scale = 1 + t * 0.3;
+            const scale = 1 + eased * 0.35;
             const cw = drawW / scale;
             const ch = drawH / scale;
             sx = (img.width - cw) / 2;
             sy = (img.height - ch) / 2;
-            sw = cw;
-            sh = ch;
+            sw = cw; sh = ch;
             break;
           }
           case "zoom-out": {
-            const scale = 1.3 - t * 0.3;
+            const scale = 1.35 - eased * 0.35;
             const cw = drawW / scale;
             const ch = drawH / scale;
             sx = (img.width - cw) / 2;
             sy = (img.height - ch) / 2;
-            sw = cw;
-            sh = ch;
+            sw = cw; sh = ch;
             break;
           }
           case "pan-left": {
-            sx = maxOffsetX * (1 - t);
+            sx = maxOffsetX * (1 - eased);
             sy = (img.height - drawH) / 2;
-            sw = drawW;
-            sh = drawH;
+            sw = drawW; sh = drawH;
             break;
           }
           case "pan-right": {
-            sx = maxOffsetX * t;
+            sx = maxOffsetX * eased;
             sy = (img.height - drawH) / 2;
-            sw = drawW;
-            sh = drawH;
+            sw = drawW; sh = drawH;
             break;
           }
           case "pan-up": {
             sx = (img.width - drawW) / 2;
-            sy = maxOffsetY * (1 - t);
-            sw = drawW;
-            sh = drawH;
+            sy = maxOffsetY * (1 - eased);
+            sw = drawW; sh = drawH;
             break;
           }
           case "ken-burns": {
-            const scale = 1 + t * 0.25;
+            const scale = 1 + eased * 0.3;
             const cw = drawW / scale;
             const ch = drawH / scale;
-            sx = (img.width - cw) * t * 0.5;
-            sy = (img.height - ch) * (1 - t) * 0.5;
-            sw = cw;
-            sh = ch;
+            sx = (img.width - cw) * eased * 0.4;
+            sy = (img.height - ch) * (1 - eased) * 0.4;
+            sw = cw; sh = ch;
+            break;
+          }
+          case "drift": {
+            const scale = 1 + eased * 0.15;
+            const cw = drawW / scale;
+            const ch = drawH / scale;
+            sx = (img.width - cw) * eased * 0.6;
+            sy = (img.height - ch) * eased * 0.4;
+            sw = cw; sh = ch;
+            break;
+          }
+          case "dramatic-zoom": {
+            // Fast start, slow end with cubic ease-out
+            const dramatic = 1 - Math.pow(1 - t, 3);
+            const scale = 1 + dramatic * 0.5;
+            const cw = drawW / scale;
+            const ch = drawH / scale;
+            sx = (img.width - cw) / 2;
+            sy = (img.height - ch) / 2;
+            sw = cw; sh = ch;
             break;
           }
         }
