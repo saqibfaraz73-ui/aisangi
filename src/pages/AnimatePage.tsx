@@ -8,6 +8,7 @@ import ImageGallery from "@/components/animate/ImageGallery";
 import PlatformSelector from "@/components/animate/PlatformSelector";
 import { ANIMATION_STYLES, type AnimationStyle, type PlatformPreset } from "@/components/animate/types";
 import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
+import AudioOverlaySection from "@/components/animate/AudioOverlaySection";
 
 const AnimatePage = () => {
   const [images, setImages] = useState<string[]>([]);
@@ -199,6 +200,15 @@ const AnimatePage = () => {
         </div>
 
         <canvas ref={canvasRef} className="hidden" />
+
+        {/* Audio Overlay Section - appears after video is generated */}
+        {videoUrl && (
+          <AudioOverlaySection
+            videoUrl={videoUrl}
+            platform={platform}
+            onPlatformChange={setPlatform}
+          />
+        )}
       </main>
     </div>
   );
