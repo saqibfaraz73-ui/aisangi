@@ -44,6 +44,7 @@ const AnimatePage = () => {
   const removeImage = (index: number) => {
     setImages((prev) => prev.filter((_, i) => i !== index));
     setDurations((prev) => prev.filter((_, i) => i !== index));
+    setStyles((prev) => prev.filter((_, i) => i !== index));
     setVideoUrl(null);
   };
 
