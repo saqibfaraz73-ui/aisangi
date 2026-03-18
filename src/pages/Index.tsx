@@ -200,21 +200,42 @@ const Index = () => {
               )}
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-3">
               <p className="text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">
-                Try these prompts
+                {characterImages.length > 0 ? "Try these scene prompts" : "Try these prompts"}
               </p>
-              <div className="flex flex-wrap gap-2">
-                {EXAMPLE_PROMPTS.map((p, i) => (
-                  <button
-                    key={i}
-                    onClick={() => setPrompt(p)}
-                    className="text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors text-left"
-                  >
-                    {p.length > 50 ? p.substring(0, 50) + "…" : p}
-                  </button>
-                ))}
-              </div>
+              {characterImages.length > 0 ? (
+                <div className="space-y-2">
+                  {CHARACTER_PROMPTS.map((cat) => (
+                    <div key={cat.category}>
+                      <p className="text-xs font-semibold text-foreground mb-1">{cat.category}</p>
+                      <div className="flex flex-wrap gap-1.5">
+                        {cat.prompts.map((p, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setPrompt(p)}
+                            className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors text-left"
+                          >
+                            {p.length > 45 ? p.substring(0, 45) + "…" : p}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {GENERAL_PROMPTS.map((p, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setPrompt(p)}
+                      className="text-xs px-3 py-1.5 rounded-full bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors text-left"
+                    >
+                      {p.length > 50 ? p.substring(0, 50) + "…" : p}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
 
