@@ -6,6 +6,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import Index from "./pages/Index.tsx";
 import AnimatePage from "./pages/AnimatePage.tsx";
 import OverlayPage from "./pages/OverlayPage.tsx";
+import ScriptGeneratorPage from "./pages/ScriptGeneratorPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
