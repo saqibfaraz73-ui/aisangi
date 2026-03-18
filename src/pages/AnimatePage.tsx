@@ -1,208 +1,66 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Upload, Play, Download, Loader2, Film, X } from "lucide-react";
+import { Play, Download, Loader2, Film } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
-
-type AnimationStyle = "zoom-in" | "zoom-out" | "pan-left" | "pan-right" | "pan-up" | "ken-burns" | "drift" | "dramatic-zoom";
-
-const ANIMATION_STYLES: { value: AnimationStyle; label: string; desc: string }[] = [
-  { value: "zoom-in", label: "Zoom In", desc: "Smooth zoom into focal point" },
-  { value: "zoom-out", label: "Zoom Out", desc: "Reveal zoom from center" },
-  { value: "pan-left", label: "Pan Left", desc: "Cinematic horizontal sweep" },
-  { value: "pan-right", label: "Pan Right", desc: "Reverse horizontal sweep" },
-  { value: "pan-up", label: "Pan Up", desc: "Vertical rise reveal" },
-  { value: "ken-burns", label: "Ken Burns", desc: "Classic zoom + drift combo" },
-  { value: "drift", label: "Drift", desc: "Gentle diagonal float" },
-  { value: "dramatic-zoom", label: "Dramatic", desc: "Fast zoom with slow ease" },
-];
+import ImageGallery from "@/components/animate/ImageGallery";
+import PlatformSelector from "@/components/animate/PlatformSelector";
+import { ANIMATION_STYLES, type AnimationStyle, type PlatformPreset } from "@/components/animate/types";
+import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
 
 const AnimatePage = () => {
-  const [image, setImage] = useState<string | null>(null);
+  const [images, setImages] = useState<string[]>([]);
   const [style, setStyle] = useState<AnimationStyle>("ken-burns");
   const [duration, setDuration] = useState(5);
+  const [platform, setPlatform] = useState<PlatformPreset>("youtube");
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
+  const { generate } = useVideoGenerator(canvasRef);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      toast({ title: "Please upload an image file", variant: "destructive" });
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter((f) => f.type.startsWith("image/"));
+    if (imageFiles.length === 0) {
+      toast({ title: "Please upload image files", variant: "destructive" });
       return;
     }
-    const reader = new FileReader();
-    reader.onload = () => setImage(reader.result as string);
-    reader.readAsDataURL(file);
+    imageFiles.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = () => setImages((prev) => [...prev, reader.result as string]);
+      reader.readAsDataURL(file);
+    });
+    setVideoUrl(null);
+    e.target.value = "";
+  };
+
+  const removeImage = (index: number) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
     setVideoUrl(null);
   };
 
-  const generateVideo = useCallback(async () => {
-    if (!image || !canvasRef.current) return;
+  const handleGenerate = async () => {
+    if (images.length === 0) return;
     setIsGenerating(true);
     setVideoUrl(null);
-
     try {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d")!;
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-
-      await new Promise<void>((resolve, reject) => {
-        img.onload = () => resolve();
-        img.onerror = reject;
-        img.src = image;
-      });
-
-      const W = 1280;
-      const H = 720;
-      canvas.width = W;
-      canvas.height = H;
-
-      const fps = 30;
-      const totalFrames = duration * fps;
-
-      const stream = canvas.captureStream(fps);
-      const recorder = new MediaRecorder(stream, {
-        mimeType: "video/webm;codecs=vp9",
-        videoBitsPerSecond: 5_000_000,
-      });
-
-      const chunks: Blob[] = [];
-      recorder.ondataavailable = (e) => {
-        if (e.data.size > 0) chunks.push(e.data);
-      };
-
-      const done = new Promise<void>((resolve) => {
-        recorder.onstop = () => resolve();
-      });
-
-      recorder.start();
-
-      for (let frame = 0; frame < totalFrames; frame++) {
-        const t = frame / totalFrames;
-        // Eased progress for smoother motion
-        const eased = t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
-
-        ctx.clearRect(0, 0, W, H);
-        ctx.save();
-
-        let sx = 0, sy = 0, sw = img.width, sh = img.height;
-        const aspect = W / H;
-        const imgAspect = img.width / img.height;
-
-        let drawW = img.width, drawH = img.height;
-        if (imgAspect > aspect) {
-          drawH = img.height;
-          drawW = drawH * aspect;
-        } else {
-          drawW = img.width;
-          drawH = drawW / aspect;
-        }
-
-        const maxOffsetX = img.width - drawW;
-        const maxOffsetY = img.height - drawH;
-
-        switch (style) {
-          case "zoom-in": {
-            const scale = 1 + eased * 0.35;
-            const cw = drawW / scale;
-            const ch = drawH / scale;
-            sx = (img.width - cw) / 2;
-            sy = (img.height - ch) / 2;
-            sw = cw; sh = ch;
-            break;
-          }
-          case "zoom-out": {
-            const scale = 1.35 - eased * 0.35;
-            const cw = drawW / scale;
-            const ch = drawH / scale;
-            sx = (img.width - cw) / 2;
-            sy = (img.height - ch) / 2;
-            sw = cw; sh = ch;
-            break;
-          }
-          case "pan-left": {
-            sx = maxOffsetX * (1 - eased);
-            sy = (img.height - drawH) / 2;
-            sw = drawW; sh = drawH;
-            break;
-          }
-          case "pan-right": {
-            sx = maxOffsetX * eased;
-            sy = (img.height - drawH) / 2;
-            sw = drawW; sh = drawH;
-            break;
-          }
-          case "pan-up": {
-            sx = (img.width - drawW) / 2;
-            sy = maxOffsetY * (1 - eased);
-            sw = drawW; sh = drawH;
-            break;
-          }
-          case "ken-burns": {
-            const scale = 1 + eased * 0.3;
-            const cw = drawW / scale;
-            const ch = drawH / scale;
-            sx = (img.width - cw) * eased * 0.4;
-            sy = (img.height - ch) * (1 - eased) * 0.4;
-            sw = cw; sh = ch;
-            break;
-          }
-          case "drift": {
-            const scale = 1 + eased * 0.15;
-            const cw = drawW / scale;
-            const ch = drawH / scale;
-            sx = (img.width - cw) * eased * 0.6;
-            sy = (img.height - ch) * eased * 0.4;
-            sw = cw; sh = ch;
-            break;
-          }
-          case "dramatic-zoom": {
-            // Fast start, slow end with cubic ease-out
-            const dramatic = 1 - Math.pow(1 - t, 3);
-            const scale = 1 + dramatic * 0.5;
-            const cw = drawW / scale;
-            const ch = drawH / scale;
-            sx = (img.width - cw) / 2;
-            sy = (img.height - ch) / 2;
-            sw = cw; sh = ch;
-            break;
-          }
-        }
-
-        ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
-        ctx.restore();
-
-        await new Promise((r) => setTimeout(r, 1000 / fps));
-      }
-
-      recorder.stop();
-      await done;
-
-      const blob = new Blob(chunks, { type: "video/webm" });
-      setVideoUrl(URL.createObjectURL(blob));
+      const url = await generate(images, style, duration, platform);
+      setVideoUrl(url);
       toast({ title: "Video generated successfully!" });
     } catch (err: any) {
-      toast({
-        title: "Video generation failed",
-        description: err.message || "Something went wrong",
-        variant: "destructive",
-      });
+      toast({ title: "Video generation failed", description: err.message, variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }
-  }, [image, style, duration, toast]);
+  };
 
   const downloadVideo = () => {
     if (!videoUrl) return;
     const a = document.createElement("a");
     a.href = videoUrl;
-    a.download = `sangi-animated-${Date.now()}.webm`;
+    a.download = `sangi-${platform}-${Date.now()}.webm`;
     a.click();
   };
 
@@ -211,38 +69,18 @@ const AnimatePage = () => {
       <AppHeader />
       <main className="max-w-5xl mx-auto px-4 py-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-8">
-          <h2 className="font-display font-extrabold text-3xl md:text-4xl text-foreground mb-3">
+          <h1 className="font-display font-extrabold text-3xl md:text-4xl text-foreground mb-3">
             Animate Still Images
-          </h2>
+          </h1>
           <p className="text-muted-foreground text-sm max-w-lg mx-auto">
-            Upload any image and turn it into a cinematic video with camera motion effects.
+            Upload one or multiple images to create a cinematic slideshow video. Choose your platform for the perfect aspect ratio.
           </p>
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-8">
-          {/* Left: Controls */}
+          {/* Controls */}
           <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }} className="space-y-5">
-            {/* Image Upload */}
-            <div className="space-y-2">
-              <label className="text-sm font-display font-semibold text-foreground">Upload Image</label>
-              {image ? (
-                <div className="relative rounded-lg overflow-hidden border border-border">
-                  <img src={image} alt="Uploaded" className="w-full h-48 object-cover" />
-                  <button
-                    onClick={() => { setImage(null); setVideoUrl(null); }}
-                    className="absolute top-2 right-2 h-7 w-7 rounded-full bg-background/80 flex items-center justify-center text-foreground hover:bg-destructive hover:text-destructive-foreground transition-colors"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              ) : (
-                <label className="flex flex-col items-center justify-center h-48 border-2 border-dashed border-border rounded-lg cursor-pointer hover:border-primary/50 transition-colors bg-card">
-                  <Upload className="h-8 w-8 text-muted-foreground mb-2" />
-                  <span className="text-sm text-muted-foreground">Click to upload an image</span>
-                  <input type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
-                </label>
-              )}
-            </div>
+            <ImageGallery images={images} onAdd={handleImageUpload} onRemove={removeImage} />
 
             {/* Animation Style */}
             <div className="space-y-2">
@@ -265,9 +103,16 @@ const AnimatePage = () => {
               </div>
             </div>
 
-            {/* Duration */}
+            {/* Duration per image */}
             <div className="space-y-2">
-              <label className="text-sm font-display font-semibold text-foreground">Duration</label>
+              <label className="text-sm font-display font-semibold text-foreground">
+                Duration per Image
+                {images.length > 1 && (
+                  <span className="text-muted-foreground font-normal ml-1">
+                    (total: {duration * images.length}s)
+                  </span>
+                )}
+              </label>
               <div className="flex gap-2">
                 {[3, 5, 8, 10].map((d) => (
                   <button
@@ -285,10 +130,11 @@ const AnimatePage = () => {
               </div>
             </div>
 
-            {/* Generate */}
+            <PlatformSelector platform={platform} onChange={setPlatform} />
+
             <Button
-              onClick={generateVideo}
-              disabled={!image || isGenerating}
+              onClick={handleGenerate}
+              disabled={images.length === 0 || isGenerating}
               className="w-full h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
             >
               {isGenerating ? (
@@ -299,19 +145,31 @@ const AnimatePage = () => {
               ) : (
                 <>
                   <Film className="h-5 w-5 mr-2" />
-                  Generate Video
+                  Generate Video ({images.length} image{images.length !== 1 ? "s" : ""})
                 </>
               )}
             </Button>
           </motion.div>
 
-          {/* Right: Preview */}
+          {/* Preview */}
           <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }}>
             <div className="rounded-xl border border-border bg-card overflow-hidden">
-              <div className="p-4 border-b border-border">
+              <div className="p-4 border-b border-border flex items-center justify-between">
                 <h3 className="font-display font-semibold text-foreground text-sm">Preview</h3>
+                {platform && (
+                  <span className="text-xs text-muted-foreground">
+                    {platform === "youtube" ? "1920×1080" : platform === "tiktok" ? "1080×1920" : platform === "facebook" ? "1080×1080" : "1280×720"}
+                  </span>
+                )}
               </div>
-              <div className="aspect-video bg-muted flex items-center justify-center">
+              <div
+                className="bg-muted flex items-center justify-center"
+                style={{
+                  aspectRatio:
+                    platform === "tiktok" ? "9/16" : platform === "facebook" ? "1/1" : "16/9",
+                  maxHeight: "480px",
+                }}
+              >
                 {videoUrl ? (
                   <video src={videoUrl} controls autoPlay loop className="w-full h-full object-contain" />
                 ) : isGenerating ? (
@@ -320,9 +178,9 @@ const AnimatePage = () => {
                     <p className="text-sm text-muted-foreground">Rendering animation...</p>
                   </div>
                 ) : (
-                  <div className="text-center">
+                  <div className="text-center p-4">
                     <Play className="h-10 w-10 text-muted-foreground mx-auto mb-3 opacity-30" />
-                    <p className="text-sm text-muted-foreground">Upload an image and generate to preview</p>
+                    <p className="text-sm text-muted-foreground">Upload images and generate to preview</p>
                   </div>
                 )}
               </div>
@@ -330,7 +188,7 @@ const AnimatePage = () => {
                 <div className="p-4 border-t border-border">
                   <Button onClick={downloadVideo} variant="outline" className="w-full">
                     <Download className="h-4 w-4 mr-2" />
-                    Download Video (.webm)
+                    Download for {platform === "youtube" ? "YouTube" : platform === "tiktok" ? "TikTok" : platform === "facebook" ? "Facebook" : "HD"}
                   </Button>
                 </div>
               )}
@@ -338,7 +196,6 @@ const AnimatePage = () => {
           </motion.div>
         </div>
 
-        {/* Hidden canvas for rendering */}
         <canvas ref={canvasRef} className="hidden" />
       </main>
     </div>
