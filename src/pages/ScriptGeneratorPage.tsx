@@ -351,6 +351,12 @@ const ScriptGeneratorPage = () => {
                     </p>
                   </div>
 
+                  {/* Generate Full Script Voice */}
+                  <FullScriptVoiceButton
+                    fullNarration={script.fullNarration}
+                    title={script.title}
+                  />
+
                   {/* Copy Full Script */}
                   <Button
                     onClick={() => {
