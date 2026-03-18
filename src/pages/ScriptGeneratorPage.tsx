@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
 import AppHeader from "@/components/AppHeader";
 import SceneCountSelector from "@/components/SceneCountSelector";
+import { SceneVoiceButton } from "@/components/SceneVoiceButton";
 import { useNavigate } from "react-router-dom";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 
