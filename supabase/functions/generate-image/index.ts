@@ -49,28 +49,31 @@ serve(async (req) => {
           .join(", ");
 
         const faceRules = allCharacterUrls.length === 1
-          ? `CRITICAL INSTRUCTION: You MUST use the EXACT face from the reference photo below. Do NOT alter, stylize, or change ANY facial features. The generated image must preserve the IDENTICAL face — same eyes, nose, mouth, jawline, skin tone, facial structure, and all distinguishing features.
+          ? `CRITICAL INSTRUCTION: The reference photo below may contain ONE or MULTIPLE people. You MUST preserve the EXACT face of EVERY person visible in the reference photo. Do NOT remove, replace, or omit ANY person from the reference. Do NOT alter, stylize, or change ANY facial features of ANY person.
 
 Scene to generate: ${prompt}${variationHint}
 
 Rules:
-1. The face MUST be an exact match to the reference photo — as if it's the same person in a different photo
-2. Do NOT change age, ethnicity, skin color, or facial proportions
-3. Keep the same facial hair, eyebrow shape, and facial marks if visible
-4. Only change clothing/pose/background to match the scene description
-5. The result should be photorealistic and look like a real unedited photo of this person`
-          : `CRITICAL INSTRUCTION: There are ${allCharacterUrls.length} reference photos below (${personLabels}). You MUST use the EXACT face from EACH reference photo for the corresponding person in the generated image. Do NOT alter, stylize, or change ANY facial features of ANY person.
+1. EVERY person's face MUST be an exact match to how they appear in the reference photo — same eyes, nose, mouth, jawline, skin tone, facial structure, and all distinguishing features
+2. If the reference photo shows 2 or more people, ALL of them MUST appear in the generated image with their exact faces preserved
+3. Do NOT keep only one person and remove others — every person in the reference MUST be in the output
+4. Do NOT change age, ethnicity, skin color, or facial proportions of ANY person
+5. Keep the same facial hair, eyebrow shape, and facial marks if visible on each person
+6. Only change clothing/pose/background to match the scene description
+7. The result should be photorealistic and look like a real unedited photo of these exact people`
+          : `CRITICAL INSTRUCTION: There are ${allCharacterUrls.length} reference photos below (${personLabels}). Each reference photo may contain ONE or MULTIPLE people. You MUST use the EXACT face of EVERY person visible in EACH reference photo. Do NOT alter, stylize, remove, or change ANY facial features of ANY person. ALL people from ALL references must appear in the generated image.
 
 Scene to generate: ${prompt}${variationHint}
 
 Rules:
 1. EVERY person's face MUST be an exact match to their reference photo — same eyes, nose, mouth, jawline, skin tone, facial structure
-2. Do NOT swap, merge, or blend faces between people — each person keeps their OWN unique face
-3. Do NOT change age, ethnicity, skin color, or facial proportions of ANY person
-4. Keep facial hair, eyebrow shape, and facial marks exactly as shown in each reference
-5. Person 1 = first reference image, Person 2 = second reference image, etc.
-6. Both/all people must appear clearly in the scene
-7. The result should be photorealistic and look like a real unedited photo of these exact people together`;
+2. If a reference photo contains multiple people, ALL of them MUST appear in the generated image
+3. Do NOT swap, merge, or blend faces between people — each person keeps their OWN unique face
+4. Do NOT remove or omit any person from any reference photo
+5. Do NOT change age, ethnicity, skin color, or facial proportions of ANY person
+6. Keep facial hair, eyebrow shape, and facial marks exactly as shown for each person
+7. Person 1 = first reference image, Person 2 = second reference image, etc.
+8. The result should be photorealistic and look like a real unedited photo of all these people together`;
 
         const contentParts: any[] = [
           { type: "text", text: faceRules },
