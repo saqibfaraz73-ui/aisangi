@@ -23,6 +23,7 @@ const AnimatePage = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
   const { generate } = useVideoGenerator(canvasRef);
+  const { checkAndTrack } = useUsageLimit("image_to_video");
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
