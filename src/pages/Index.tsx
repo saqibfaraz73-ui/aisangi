@@ -1,4 +1,5 @@
 import { useRef, useState } from "react";
+import { FunctionsHttpError } from "@supabase/supabase-js";
 import { motion } from "framer-motion";
 import { Sparkles, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -71,6 +72,25 @@ interface ImageResult {
   description?: string;
 }
 
+const extractFunctionErrorMessage = async (error: unknown) => {
+  if (error instanceof FunctionsHttpError) {
+    try {
+      const payload = await error.context.json();
+      if (typeof payload?.error === "string" && payload.error.trim()) {
+        return payload.error;
+      }
+    } catch {
+      return error.message;
+    }
+  }
+
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return "Something went wrong. Try again.";
+};
+
 const Index = () => {
   const [prompt, setPrompt] = usePersistedState("sangi_prompt", "");
   const [images, setImages] = usePersistedState<ImageResult[]>("sangi_images", []);
@@ -105,7 +125,7 @@ const Index = () => {
         },
       });
 
-      if (error) throw new Error(error.message);
+      if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
       if (data?.images?.length) {
@@ -115,10 +135,11 @@ const Index = () => {
       } else {
         throw new Error("No image returned");
       }
-    } catch (err: any) {
+    } catch (err) {
+      const description = await extractFunctionErrorMessage(err);
       toast({
         title: "Generation failed",
-        description: err.message || "Something went wrong. Try again.",
+        description,
         variant: "destructive",
       });
     } finally {
