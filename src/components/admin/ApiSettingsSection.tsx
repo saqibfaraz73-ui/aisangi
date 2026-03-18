@@ -197,7 +197,7 @@ const ApiSettingsSection = () => {
           <p className="text-xs text-muted-foreground">
             {provider === "openai"
               ? "For images use DALL·E 3. For scripts use GPT-4o."
-              : "Gemini 2.0 Flash supports both text and image generation."}
+              : "Preview Gemini models are used for images; script generation automatically falls back to a stable text model."}
           </p>
         </div>
 
