@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useUsageLimit } from "@/hooks/use-usage-limit";
 import AppHeader from "@/components/AppHeader";
 import SceneCountSelector from "@/components/SceneCountSelector";
 import { useNavigate } from "react-router-dom";
