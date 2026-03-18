@@ -11,6 +11,7 @@ import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
 import AudioOverlaySection from "@/components/animate/AudioOverlaySection";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
+import { useWatermark } from "@/hooks/use-watermark";
 
 const AnimatePage = () => {
   const [images, setImages] = usePersistedState<string[]>("sangi_anim_images", []);
