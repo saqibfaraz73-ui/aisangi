@@ -15,6 +15,7 @@ import AdminPasswordSection from "@/components/admin/AdminPasswordSection";
 import WatermarkSection from "@/components/admin/WatermarkSection";
 import UsageStatsSection from "@/components/admin/UsageStatsSection";
 import ApiSettingsSection from "@/components/admin/ApiSettingsSection";
+import ElevenLabsSection from "@/components/admin/ElevenLabsSection";
 import GlobalCapSection from "@/components/admin/GlobalCapSection";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
