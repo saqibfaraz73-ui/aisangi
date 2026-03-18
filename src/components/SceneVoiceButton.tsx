@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
+import { useElevenLabsVoice } from "@/hooks/use-elevenlabs-voice";
 
 const VOICES = [
   { value: "Kore", label: "Kore (Female, Warm)" },
@@ -38,6 +39,7 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
   const [editingName, setEditingName] = useState(false);
   const { toast } = useToast();
   const { checkLimit, trackUsage } = useUsageLimit("voice_tts");
+  const elevenLabs = useElevenLabsVoice();
 
   const handleGenerate = async () => {
     if (!narration.trim()) return;
@@ -47,9 +49,10 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
 
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-voice", {
-        body: { text: narration, voice },
-      });
+      const isClone = voice === "__clone__";
+      const fnName = isClone ? "generate-voice-elevenlabs" : "generate-voice";
+      const body = isClone ? { text: narration } : { text: narration, voice };
+      const { data, error } = await supabase.functions.invoke(fnName, { body });
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
@@ -57,7 +60,8 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
 
       await trackUsage(data?.tokensUsed || 0);
 
-      const url = `data:audio/wav;base64,${data.audioContent}`;
+      const mime = isClone ? "audio/mpeg" : "audio/wav";
+      const url = `data:${mime};base64,${data.audioContent}`;
       setAudioUrl(url);
       toast({ title: `Scene ${sceneNumber} voice generated!` });
     } catch (err: any) {
@@ -89,7 +93,8 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
     if (!audioUrl) return;
     const a = document.createElement("a");
     a.href = audioUrl;
-    a.download = `${fileName.replace(/[^a-zA-Z0-9_-]/g, "_")}.wav`;
+    const ext = voice === "__clone__" ? "mp3" : "wav";
+    a.download = `${fileName.replace(/[^a-zA-Z0-9_-]/g, "_")}.${ext}`;
     a.click();
   };
 
@@ -105,6 +110,11 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            {elevenLabs.enabled && (
+              <SelectItem value="__clone__" className="text-xs font-semibold text-primary">
+                🎤 {elevenLabs.voiceName}
+              </SelectItem>
+            )}
             {VOICES.map((v) => (
               <SelectItem key={v.value} value={v.value} className="text-xs">
                 {v.label}

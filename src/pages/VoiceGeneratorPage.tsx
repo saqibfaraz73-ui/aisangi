@@ -10,6 +10,7 @@ import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import { VOICES } from "@/components/SceneVoiceButton";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
+import { useElevenLabsVoice } from "@/hooks/use-elevenlabs-voice";
 
 const VoiceGeneratorPage = () => {
   const [text, setText] = useState("");
@@ -22,6 +23,7 @@ const VoiceGeneratorPage = () => {
   const [editingName, setEditingName] = useState(false);
   const { toast } = useToast();
   const { checkLimit, trackUsage } = useUsageLimit("voice_tts");
+  const elevenLabs = useElevenLabsVoice();
 
   const handleGenerate = async () => {
     if (!text.trim()) {
@@ -37,9 +39,10 @@ const VoiceGeneratorPage = () => {
     if (audioEl) { audioEl.pause(); setIsPlaying(false); }
 
     try {
-      const { data, error } = await supabase.functions.invoke("generate-voice", {
-        body: { text: text.trim(), voice },
-      });
+      const isClone = voice === "__clone__";
+      const fnName = isClone ? "generate-voice-elevenlabs" : "generate-voice";
+      const body = isClone ? { text: text.trim() } : { text: text.trim(), voice };
+      const { data, error } = await supabase.functions.invoke(fnName, { body });
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
@@ -47,7 +50,8 @@ const VoiceGeneratorPage = () => {
 
       await trackUsage(data?.tokensUsed || 0);
 
-      const url = `data:audio/wav;base64,${data.audioContent}`;
+      const mime = isClone ? "audio/mpeg" : "audio/wav";
+      const url = `data:${mime};base64,${data.audioContent}`;
       setAudioUrl(url);
       toast({ title: "Voice generated successfully!" });
     } catch (err: any) {
@@ -79,7 +83,8 @@ const VoiceGeneratorPage = () => {
     if (!audioUrl) return;
     const a = document.createElement("a");
     a.href = audioUrl;
-    a.download = `${fileName.replace(/[^a-zA-Z0-9_-]/g, "_")}.wav`;
+    const ext = voice === "__clone__" ? "mp3" : "wav";
+    a.download = `${fileName.replace(/[^a-zA-Z0-9_-]/g, "_")}.${ext}`;
     a.click();
   };
 
@@ -132,6 +137,11 @@ const VoiceGeneratorPage = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                {elevenLabs.enabled && (
+                  <SelectItem value="__clone__" className="font-semibold text-primary">
+                    🎤 {elevenLabs.voiceName}
+                  </SelectItem>
+                )}
                 {VOICES.map((v) => (
                   <SelectItem key={v.value} value={v.value}>
                     {v.label}
