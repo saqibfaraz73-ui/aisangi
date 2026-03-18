@@ -128,6 +128,8 @@ const AdminPage = () => {
 
         <ApiSettingsSection />
 
+        <ElevenLabsSection />
+
         <GlobalCapSection />
 
         <WatermarkSection users={users} />
