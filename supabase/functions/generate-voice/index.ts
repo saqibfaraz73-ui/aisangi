@@ -203,11 +203,15 @@ serve(async (req) => {
 
     const wavBase64 = base64Encode(wavBytes);
 
+    // Extract token usage
+    const tokensUsed = data?.usageMetadata?.totalTokenCount || 0;
+
     return new Response(
       JSON.stringify({
         audioContent: wavBase64,
         mimeType: "audio/wav",
         voice: selectedVoice,
+        tokensUsed,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );

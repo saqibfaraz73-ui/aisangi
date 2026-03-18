@@ -278,7 +278,15 @@ Generate exactly ${count} scenes. Detailed image prompts with lighting, style, c
       throw new Error("Failed to parse AI response");
     }
 
-    return new Response(JSON.stringify(parsed), {
+    // Extract token usage
+    let tokensUsed = 0;
+    if (apiConfig.useNativeGemini) {
+      tokensUsed = data?.usageMetadata?.totalTokenCount || 0;
+    } else {
+      tokensUsed = data?.usage?.total_tokens || 0;
+    }
+
+    return new Response(JSON.stringify({ ...parsed, tokensUsed }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (e) {
