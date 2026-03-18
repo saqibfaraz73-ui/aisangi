@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import { VOICES } from "@/components/SceneVoiceButton";
+import { useUsageLimit } from "@/hooks/use-usage-limit";
 
 const VoiceGeneratorPage = () => {
   const [text, setText] = useState("");
@@ -20,12 +21,16 @@ const VoiceGeneratorPage = () => {
   const [fileName, setFileName] = useState("My_Voice");
   const [editingName, setEditingName] = useState(false);
   const { toast } = useToast();
+  const { checkAndTrack } = useUsageLimit("voice_tts");
 
   const handleGenerate = async () => {
     if (!text.trim()) {
       toast({ title: "Please enter some text", variant: "destructive" });
       return;
     }
+
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
 
     setGenerating(true);
     setAudioUrl(null);

@@ -215,6 +215,27 @@ export type Database = {
         }
         Relationships: []
       }
+      voice_generation_cap: {
+        Row: {
+          daily_limit: number
+          enabled: boolean
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          daily_limit?: number
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          daily_limit?: number
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       watermark_settings: {
         Row: {
           color: string

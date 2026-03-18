@@ -35,6 +35,41 @@ async function getGeminiApiKey(supabase: any): Promise<string> {
   );
 }
 
+async function callGeminiTtsWithRetry(url: string, body: any, maxRetries = 3): Promise<Response> {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    // Retry on 500 internal errors (transient Gemini issues)
+    if (response.status === 500 && attempt < maxRetries - 1) {
+      const waitMs = Math.min(1000 * Math.pow(2, attempt), 8000);
+      console.log(`Gemini TTS returned 500, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+      await new Promise((r) => setTimeout(r, waitMs));
+      continue;
+    }
+
+    // Retry on 429 rate limit with backoff
+    if (response.status === 429 && attempt < maxRetries - 1) {
+      const waitMs = Math.min(2000 * Math.pow(2, attempt), 16000);
+      console.log(`Gemini TTS rate limited, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+      await new Promise((r) => setTimeout(r, waitMs));
+      continue;
+    }
+
+    return response;
+  }
+
+  // Should not reach here, but return last attempt
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -67,23 +102,21 @@ serve(async (req) => {
 
     console.log(`Generating TTS with voice: ${selectedVoice}, text length: ${text.length}`);
 
-    const response = await fetch(buildGeminiTtsUrl(apiKey), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: text.trim() }] }],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: selectedVoice,
-              },
+    const requestBody = {
+      contents: [{ parts: [{ text: text.trim() }] }],
+      generationConfig: {
+        responseModalities: ["AUDIO"],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: {
+              voiceName: selectedVoice,
             },
           },
         },
-      }),
-    });
+      },
+    };
+
+    const response = await callGeminiTtsWithRetry(buildGeminiTtsUrl(apiKey), requestBody);
 
     if (!response.ok) {
       const errText = await response.text();
@@ -91,7 +124,7 @@ serve(async (req) => {
 
       if (response.status === 429) {
         return new Response(
-          JSON.stringify({ error: "Rate limited. Please wait and try again." }),
+          JSON.stringify({ error: "Rate limited. Please wait a moment and try again." }),
           { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -102,7 +135,7 @@ serve(async (req) => {
         );
       }
 
-      let errorMsg = "Voice generation failed.";
+      let errorMsg = "Voice generation failed. Please try again.";
       try {
         const parsed = JSON.parse(errText);
         errorMsg = parsed?.error?.message || errorMsg;

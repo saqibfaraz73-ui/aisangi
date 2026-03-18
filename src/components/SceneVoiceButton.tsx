@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { motion } from "framer-motion";
+import { useUsageLimit } from "@/hooks/use-usage-limit";
 
 const VOICES = [
   { value: "Kore", label: "Kore (Female, Warm)" },
@@ -36,9 +37,14 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
   const [fileName, setFileName] = useState(`Scene_${sceneNumber}_Voice`);
   const [editingName, setEditingName] = useState(false);
   const { toast } = useToast();
+  const { checkAndTrack } = useUsageLimit("voice_tts");
 
   const handleGenerate = async () => {
     if (!narration.trim()) return;
+
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
+
     setGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-voice", {

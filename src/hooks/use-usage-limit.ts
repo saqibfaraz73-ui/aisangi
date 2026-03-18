@@ -17,7 +17,7 @@ export function useUsageLimit(section: string) {
     const clientOnlySections = ["image_to_video", "audio_overlay"];
     const usesGeminiCredits = !clientOnlySections.includes(section);
 
-    // Only check global/image/script caps for features that actually use API credits
+    // Only check global/image/script/voice caps for features that actually use API credits
     if (usesGeminiCredits) {
       // Check global daily cap
       const { data: capData } = await supabase
@@ -31,7 +31,7 @@ export function useUsageLimit(section: string) {
         const { count: globalCount } = await supabase
           .from("usage_log")
           .select("*", { count: "exact", head: true })
-          .in("section", ["text_to_image", "script_ai"])
+          .in("section", ["text_to_image", "script_ai", "voice_tts"])
           .gte("used_at", todayStart.toISOString());
 
         if ((globalCount ?? 0) >= capData.daily_limit) {
@@ -90,6 +90,32 @@ export function useUsageLimit(section: string) {
           toast({
             title: "Script generation limit reached",
             description: `The platform has reached its daily limit of ${scriptCapData.daily_limit} script generations. Try again tomorrow.`,
+            variant: "destructive",
+          });
+          return false;
+        }
+      }
+    }
+
+    // Check voice generation daily cap (for voice_tts section only)
+    if (section === "voice_tts") {
+      const { data: voiceCapData } = await supabase
+        .from("voice_generation_cap")
+        .select("enabled, daily_limit")
+        .limit(1)
+        .maybeSingle();
+
+      if (voiceCapData?.enabled) {
+        const { count: voiceCount } = await supabase
+          .from("usage_log")
+          .select("*", { count: "exact", head: true })
+          .eq("section", "voice_tts")
+          .gte("used_at", todayStart.toISOString());
+
+        if ((voiceCount ?? 0) >= voiceCapData.daily_limit) {
+          toast({
+            title: "Voice generation limit reached",
+            description: `The platform has reached its daily limit of ${voiceCapData.daily_limit} voice generations. Try again tomorrow.`,
             variant: "destructive",
           });
           return false;

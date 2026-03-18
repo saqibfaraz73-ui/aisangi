@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Globe, Image, FileText, Save, Loader2 } from "lucide-react";
+import { Globe, Image, FileText, Volume2, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -93,9 +93,11 @@ const GlobalCapSection = () => {
   const [savingGlobal, setSavingGlobal] = useState(false);
   const [savingImage, setSavingImage] = useState(false);
   const [savingScript, setSavingScript] = useState(false);
+  const [savingVoice, setSavingVoice] = useState(false);
   const [globalCap, setGlobalCap] = useState<CapState>(defaultCap(1400));
   const [imageCap, setImageCap] = useState<CapState>(defaultCap(240));
   const [scriptCap, setScriptCap] = useState<CapState>(defaultCap(1160));
+  const [voiceCap, setVoiceCap] = useState<CapState>(defaultCap(100));
 
   useEffect(() => {
     fetchData();
@@ -106,13 +108,15 @@ const GlobalCapSection = () => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [capRes, imageCapRes, scriptCapRes, totalUsageRes, imageUsageRes, scriptUsageRes] = await Promise.all([
+    const [capRes, imageCapRes, scriptCapRes, voiceCapRes, totalUsageRes, imageUsageRes, scriptUsageRes, voiceUsageRes] = await Promise.all([
       supabase.from("global_usage_cap").select("*").limit(1).maybeSingle(),
       supabase.from("image_generation_cap").select("*").limit(1).maybeSingle(),
       supabase.from("script_generation_cap").select("*").limit(1).maybeSingle(),
-      supabase.from("usage_log").select("*", { count: "exact", head: true }).in("section", ["text_to_image", "script_ai"]).gte("used_at", todayStart.toISOString()),
+      supabase.from("voice_generation_cap").select("*").limit(1).maybeSingle(),
+      supabase.from("usage_log").select("*", { count: "exact", head: true }).in("section", ["text_to_image", "script_ai", "voice_tts"]).gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "text_to_image").gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "script_ai").gte("used_at", todayStart.toISOString()),
+      supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "voice_tts").gte("used_at", todayStart.toISOString()),
     ]);
 
     if (capRes.data) {
@@ -133,11 +137,17 @@ const GlobalCapSection = () => {
       setScriptCap((p) => ({ ...p, todayUsage: scriptUsageRes.count ?? 0 }));
     }
 
+    if (voiceCapRes.data) {
+      setVoiceCap({ id: voiceCapRes.data.id, enabled: voiceCapRes.data.enabled, dailyLimit: voiceCapRes.data.daily_limit, todayUsage: voiceUsageRes.count ?? 0 });
+    } else {
+      setVoiceCap((p) => ({ ...p, todayUsage: voiceUsageRes.count ?? 0 }));
+    }
+
     setLoading(false);
   };
 
   const saveCap = async (
-    table: "global_usage_cap" | "image_generation_cap" | "script_generation_cap",
+    table: "global_usage_cap" | "image_generation_cap" | "script_generation_cap" | "voice_generation_cap",
     cap: CapState,
     setSaving: (v: boolean) => void,
     label: string
@@ -175,7 +185,7 @@ const GlobalCapSection = () => {
         <h2 className="font-display font-bold text-lg text-foreground">Daily Caps (Gemini Quota Protection)</h2>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         <CapCard
           icon={Globe}
           title="Global Request Cap"
@@ -188,7 +198,7 @@ const GlobalCapSection = () => {
         <CapCard
           icon={Image}
           title="Image Generation Cap"
-          description="Limits total image generations across all users per day (Gemini allows ~250/day)."
+          description="Limits total image generations across all users per day."
           state={imageCap}
           onChange={(s) => setImageCap((p) => ({ ...p, ...s }))}
           onSave={() => saveCap("image_generation_cap", imageCap, setSavingImage, "Image generation cap")}
@@ -197,11 +207,20 @@ const GlobalCapSection = () => {
         <CapCard
           icon={FileText}
           title="Script Generation Cap"
-          description="Limits total script generations across all users per day (default 1160/day)."
+          description="Limits total script generations across all users per day."
           state={scriptCap}
           onChange={(s) => setScriptCap((p) => ({ ...p, ...s }))}
           onSave={() => saveCap("script_generation_cap", scriptCap, setSavingScript, "Script generation cap")}
           saving={savingScript}
+        />
+        <CapCard
+          icon={Volume2}
+          title="Voice Generation Cap"
+          description="Limits total voice generations across all users per day (default 100/day)."
+          state={voiceCap}
+          onChange={(s) => setVoiceCap((p) => ({ ...p, ...s }))}
+          onSave={() => saveCap("voice_generation_cap", voiceCap, setSavingVoice, "Voice generation cap")}
+          saving={savingVoice}
         />
       </div>
     </motion.div>
