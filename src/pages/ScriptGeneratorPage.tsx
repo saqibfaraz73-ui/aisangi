@@ -62,7 +62,7 @@ const ScriptGeneratorPage = () => {
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-script", {
-        body: { idea: idea.trim(), sceneCount },
+        body: { idea: idea.trim(), sceneCount: sceneCount ?? undefined },
       });
 
       if (error) throw new Error(error.message);
