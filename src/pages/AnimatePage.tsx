@@ -6,9 +6,9 @@ import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
 import ImageGallery from "@/components/animate/ImageGallery";
 import PlatformSelector from "@/components/animate/PlatformSelector";
+import AudioInputSection, { type AudioTrackInput } from "@/components/animate/AudioInputSection";
 import { ANIMATION_STYLES, type AnimationStyle, type PlatformPreset } from "@/components/animate/types";
 import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
-import AudioOverlaySection from "@/components/animate/AudioOverlaySection";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
 import { useWatermark } from "@/hooks/use-watermark";
@@ -21,6 +21,7 @@ const AnimatePage = () => {
   const [platform, setPlatform] = usePersistedState<PlatformPreset>("sangi_anim_platform", "youtube");
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = usePersistedState<string | null>("sangi_anim_videoUrl", null);
+  const [audioTracks, setAudioTracks] = useState<AudioTrackInput[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
   const { generate } = useVideoGenerator(canvasRef);
@@ -71,7 +72,7 @@ const AnimatePage = () => {
     setIsGenerating(true);
     setVideoUrl(null);
     try {
-      const url = await generate(images, styles, durations, platform, watermarkEnabled, watermarkColor);
+      const url = await generate(images, styles, durations, platform, watermarkEnabled, watermarkColor, audioTracks);
       setVideoUrl(url);
       toast({ title: "Video generated successfully!" });
     } catch (err: any) {
@@ -96,6 +97,8 @@ const AnimatePage = () => {
     setVideoUrl(null);
     setDefaultStyle("ken-burns");
     setPlatform("youtube");
+    audioTracks.forEach((t) => URL.revokeObjectURL(t.url));
+    setAudioTracks([]);
     toast({ title: "Cleared all data" });
   };
 
@@ -145,6 +148,8 @@ const AnimatePage = () => {
                 ))}
               </div>
             </div>
+
+            <AudioInputSection tracks={audioTracks} onTracksChange={setAudioTracks} />
 
             <PlatformSelector platform={platform} onChange={setPlatform} />
 
@@ -228,13 +233,6 @@ const AnimatePage = () => {
 
         <canvas ref={canvasRef} className="hidden" />
 
-        {videoUrl && (
-          <AudioOverlaySection
-            videoUrl={videoUrl}
-            platform={platform}
-            onPlatformChange={setPlatform}
-          />
-        )}
       </main>
     </div>
   );

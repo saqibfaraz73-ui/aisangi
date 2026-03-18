@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { type AnimationStyle, type PlatformPreset, PLATFORM_PRESETS } from "./types";
+import type { AudioTrackInput } from "./AudioInputSection";
 
 function getEased(t: number) {
   return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
@@ -131,7 +132,8 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
       durations: number[],
       platform: PlatformPreset,
       watermark: boolean = true,
-      watermarkColor: string = "white"
+      watermarkColor: string = "white",
+      audioTracks: AudioTrackInput[] = []
     ): Promise<string> => {
       const canvas = canvasRef.current;
       if (!canvas) throw new Error("Canvas not ready");
@@ -142,9 +144,40 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
       canvas.height = H;
 
       const fps = 30;
-      const stream = canvas.captureStream(fps);
-      const recorder = new MediaRecorder(stream, {
-        mimeType: "video/webm;codecs=vp9",
+      const videoStream = canvas.captureStream(fps);
+      const hasAudio = audioTracks.length > 0;
+
+      let audioCtx: AudioContext | null = null;
+      let dest: MediaStreamAudioDestinationNode | null = null;
+      let sources: AudioBufferSourceNode[] = [];
+
+      if (hasAudio) {
+        audioCtx = new AudioContext();
+        dest = audioCtx.createMediaStreamDestination();
+
+        for (const track of audioTracks) {
+          const arrayBuffer = await track.file.arrayBuffer();
+          const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+          const source = audioCtx.createBufferSource();
+          source.buffer = audioBuffer;
+          source.connect(dest);
+          source.start(0);
+          sources.push(source);
+        }
+      }
+
+      const combinedTracks = [
+        ...videoStream.getVideoTracks(),
+        ...(dest ? dest.stream.getAudioTracks() : []),
+      ];
+      const combinedStream = new MediaStream(combinedTracks);
+
+      const mimeType = hasAudio
+        ? "video/webm;codecs=vp9,opus"
+        : "video/webm;codecs=vp9";
+
+      const recorder = new MediaRecorder(combinedStream, {
+        mimeType,
         videoBitsPerSecond: 5_000_000,
       });
 
@@ -177,6 +210,10 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
 
       recorder.stop();
       await done;
+
+      // Cleanup audio
+      sources.forEach((s) => { try { s.stop(); } catch {} });
+      if (audioCtx) await audioCtx.close();
 
       const blob = new Blob(chunks, { type: "video/webm" });
       return URL.createObjectURL(blob);
