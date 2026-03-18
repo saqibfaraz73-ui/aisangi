@@ -39,9 +39,10 @@ const VoiceGeneratorPage = () => {
     if (audioEl) { audioEl.pause(); setIsPlaying(false); }
 
     try {
-      const { data, error } = await supabase.functions.invoke("generate-voice", {
-        body: { text: text.trim(), voice },
-      });
+      const isClone = voice === "__clone__";
+      const fnName = isClone ? "generate-voice-elevenlabs" : "generate-voice";
+      const body = isClone ? { text: text.trim() } : { text: text.trim(), voice };
+      const { data, error } = await supabase.functions.invoke(fnName, { body });
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
