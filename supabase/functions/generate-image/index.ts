@@ -328,7 +328,7 @@ serve(async (req) => {
       allCharacterUrls.push(characterImageUrl);
     }
 
-    const count = Math.min(Math.max(1, Number(sceneCount) || 1), 4);
+    const count = Math.max(1, Number(sceneCount) || 1);
 
     const generateOne = async (index: number) => {
       const variationHint = count > 1 ? ` (variation ${index + 1} of ${count}, unique composition)` : "";
