@@ -32,6 +32,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 const AppRoutes = () => (
   <Routes>
     <Route path="/auth" element={<AuthPage />} />
+    <Route path="/reset-password" element={<ResetPasswordPage />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/animate" element={<ProtectedRoute><AnimatePage /></ProtectedRoute>} />
     <Route path="/overlay" element={<ProtectedRoute><OverlayPage /></ProtectedRoute>} />
