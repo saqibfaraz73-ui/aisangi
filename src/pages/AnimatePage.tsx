@@ -6,15 +6,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
 
-type AnimationStyle = "zoom-in" | "zoom-out" | "pan-left" | "pan-right" | "pan-up" | "ken-burns";
+type AnimationStyle = "zoom-in" | "zoom-out" | "pan-left" | "pan-right" | "pan-up" | "ken-burns" | "drift" | "dramatic-zoom";
 
 const ANIMATION_STYLES: { value: AnimationStyle; label: string; desc: string }[] = [
-  { value: "zoom-in", label: "Zoom In", desc: "Slowly zoom into the image" },
-  { value: "zoom-out", label: "Zoom Out", desc: "Slowly zoom out from center" },
-  { value: "pan-left", label: "Pan Left", desc: "Horizontal pan left to right" },
-  { value: "pan-right", label: "Pan Right", desc: "Horizontal pan right to left" },
-  { value: "pan-up", label: "Pan Up", desc: "Vertical pan upward" },
-  { value: "ken-burns", label: "Ken Burns", desc: "Classic zoom + pan combo" },
+  { value: "zoom-in", label: "Zoom In", desc: "Smooth zoom into focal point" },
+  { value: "zoom-out", label: "Zoom Out", desc: "Reveal zoom from center" },
+  { value: "pan-left", label: "Pan Left", desc: "Cinematic horizontal sweep" },
+  { value: "pan-right", label: "Pan Right", desc: "Reverse horizontal sweep" },
+  { value: "pan-up", label: "Pan Up", desc: "Vertical rise reveal" },
+  { value: "ken-burns", label: "Ken Burns", desc: "Classic zoom + drift combo" },
+  { value: "drift", label: "Drift", desc: "Gentle diagonal float" },
+  { value: "dramatic-zoom", label: "Dramatic", desc: "Fast zoom with slow ease" },
 ];
 
 const AnimatePage = () => {
