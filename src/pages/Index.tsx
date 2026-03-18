@@ -31,6 +31,7 @@ const Index = () => {
   const [characterImage, setCharacterImage] = usePersistedState<string | null>("sangi_character", null);
   const [sceneCount, setSceneCount] = usePersistedState("sangi_sceneCount", 1);
   const { toast } = useToast();
+  const { checkAndTrack } = useUsageLimit("text_to_image");
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
