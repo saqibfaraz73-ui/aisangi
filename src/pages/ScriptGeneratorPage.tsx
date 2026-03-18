@@ -47,6 +47,9 @@ const ScriptGeneratorPage = () => {
       return;
     }
 
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
+
     setIsGenerating(true);
     setScript(null);
 

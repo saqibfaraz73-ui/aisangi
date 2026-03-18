@@ -39,6 +39,9 @@ const Index = () => {
       return;
     }
 
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
+
     setIsGenerating(true);
     setImages([]);
 
