@@ -41,6 +41,27 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_token_cap: {
+        Row: {
+          daily_limit: number
+          enabled: boolean
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          daily_limit?: number
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          daily_limit?: number
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       global_usage_cap: {
         Row: {
           daily_limit: number
@@ -153,18 +174,21 @@ export type Database = {
         Row: {
           id: string
           section: string
+          tokens_used: number | null
           used_at: string
           user_id: string
         }
         Insert: {
           id?: string
           section: string
+          tokens_used?: number | null
           used_at?: string
           user_id: string
         }
         Update: {
           id?: string
           section?: string
+          tokens_used?: number | null
           used_at?: string
           user_id?: string
         }
