@@ -162,11 +162,75 @@ serve(async (req) => {
         return generateWithDalle(apiConfig.apiKey, fullPrompt);
       }
 
-      // Chat completions path (Gemini / OpenAI GPT-4o / Lovable AI)
+      // Custom Gemini: use native Gemini API with responseModalities
+      if (apiConfig.useCustom && apiConfig.provider === "gemini") {
+        const geminiModel = apiConfig.model;
+        const nativeUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiConfig.apiKey}`;
+
+        const parts: any[] = [];
+        if (allCharacterUrls.length > 0) {
+          allCharacterUrls.forEach((url, i) => {
+            parts.push({ text: `[Reference face ${i + 1}]` });
+            // If it's a data URL, extract base64
+            if (url.startsWith("data:")) {
+              const [meta, b64] = url.split(",");
+              const mime = meta.match(/data:(.*?);/)?.[1] || "image/png";
+              parts.push({ inline_data: { mime_type: mime, data: b64 } });
+            } else {
+              parts.push({ text: `(reference image URL: ${url})` });
+            }
+          });
+          parts.push({ text: `Generate image of this exact person in: ${prompt}${variationHint}${watermarkInstruction}` });
+        } else {
+          parts.push({ text: `Generate a high-quality image: ${fullPrompt}` });
+        }
+
+        let response: Response | null = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          response = await fetch(nativeUrl, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              contents: [{ parts }],
+              generationConfig: { responseModalities: ["TEXT", "IMAGE"] },
+            }),
+          });
+
+          if (response.ok) break;
+          if (response.status === 429 && attempt < 3) {
+            await new Promise(r => setTimeout(r, attempt * 2000));
+            continue;
+          }
+          if (response.status === 429) throw { status: 429, message: "Rate limited. Please wait and try again." };
+          if (response.status === 401 || response.status === 403) throw { status: 401, message: "Invalid Gemini API key. Check Admin settings." };
+
+          const errText = await response.text();
+          console.error("Gemini native API error:", response.status, errText);
+          throw { status: 500, message: "Image generation failed." };
+        }
+
+        if (!response || !response.ok) throw { status: 500, message: "Generation unavailable." };
+
+        const data = await response.json();
+        let imageUrl = "";
+        let textContent = "";
+        const resParts = data.candidates?.[0]?.content?.parts;
+        if (resParts) {
+          for (const part of resParts) {
+            if (part.inlineData?.data) imageUrl = `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+            if (part.inline_data?.data) imageUrl = `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
+            if (part.text) textContent = part.text;
+          }
+        }
+
+        if (!imageUrl) throw { status: 500, message: "No image generated. Try a different prompt or a different model." };
+        return { imageUrl, description: textContent };
+      }
+
+      // Lovable AI gateway / OpenAI chat completions path
       let messages: any[];
 
       if (allCharacterUrls.length > 0 && apiConfig.provider !== "openai") {
-        // Gemini/Lovable support image_url in messages
         const contentParts: any[] = [];
         allCharacterUrls.forEach((url, i) => {
           contentParts.push({ type: "text", text: `[Reference face ${i + 1}]` });
@@ -178,14 +242,14 @@ serve(async (req) => {
         messages = [{ role: "user", content: `Generate a high-quality image: ${fullPrompt}` }];
       }
 
-      let response: Response | null = null;
+      let response2: Response | null = null;
       for (let attempt = 1; attempt <= 3; attempt++) {
         const body: any = { model: apiConfig.model, messages };
         if (apiConfig.provider !== "openai") {
           body.modalities = ["image", "text"];
         }
 
-        response = await fetch(apiConfig.baseUrl, {
+        response2 = await fetch(apiConfig.baseUrl, {
           method: "POST",
           headers: {
             Authorization: `Bearer ${apiConfig.apiKey}`,
@@ -194,33 +258,32 @@ serve(async (req) => {
           body: JSON.stringify(body),
         });
 
-        if (response.ok) break;
+        if (response2.ok) break;
 
-        if (response.status === 429 && attempt < 3) {
+        if (response2.status === 429 && attempt < 3) {
           await new Promise(r => setTimeout(r, attempt * 2000));
           continue;
         }
 
-        if (response.status === 429) throw { status: 429, message: "Rate limited. Please wait and try again." };
-        if (response.status === 401) throw { status: 401, message: `Invalid ${apiConfig.provider} API key. Check Admin settings.` };
-        if (response.status === 402) throw { status: 402, message: "Credits exhausted. Add your own API key in Admin." };
+        if (response2.status === 429) throw { status: 429, message: "Rate limited. Please wait and try again." };
+        if (response2.status === 401) throw { status: 401, message: `Invalid ${apiConfig.provider} API key. Check Admin settings.` };
+        if (response2.status === 402) throw { status: 402, message: "Credits exhausted. Add your own API key in Admin." };
 
-        const errText = await response.text();
-        console.error("API error:", response.status, errText);
+        const errText = await response2.text();
+        console.error("API error:", response2.status, errText);
         throw { status: 500, message: "Image generation failed." };
       }
 
-      if (!response || !response.ok) throw { status: 500, message: "Generation unavailable." };
+      if (!response2 || !response2.ok) throw { status: 500, message: "Generation unavailable." };
 
-      const data = await response.json();
+      const data = await response2.json();
       let imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
       let textContent = data.choices?.[0]?.message?.content || "";
 
-      // Fallback for Gemini native format
       if (!imageUrl) {
-        const parts = data.candidates?.[0]?.content?.parts;
-        if (parts) {
-          for (const part of parts) {
+        const parts2 = data.candidates?.[0]?.content?.parts;
+        if (parts2) {
+          for (const part of parts2) {
             if (part.inline_data?.data) imageUrl = `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
             if (part.text) textContent = part.text;
           }
