@@ -110,8 +110,8 @@ const Index = () => {
             className="space-y-5"
           >
             <CharacterUpload
-              characterImage={characterImage}
-              onCharacterChange={setCharacterImage}
+              characterImages={characterImages}
+              onCharacterImagesChange={setCharacterImages}
             />
 
             <div className="space-y-2">
