@@ -164,7 +164,19 @@ serve(async (req) => {
 
       // Custom Gemini: use native Gemini API with responseModalities
       if (apiConfig.useCustom && apiConfig.provider === "gemini") {
-        const geminiModel = apiConfig.model;
+        // Models that support image generation via responseModalities
+        const IMAGE_CAPABLE_MODELS = [
+          "gemini-2.0-flash-exp",
+          "gemini-2.5-flash-preview-05-20", 
+          "gemini-2.5-pro-preview-05-06",
+          "gemini-2.0-flash-thinking-exp",
+        ];
+        let geminiModel = apiConfig.model;
+        // Auto-switch non-image-capable models to gemini-2.0-flash-exp
+        if (!IMAGE_CAPABLE_MODELS.includes(geminiModel)) {
+          console.log(`Model ${geminiModel} doesn't support image gen, switching to gemini-2.0-flash-exp`);
+          geminiModel = "gemini-2.0-flash-exp";
+        }
         const nativeUrl = `https://generativelanguage.googleapis.com/v1beta/models/${geminiModel}:generateContent?key=${apiConfig.apiKey}`;
 
         const parts: any[] = [];
