@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useUsageLimit } from "@/hooks/use-usage-limit";
 import AppHeader from "@/components/AppHeader";
 import SceneCountSelector from "@/components/SceneCountSelector";
 import { useNavigate } from "react-router-dom";
@@ -37,6 +38,7 @@ const ScriptGeneratorPage = () => {
   const [script, setScript] = usePersistedState<GeneratedScript | null>("sangi_script_result", null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const { toast } = useToast();
+  const { checkAndTrack } = useUsageLimit("script_ai");
   const navigate = useNavigate();
 
   const handleGenerate = async () => {
@@ -44,6 +46,9 @@ const ScriptGeneratorPage = () => {
       toast({ title: "Please enter a video idea", variant: "destructive" });
       return;
     }
+
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
 
     setIsGenerating(true);
     setScript(null);

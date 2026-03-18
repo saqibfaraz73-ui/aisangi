@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import { useUsageLimit } from "@/hooks/use-usage-limit";
 import CharacterUpload from "@/components/CharacterUpload";
 import SceneCountSelector from "@/components/SceneCountSelector";
 import ImageResults from "@/components/ImageResults";
@@ -30,12 +31,16 @@ const Index = () => {
   const [characterImage, setCharacterImage] = usePersistedState<string | null>("sangi_character", null);
   const [sceneCount, setSceneCount] = usePersistedState("sangi_sceneCount", 1);
   const { toast } = useToast();
+  const { checkAndTrack } = useUsageLimit("text_to_image");
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
       toast({ title: "Please enter a prompt", variant: "destructive" });
       return;
     }
+
+    const allowed = await checkAndTrack();
+    if (!allowed) return;
 
     setIsGenerating(true);
     setImages([]);
