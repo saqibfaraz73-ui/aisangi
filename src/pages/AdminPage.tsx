@@ -1,20 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Users, Settings, Shield, Save, Loader2 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Users, Shield, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/use-auth";
 import { useNavigate } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
+import UserSearch from "@/components/admin/UserSearch";
+import GlobalLimitsSection from "@/components/admin/GlobalLimitsSection";
+import type { UsageLimit } from "@/components/admin/GlobalLimitsSection";
+import UserLimitsSection from "@/components/admin/UserLimitsSection";
+import type { UserUsageLimit } from "@/components/admin/UserLimitsSection";
+import AdminPasswordSection from "@/components/admin/AdminPasswordSection";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 
 interface Profile {
@@ -24,55 +23,48 @@ interface Profile {
   created_at: string;
 }
 
-interface UsageLimit {
-  id: string;
-  section: string;
-  daily_limit: number;
-}
-
-const SECTION_LABELS: Record<string, string> = {
-  text_to_image: "Text to Image",
-  image_to_video: "Image to Video",
-  audio_overlay: "Audio Overlay",
-  script_ai: "Script AI",
-};
-
 const AdminPage = () => {
   const { isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [users, setUsers] = useState<Profile[]>([]);
   const [limits, setLimits] = useState<UsageLimit[]>([]);
+  const [userLimits, setUserLimits] = useState<UserUsageLimit[]>([]);
   const [editedLimits, setEditedLimits] = useState<Record<string, number>>({});
+  const [editedTypes, setEditedTypes] = useState<Record<string, string>>({});
   const [savingLimits, setSavingLimits] = useState(false);
   const [loadingData, setLoadingData] = useState(true);
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    if (!authLoading && !isAdmin) {
-      navigate("/");
-    }
+    if (!authLoading && !isAdmin) navigate("/");
   }, [isAdmin, authLoading, navigate]);
 
   useEffect(() => {
-    if (isAdmin) {
-      fetchData();
-    }
+    if (isAdmin) fetchData();
   }, [isAdmin]);
 
   const fetchData = async () => {
     setLoadingData(true);
-    const [usersRes, limitsRes] = await Promise.all([
+    const [usersRes, limitsRes, userLimitsRes] = await Promise.all([
       supabase.from("profiles").select("*").order("created_at", { ascending: false }),
       supabase.from("usage_limits").select("*").order("section"),
+      supabase.from("user_usage_limits").select("*"),
     ]);
 
     if (usersRes.data) setUsers(usersRes.data);
     if (limitsRes.data) {
-      setLimits(limitsRes.data);
-      const initial: Record<string, number> = {};
-      limitsRes.data.forEach((l) => (initial[l.id] = l.daily_limit));
-      setEditedLimits(initial);
+      setLimits(limitsRes.data as UsageLimit[]);
+      const initLimits: Record<string, number> = {};
+      const initTypes: Record<string, string> = {};
+      limitsRes.data.forEach((l: any) => {
+        initLimits[l.id] = l.daily_limit;
+        initTypes[l.id] = l.limit_type || "per_day";
+      });
+      setEditedLimits(initLimits);
+      setEditedTypes(initTypes);
     }
+    if (userLimitsRes.data) setUserLimits(userLimitsRes.data as UserUsageLimit[]);
     setLoadingData(false);
   };
 
@@ -81,15 +73,16 @@ const AdminPage = () => {
     try {
       for (const limit of limits) {
         const newLimit = editedLimits[limit.id];
-        if (newLimit !== limit.daily_limit) {
+        const newType = editedTypes[limit.id];
+        if (newLimit !== limit.daily_limit || newType !== limit.limit_type) {
           const { error } = await supabase
             .from("usage_limits")
-            .update({ daily_limit: newLimit, updated_at: new Date().toISOString() })
+            .update({ daily_limit: newLimit, limit_type: newType, updated_at: new Date().toISOString() })
             .eq("id", limit.id);
           if (error) throw error;
         }
       }
-      toast({ title: "Usage limits updated!" });
+      toast({ title: "Global limits updated!" });
       fetchData();
     } catch (err: any) {
       toast({ title: "Failed to update limits", description: err.message, variant: "destructive" });
@@ -97,6 +90,14 @@ const AdminPage = () => {
       setSavingLimits(false);
     }
   };
+
+  const filteredUsers = useMemo(() => {
+    if (!search.trim()) return users;
+    const q = search.toLowerCase();
+    return users.filter(
+      (u) => u.email.toLowerCase().includes(q) || (u.full_name || "").toLowerCase().includes(q)
+    );
+  }, [users, search]);
 
   if (authLoading || loadingData) {
     return (
@@ -117,59 +118,35 @@ const AdminPage = () => {
             <Shield className="h-6 w-6 text-primary" />
             <h1 className="font-display font-extrabold text-3xl text-foreground">Admin Dashboard</h1>
           </div>
-          <p className="text-muted-foreground text-sm">Manage users and usage limits.</p>
+          <p className="text-muted-foreground text-sm">Manage users, limits, and settings.</p>
         </motion.div>
 
-        {/* Usage Limits */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="rounded-xl border border-border bg-card p-6 mb-8"
-        >
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <Settings className="h-5 w-5 text-accent" />
-              <h2 className="font-display font-bold text-lg text-foreground">Daily Usage Limits</h2>
-            </div>
-            <Button onClick={saveLimits} disabled={savingLimits} size="sm">
-              {savingLimits ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Save className="h-4 w-4 mr-1" />}
-              Save
-            </Button>
-          </div>
-          <div className="grid sm:grid-cols-2 gap-4">
-            {limits.map((limit) => (
-              <div key={limit.id} className="flex items-center gap-3 p-3 rounded-lg bg-background border border-border">
-                <span className="text-sm font-medium text-foreground flex-1">
-                  {SECTION_LABELS[limit.section] || limit.section}
-                </span>
-                <Input
-                  type="number"
-                  min={0}
-                  value={editedLimits[limit.id] ?? limit.daily_limit}
-                  onChange={(e) =>
-                    setEditedLimits((prev) => ({ ...prev, [limit.id]: parseInt(e.target.value) || 0 }))
-                  }
-                  className="w-20 text-center bg-card border-border"
-                />
-                <span className="text-xs text-muted-foreground">/day</span>
-              </div>
-            ))}
-          </div>
-        </motion.div>
+        <AdminPasswordSection />
+
+        <GlobalLimitsSection
+          limits={limits}
+          editedLimits={editedLimits}
+          editedTypes={editedTypes}
+          onLimitChange={(id, v) => setEditedLimits((p) => ({ ...p, [id]: v }))}
+          onTypeChange={(id, v) => setEditedTypes((p) => ({ ...p, [id]: v }))}
+          onSave={saveLimits}
+          saving={savingLimits}
+        />
+
+        <UserLimitsSection users={users} userLimits={userLimits} onRefresh={fetchData} />
 
         {/* Users Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="rounded-xl border border-border bg-card overflow-hidden"
-        >
-          <div className="p-4 border-b border-border flex items-center gap-2">
-            <Users className="h-5 w-5 text-primary" />
-            <h2 className="font-display font-bold text-lg text-foreground">
-              Registered Users ({users.length})
-            </h2>
+        <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="rounded-xl border border-border bg-card overflow-hidden">
+          <div className="p-4 border-b border-border flex flex-col sm:flex-row sm:items-center gap-3">
+            <div className="flex items-center gap-2 flex-1">
+              <Users className="h-5 w-5 text-primary" />
+              <h2 className="font-display font-bold text-lg text-foreground">
+                Registered Users ({filteredUsers.length})
+              </h2>
+            </div>
+            <div className="w-full sm:w-64">
+              <UserSearch value={search} onChange={setSearch} />
+            </div>
           </div>
           <Table>
             <TableHeader>
@@ -180,7 +157,7 @@ const AdminPage = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.full_name || "—"}</TableCell>
                   <TableCell>{user.email}</TableCell>
@@ -189,10 +166,10 @@ const AdminPage = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {users.length === 0 && (
+              {filteredUsers.length === 0 && (
                 <TableRow>
                   <TableCell colSpan={3} className="text-center text-muted-foreground py-8">
-                    No users registered yet
+                    {search ? "No users match your search" : "No users registered yet"}
                   </TableCell>
                 </TableRow>
               )}

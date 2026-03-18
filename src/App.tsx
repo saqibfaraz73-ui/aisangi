@@ -10,6 +10,7 @@ import OverlayPage from "./pages/OverlayPage.tsx";
 import ScriptGeneratorPage from "./pages/ScriptGeneratorPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { Loader2 } from "lucide-react";
 
@@ -31,6 +32,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 const AppRoutes = () => (
   <Routes>
     <Route path="/auth" element={<AuthPage />} />
+    <Route path="/reset-password" element={<ResetPasswordPage />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/animate" element={<ProtectedRoute><AnimatePage /></ProtectedRoute>} />
     <Route path="/overlay" element={<ProtectedRoute><OverlayPage /></ProtectedRoute>} />

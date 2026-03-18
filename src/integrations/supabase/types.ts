@@ -39,18 +39,21 @@ export type Database = {
         Row: {
           daily_limit: number
           id: string
+          limit_type: string
           section: string
           updated_at: string
         }
         Insert: {
           daily_limit?: number
           id?: string
+          limit_type?: string
           section: string
           updated_at?: string
         }
         Update: {
           daily_limit?: number
           id?: string
+          limit_type?: string
           section?: string
           updated_at?: string
         }
@@ -91,6 +94,33 @@ export type Database = {
         Update: {
           id?: string
           role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_usage_limits: {
+        Row: {
+          custom_limit: number
+          id: string
+          limit_type: string
+          section: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          custom_limit?: number
+          id?: string
+          limit_type?: string
+          section: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          custom_limit?: number
+          id?: string
+          limit_type?: string
+          section?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
