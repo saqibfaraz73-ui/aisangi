@@ -131,6 +131,33 @@ export type Database = {
         }
         Relationships: []
       }
+      lipsync_settings: {
+        Row: {
+          did_api_key: string
+          enabled: boolean
+          heygen_api_key: string
+          id: string
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          did_api_key?: string
+          enabled?: boolean
+          heygen_api_key?: string
+          id?: string
+          provider?: string
+          updated_at?: string
+        }
+        Update: {
+          did_api_key?: string
+          enabled?: boolean
+          heygen_api_key?: string
+          id?: string
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
