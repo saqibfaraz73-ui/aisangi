@@ -96,49 +96,13 @@ serve(async (req) => {
       let messages: any[];
 
       if (allCharacterUrls.length > 0) {
-        const personLabels = allCharacterUrls
-          .map((_, i) => `Person ${i + 1}`)
-          .join(", ");
+        const contentParts: any[] = [];
 
-        const faceRules = allCharacterUrls.length === 1
-          ? `ABSOLUTE PRIORITY — FACE IDENTITY LOCK: You are performing face-preserving image generation. The reference photo below is the GROUND TRUTH for facial identity. Your #1 job is to keep the EXACT same face — this overrides all other instructions.
-
-Scene to generate: ${prompt}${variationHint}
-
-FACE PRESERVATION RULES (NON-NEGOTIABLE):
-1. Copy the EXACT face pixel-for-pixel: same eye shape, eye color, nose width, nose bridge, lip shape, lip thickness, jawline, chin shape, cheekbones, forehead size, skin tone, skin texture, facial marks, moles, dimples, wrinkles
-2. Do NOT beautify, smooth, age, de-age, slim, widen, or stylize the face in ANY way
-3. Do NOT change ethnicity, skin color, facial proportions, or bone structure
-4. Keep exact same facial hair style, eyebrow shape and thickness, eyelash length
-5. The face in the output must be INDISTINGUISHABLE from the reference — a family member should recognize them instantly
-6. If the reference shows multiple people, ALL must appear with their exact faces preserved
-7. Only change clothing, pose, body position, and background to match the scene
-8. Hair color and style should remain the same unless the scene explicitly requires a change
-9. The result must be photorealistic — like a real unedited photograph of this exact person${watermarkInstruction}`
-          : `ABSOLUTE PRIORITY — FACE IDENTITY LOCK: You are performing multi-person face-preserving image generation. The ${allCharacterUrls.length} reference photos below (${personLabels}) are the GROUND TRUTH for each person's facial identity. Your #1 job is to keep EVERY person's EXACT same face — this overrides all other instructions.
-
-Scene to generate: ${prompt}${variationHint}
-
-FACE PRESERVATION RULES (NON-NEGOTIABLE):
-1. Copy each person's EXACT face pixel-for-pixel: same eye shape, eye color, nose width, nose bridge, lip shape, lip thickness, jawline, chin shape, cheekbones, forehead size, skin tone, skin texture, facial marks, moles, dimples, wrinkles
-2. Do NOT beautify, smooth, age, de-age, slim, widen, or stylize ANY face
-3. Do NOT swap, merge, blend, or mix facial features between different people
-4. Do NOT change ethnicity, skin color, facial proportions, or bone structure of ANY person
-5. Keep exact same facial hair style, eyebrow shape and thickness for each person
-6. Person 1 = first reference, Person 2 = second reference, etc. — NEVER confuse identities
-7. Every person from every reference MUST appear in the output — do NOT omit anyone
-8. A family member should be able to recognize each person instantly in the output
-9. Only change clothing, pose, and background to match the scene
-10. The result must be photorealistic — like a real unedited group photograph${watermarkInstruction}`;
-
-        const contentParts: any[] = [
-          { type: "text", text: faceRules },
-        ];
-
+        // Put reference images FIRST so the model anchors on them
         allCharacterUrls.forEach((url, i) => {
           contentParts.push({
             type: "text",
-            text: `--- Reference photo for Person ${i + 1}: ---`,
+            text: allCharacterUrls.length > 1 ? `[Reference face for Person ${i + 1}]` : `[Reference face photo]`,
           });
           contentParts.push({
             type: "image_url",
@@ -146,7 +110,31 @@ FACE PRESERVATION RULES (NON-NEGOTIABLE):
           });
         });
 
+        // Then add the generation instruction
+        const faceInstruction = allCharacterUrls.length === 1
+          ? `Generate a NEW image of the EXACT SAME PERSON shown in the reference photo above, placed in this scene: ${prompt}${variationHint}
+
+CRITICAL RULES:
+- The person's face MUST be identical to the reference — same eyes, nose, lips, jawline, skin tone, facial marks
+- Do NOT replace, alter, beautify, age, or change the face in any way
+- Keep the same hair color and style
+- Only change clothing, pose, and background to fit the scene
+- Output must be photorealistic — like a real photograph of this exact person${watermarkInstruction}`
+          : `Generate a NEW image with ALL ${allCharacterUrls.length} people from the reference photos above, placed in this scene: ${prompt}${variationHint}
+
+CRITICAL RULES:
+- Each person's face MUST be identical to their reference — same eyes, nose, lips, jawline, skin tone
+- Person 1 = first reference, Person 2 = second reference, etc.
+- Do NOT swap, blend, or alter any faces
+- Do NOT omit any person — ALL must appear
+- Keep same hair color and style for each person
+- Only change clothing, pose, and background to fit the scene
+- Output must be photorealistic — like a real group photograph${watermarkInstruction}`;
+
+        contentParts.push({ type: "text", text: faceInstruction });
+
         messages = [{ role: "user", content: contentParts }];
+
       } else {
         messages = [
           {
