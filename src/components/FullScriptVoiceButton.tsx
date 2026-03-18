@@ -82,7 +82,8 @@ const FullScriptVoiceButton = ({ fullNarration, title }: FullScriptVoiceButtonPr
     if (!audioUrl) return;
     const a = document.createElement("a");
     a.href = audioUrl;
-    a.download = `${fileName.replace(/[^a-zA-Z0-9_-]/g, "_")}.wav`;
+    const ext = voice === "__clone__" ? "mp3" : "wav";
+    a.download = `${fileName.replace(/[^a-zA-Z0-9_-]/g, "_")}.${ext}`;
     a.click();
   };
 
