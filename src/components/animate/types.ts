@@ -2,6 +2,19 @@ export type AnimationStyle = "none" | "zoom-in" | "zoom-out" | "pan-left" | "pan
 
 export type PlatformPreset = "youtube" | "tiktok" | "facebook" | "custom";
 
+export type MediaType = "image" | "video";
+
+export interface MediaItem {
+  type: MediaType;
+  src: string;          // data URL for images, object URL for videos
+  thumbnail: string;    // data URL thumbnail (same as src for images)
+  duration: number;     // seconds (user-set for images, natural for videos)
+  style: AnimationStyle;
+  fileName: string;
+  audio: { file: File; url: string } | null;  // per-item voice/audio
+  videoFile?: File;     // original video file for rendering
+}
+
 export interface PlatformConfig {
   label: string;
   width: number;

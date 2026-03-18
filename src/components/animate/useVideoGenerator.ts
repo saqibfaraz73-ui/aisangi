@@ -1,5 +1,5 @@
 import { useCallback } from "react";
-import { type AnimationStyle, type PlatformPreset, PLATFORM_PRESETS } from "./types";
+import { type AnimationStyle, type PlatformPreset, type MediaItem, PLATFORM_PRESETS } from "./types";
 import type { AudioTrackInput } from "./AudioInputSection";
 
 function getEased(t: number) {
@@ -31,7 +31,7 @@ function drawWatermark(ctx: CanvasRenderingContext2D, W: number, H: number, colo
 
 function renderFrame(
   ctx: CanvasRenderingContext2D,
-  img: HTMLImageElement,
+  img: HTMLImageElement | HTMLVideoElement,
   W: number,
   H: number,
   t: number,
@@ -41,67 +41,70 @@ function renderFrame(
   ctx.clearRect(0, 0, W, H);
   ctx.save();
 
+  const imgW = img instanceof HTMLVideoElement ? img.videoWidth : img.width;
+  const imgH = img instanceof HTMLVideoElement ? img.videoHeight : img.height;
+
   const aspect = W / H;
-  const imgAspect = img.width / img.height;
-  let drawW = img.width, drawH = img.height;
+  const imgAspect = imgW / imgH;
+  let drawW = imgW, drawH = imgH;
 
   if (imgAspect > aspect) {
-    drawH = img.height;
+    drawH = imgH;
     drawW = drawH * aspect;
   } else {
-    drawW = img.width;
+    drawW = imgW;
     drawH = drawW / aspect;
   }
 
-  const maxOffsetX = img.width - drawW;
-  const maxOffsetY = img.height - drawH;
+  const maxOffsetX = imgW - drawW;
+  const maxOffsetY = imgH - drawH;
   let sx = 0, sy = 0, sw = drawW, sh = drawH;
 
   switch (style) {
     case "none": {
-      sx = (img.width - drawW) / 2;
-      sy = (img.height - drawH) / 2;
+      sx = (imgW - drawW) / 2;
+      sy = (imgH - drawH) / 2;
       break;
     }
     case "zoom-in": {
       const scale = 1 + eased * 0.35;
       const cw = drawW / scale, ch = drawH / scale;
-      sx = (img.width - cw) / 2; sy = (img.height - ch) / 2;
+      sx = (imgW - cw) / 2; sy = (imgH - ch) / 2;
       sw = cw; sh = ch;
       break;
     }
     case "zoom-out": {
       const scale = 1.35 - eased * 0.35;
       const cw = drawW / scale, ch = drawH / scale;
-      sx = (img.width - cw) / 2; sy = (img.height - ch) / 2;
+      sx = (imgW - cw) / 2; sy = (imgH - ch) / 2;
       sw = cw; sh = ch;
       break;
     }
     case "pan-left": {
-      sx = maxOffsetX * (1 - eased); sy = (img.height - drawH) / 2;
+      sx = maxOffsetX * (1 - eased); sy = (imgH - drawH) / 2;
       break;
     }
     case "pan-right": {
-      sx = maxOffsetX * eased; sy = (img.height - drawH) / 2;
+      sx = maxOffsetX * eased; sy = (imgH - drawH) / 2;
       break;
     }
     case "pan-up": {
-      sx = (img.width - drawW) / 2; sy = maxOffsetY * (1 - eased);
+      sx = (imgW - drawW) / 2; sy = maxOffsetY * (1 - eased);
       break;
     }
     case "ken-burns": {
       const scale = 1 + eased * 0.3;
       const cw = drawW / scale, ch = drawH / scale;
-      sx = (img.width - cw) * eased * 0.4;
-      sy = (img.height - ch) * (1 - eased) * 0.4;
+      sx = (imgW - cw) * eased * 0.4;
+      sy = (imgH - ch) * (1 - eased) * 0.4;
       sw = cw; sh = ch;
       break;
     }
     case "drift": {
       const scale = 1 + eased * 0.15;
       const cw = drawW / scale, ch = drawH / scale;
-      sx = (img.width - cw) * eased * 0.6;
-      sy = (img.height - ch) * eased * 0.4;
+      sx = (imgW - cw) * eased * 0.6;
+      sy = (imgH - ch) * eased * 0.4;
       sw = cw; sh = ch;
       break;
     }
@@ -109,7 +112,7 @@ function renderFrame(
       const dramatic = 1 - Math.pow(1 - t, 3);
       const scale = 1 + dramatic * 0.5;
       const cw = drawW / scale, ch = drawH / scale;
-      sx = (img.width - cw) / 2; sy = (img.height - ch) / 2;
+      sx = (imgW - cw) / 2; sy = (imgH - ch) / 2;
       sw = cw; sh = ch;
       break;
     }
@@ -129,16 +132,26 @@ async function loadImage(src: string): Promise<HTMLImageElement> {
   });
 }
 
+async function loadVideo(src: string): Promise<HTMLVideoElement> {
+  const video = document.createElement("video");
+  video.crossOrigin = "anonymous";
+  video.muted = true; // mute for rendering, audio is handled separately
+  video.preload = "auto";
+  return new Promise((resolve, reject) => {
+    video.onloadeddata = () => resolve(video);
+    video.onerror = reject;
+    video.src = src;
+  });
+}
+
 export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement | null>) {
   const generate = useCallback(
     async (
-      images: string[],
-      styles: AnimationStyle[],
-      durations: number[],
+      mediaItems: MediaItem[],
       platform: PlatformPreset,
       watermark: boolean = true,
       watermarkColor: string = "white",
-      audioTracks: AudioTrackInput[] = []
+      globalAudioTracks: AudioTrackInput[] = []
     ): Promise<string> => {
       const canvas = canvasRef.current;
       if (!canvas) throw new Error("Canvas not ready");
@@ -150,8 +163,25 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
 
       const fps = 30;
       const videoStream = canvas.captureStream(fps);
-      const hasAudio = audioTracks.length > 0;
 
+      // Collect all audio sources: global tracks + per-item audio
+      const allAudioFiles: { file: File; startTime: number }[] = [];
+
+      // Global background audio starts at 0
+      for (const track of globalAudioTracks) {
+        allAudioFiles.push({ file: track.file, startTime: 0 });
+      }
+
+      // Per-item audio starts at the cumulative offset
+      let offset = 0;
+      for (const item of mediaItems) {
+        if (item.audio) {
+          allAudioFiles.push({ file: item.audio.file, startTime: offset });
+        }
+        offset += item.duration;
+      }
+
+      const hasAudio = allAudioFiles.length > 0;
       let audioCtx: AudioContext | null = null;
       let dest: MediaStreamAudioDestinationNode | null = null;
       let sources: AudioBufferSourceNode[] = [];
@@ -160,13 +190,13 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
         audioCtx = new AudioContext();
         dest = audioCtx.createMediaStreamDestination();
 
-        for (const track of audioTracks) {
-          const arrayBuffer = await track.file.arrayBuffer();
+        for (const entry of allAudioFiles) {
+          const arrayBuffer = await entry.file.arrayBuffer();
           const audioBuffer = await audioCtx.decodeAudioData(arrayBuffer);
           const source = audioCtx.createBufferSource();
           source.buffer = audioBuffer;
           source.connect(dest);
-          source.start(0);
+          source.start(entry.startTime);
           sources.push(source);
         }
       }
@@ -197,26 +227,57 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
 
       recorder.start();
 
-      for (let i = 0; i < images.length; i++) {
-        const img = await loadImage(images[i]);
-        const imgDuration = durations[i] || 5;
-        const imgStyle = styles[i] || "ken-burns";
-        const totalFrames = imgDuration * fps;
+      for (const item of mediaItems) {
+        if (item.type === "video" && item.videoFile) {
+          // Render video clip frames
+          const videoEl = await loadVideo(URL.createObjectURL(item.videoFile));
+          const videoDuration = item.duration;
+          const totalFrames = Math.ceil(videoDuration * fps);
 
-        for (let frame = 0; frame < totalFrames; frame++) {
-          const t = frame / totalFrames;
-          renderFrame(ctx, img, W, H, t, imgStyle);
-          if (watermark) {
-            drawWatermark(ctx, W, H, watermarkColor);
+          videoEl.currentTime = 0;
+          await new Promise<void>((r) => {
+            videoEl.onseeked = () => r();
+            videoEl.currentTime = 0;
+          });
+
+          videoEl.play();
+
+          for (let frame = 0; frame < totalFrames; frame++) {
+            ctx.clearRect(0, 0, W, H);
+            // Draw video frame fitted to canvas
+            const vw = videoEl.videoWidth;
+            const vh = videoEl.videoHeight;
+            const scale = Math.min(W / vw, H / vh);
+            const dw = vw * scale;
+            const dh = vh * scale;
+            const dx = (W - dw) / 2;
+            const dy = (H - dh) / 2;
+            ctx.fillStyle = "#000";
+            ctx.fillRect(0, 0, W, H);
+            ctx.drawImage(videoEl, dx, dy, dw, dh);
+            if (watermark) drawWatermark(ctx, W, H, watermarkColor);
+            await new Promise((r) => setTimeout(r, 1000 / fps));
           }
-          await new Promise((r) => setTimeout(r, 1000 / fps));
+
+          videoEl.pause();
+          URL.revokeObjectURL(videoEl.src);
+        } else {
+          // Render image with animation
+          const img = await loadImage(item.src);
+          const totalFrames = item.duration * fps;
+
+          for (let frame = 0; frame < totalFrames; frame++) {
+            const t = frame / totalFrames;
+            renderFrame(ctx, img, W, H, t, item.style);
+            if (watermark) drawWatermark(ctx, W, H, watermarkColor);
+            await new Promise((r) => setTimeout(r, 1000 / fps));
+          }
         }
       }
 
       recorder.stop();
       await done;
 
-      // Cleanup audio
       sources.forEach((s) => { try { s.stop(); } catch {} });
       if (audioCtx) await audioCtx.close();
 
