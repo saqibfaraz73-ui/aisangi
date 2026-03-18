@@ -147,6 +147,8 @@ const AnimatePage = () => {
               </div>
             </div>
 
+            <AudioInputSection tracks={audioTracks} onTracksChange={setAudioTracks} />
+
             <PlatformSelector platform={platform} onChange={setPlatform} />
 
             {images.length > 0 && (
