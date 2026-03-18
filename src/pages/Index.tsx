@@ -159,7 +159,7 @@ const Index = () => {
                   </>
                 )}
               </Button>
-              {(images.length > 0 || prompt || characterImage) && (
+              {(images.length > 0 || prompt || characterImages.length > 0) && (
                 <Button
                   onClick={handleClear}
                   variant="outline"
