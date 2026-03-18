@@ -17,6 +17,7 @@ import UsageStatsSection from "@/components/admin/UsageStatsSection";
 import ApiSettingsSection from "@/components/admin/ApiSettingsSection";
 import ElevenLabsSection from "@/components/admin/ElevenLabsSection";
 import GlobalCapSection from "@/components/admin/GlobalCapSection";
+import LipSyncSection from "@/components/admin/LipSyncSection";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -131,6 +132,8 @@ const AdminPage = () => {
         <ElevenLabsSection />
 
         <GlobalCapSection />
+
+        <LipSyncSection />
 
         <WatermarkSection users={users} />
 
