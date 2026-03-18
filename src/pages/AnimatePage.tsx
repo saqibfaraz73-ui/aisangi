@@ -106,16 +106,18 @@ const AnimatePage = () => {
               onStyleChange={handleStyleChange}
             />
 
-            {/* Animation Style */}
+            {/* Default Animation Style */}
             <div className="space-y-2">
-              <label className="text-sm font-display font-semibold text-foreground">Animation Style</label>
+              <label className="text-sm font-display font-semibold text-foreground">
+                Default Style <span className="text-muted-foreground font-normal text-xs">(for new images)</span>
+              </label>
               <div className="grid grid-cols-2 gap-2">
                 {ANIMATION_STYLES.map((s) => (
                   <button
                     key={s.value}
-                    onClick={() => setStyle(s.value)}
+                    onClick={() => setDefaultStyle(s.value)}
                     className={`text-left p-3 rounded-lg border transition-colors ${
-                      style === s.value
+                      defaultStyle === s.value
                         ? "border-primary bg-primary/10 text-foreground"
                         : "border-border bg-card text-muted-foreground hover:border-primary/30"
                     }`}

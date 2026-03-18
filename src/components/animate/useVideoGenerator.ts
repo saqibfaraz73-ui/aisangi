@@ -138,11 +138,12 @@ export function useVideoGenerator(canvasRef: React.RefObject<HTMLCanvasElement |
       for (let i = 0; i < images.length; i++) {
         const img = await loadImage(images[i]);
         const imgDuration = durations[i] || 5;
+        const imgStyle = styles[i] || "ken-burns";
         const totalFrames = imgDuration * fps;
 
         for (let frame = 0; frame < totalFrames; frame++) {
           const t = frame / totalFrames;
-          renderFrame(ctx, img, W, H, t, style);
+          renderFrame(ctx, img, W, H, t, imgStyle);
           await new Promise((r) => setTimeout(r, 1000 / fps));
         }
       }
