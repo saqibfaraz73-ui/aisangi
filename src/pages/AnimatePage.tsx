@@ -33,6 +33,7 @@ const AnimatePage = () => {
       reader.onload = () => {
         setImages((prev) => [...prev, reader.result as string]);
         setDurations((prev) => [...prev, 5]);
+        setStyles((prev) => [...prev, defaultStyle]);
       };
       reader.readAsDataURL(file);
     });
