@@ -21,6 +21,7 @@ const AnimatePage = () => {
   const [platform, setPlatform] = usePersistedState<PlatformPreset>("sangi_anim_platform", "youtube");
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = usePersistedState<string | null>("sangi_anim_videoUrl", null);
+  const [audioTracks, setAudioTracks] = useState<AudioTrackInput[]>([]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const { toast } = useToast();
   const { generate } = useVideoGenerator(canvasRef);
