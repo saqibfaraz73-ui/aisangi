@@ -71,7 +71,7 @@ const AnimatePage = () => {
     setIsGenerating(true);
     setVideoUrl(null);
     try {
-      const url = await generate(images, styles, durations, platform, watermarkEnabled);
+      const url = await generate(images, styles, durations, platform, watermarkEnabled, watermarkColor);
       setVideoUrl(url);
       toast({ title: "Video generated successfully!" });
     } catch (err: any) {
