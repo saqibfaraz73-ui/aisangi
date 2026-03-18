@@ -1,10 +1,13 @@
-import { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Download, ImageIcon, Loader2, Wand2 } from "lucide-react";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Sparkles, Loader2, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
+import CharacterUpload from "@/components/CharacterUpload";
+import SceneCountSelector from "@/components/SceneCountSelector";
+import ImageResults from "@/components/ImageResults";
 
 const EXAMPLE_PROMPTS = [
   "A cyberpunk city at night with neon lights reflecting on wet streets",
@@ -13,13 +16,18 @@ const EXAMPLE_PROMPTS = [
   "A cozy cabin in a snowy mountain forest with warm light from windows",
 ];
 
+interface ImageResult {
+  imageUrl: string;
+  description?: string;
+}
+
 const Index = () => {
   const [prompt, setPrompt] = useState("");
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [images, setImages] = useState<ImageResult[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [description, setDescription] = useState("");
+  const [characterImage, setCharacterImage] = useState<string | null>(null);
+  const [sceneCount, setSceneCount] = useState(1);
   const { toast } = useToast();
-  const imageRef = useRef<HTMLImageElement>(null);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -28,20 +36,24 @@ const Index = () => {
     }
 
     setIsGenerating(true);
-    setImageUrl(null);
-    setDescription("");
+    setImages([]);
 
     try {
       const { data, error } = await supabase.functions.invoke("generate-image", {
-        body: { prompt: prompt.trim() },
+        body: {
+          prompt: prompt.trim(),
+          characterImageUrl: characterImage || undefined,
+          sceneCount,
+        },
       });
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
 
-      if (data?.imageUrl) {
-        setImageUrl(data.imageUrl);
-        setDescription(data.description || "");
+      if (data?.images?.length) {
+        setImages(data.images);
+      } else if (data?.imageUrl) {
+        setImages([{ imageUrl: data.imageUrl, description: data.description }]);
       } else {
         throw new Error("No image returned");
       }
@@ -56,37 +68,8 @@ const Index = () => {
     }
   };
 
-  const handleDownload = (format: "png" | "jpg") => {
-    if (!imageUrl) return;
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = img.width;
-      canvas.height = img.height;
-      const ctx = canvas.getContext("2d")!;
-
-      if (format === "jpg") {
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-      }
-
-      ctx.drawImage(img, 0, 0);
-      const mimeType = format === "png" ? "image/png" : "image/jpeg";
-      const dataUrl = canvas.toDataURL(mimeType, 0.95);
-
-      const link = document.createElement("a");
-      link.download = `sangi-ai-${Date.now()}.${format}`;
-      link.href = dataUrl;
-      link.click();
-    };
-    img.src = imageUrl;
-  };
-
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="border-b border-border px-4 py-3">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -104,7 +87,6 @@ const Index = () => {
       </header>
 
       <main className="max-w-5xl mx-auto px-4 py-8">
-        {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -114,7 +96,7 @@ const Index = () => {
             Turn Words Into Stunning Images
           </h2>
           <p className="text-muted-foreground text-sm max-w-lg mx-auto">
-            Describe any image and SangiAI will generate it for you instantly. Download in PNG or JPG.
+            Describe any image, upload your selfie as an AI character, and generate multiple scene variations.
           </p>
         </motion.div>
 
@@ -126,21 +108,38 @@ const Index = () => {
             transition={{ delay: 0.1 }}
             className="space-y-5"
           >
+            {/* Character Upload */}
+            <CharacterUpload
+              characterImage={characterImage}
+              onCharacterChange={setCharacterImage}
+            />
+
+            {/* Prompt */}
             <div className="space-y-2">
               <label className="text-sm font-display font-semibold text-foreground">
                 Your Prompt
               </label>
               <Textarea
-                placeholder="Describe the image you want to create..."
+                placeholder={
+                  characterImage
+                    ? "Describe the scene... e.g. 'playing football in a stadium'"
+                    : "Describe the image you want to create..."
+                }
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                className="min-h-[140px] bg-card border-border text-foreground placeholder:text-muted-foreground resize-none focus:ring-2 focus:ring-primary/50"
+                className="min-h-[120px] bg-card border-border text-foreground placeholder:text-muted-foreground resize-none focus:ring-2 focus:ring-primary/50"
               />
               <p className="text-xs text-muted-foreground">
-                Be descriptive for better results — include style, lighting, colors, and mood.
+                {characterImage
+                  ? "Your AI character will be placed in the scene you describe."
+                  : "Be descriptive — include style, lighting, colors, and mood."}
               </p>
             </div>
 
+            {/* Scene Count */}
+            <SceneCountSelector count={sceneCount} onChange={setSceneCount} />
+
+            {/* Generate Button */}
             <Button
               onClick={handleGenerate}
               disabled={isGenerating || !prompt.trim()}
@@ -149,12 +148,12 @@ const Index = () => {
               {isGenerating ? (
                 <>
                   <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                  Generating...
+                  Generating {sceneCount > 1 ? `${sceneCount} scenes` : ""}...
                 </>
               ) : (
                 <>
                   <Sparkles className="h-5 w-5 mr-2" />
-                  Generate Image
+                  Generate {sceneCount > 1 ? `${sceneCount} Scenes` : "Image"}
                 </>
               )}
             </Button>
@@ -178,90 +177,18 @@ const Index = () => {
             </div>
           </motion.div>
 
-          {/* Right: Result */}
+          {/* Right: Results */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2 }}
-            className="space-y-4"
           >
-            <div className="rounded-2xl border border-border bg-card overflow-hidden min-h-[400px] flex items-center justify-center relative">
-              <AnimatePresence mode="wait">
-                {isGenerating ? (
-                  <motion.div
-                    key="loading"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="flex flex-col items-center gap-4 p-8"
-                  >
-                    <div className="relative">
-                      <div className="h-16 w-16 rounded-2xl gradient-primary animate-pulse flex items-center justify-center">
-                        <ImageIcon className="h-8 w-8 text-primary-foreground" />
-                      </div>
-                      <div className="absolute -inset-2 rounded-2xl border-2 border-primary/30 animate-ping" />
-                    </div>
-                    <div className="text-center">
-                      <p className="text-sm font-display font-semibold text-foreground">Creating your image…</p>
-                      <p className="text-xs text-muted-foreground mt-1">This may take a few seconds</p>
-                    </div>
-                  </motion.div>
-                ) : imageUrl ? (
-                  <motion.img
-                    key="image"
-                    ref={imageRef}
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    src={imageUrl}
-                    alt={prompt}
-                    className="w-full h-auto object-contain max-h-[500px]"
-                  />
-                ) : (
-                  <motion.div
-                    key="placeholder"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    className="flex flex-col items-center gap-3 p-8 text-center"
-                  >
-                    <div className="h-16 w-16 rounded-2xl bg-muted flex items-center justify-center">
-                      <ImageIcon className="h-8 w-8 text-muted-foreground" />
-                    </div>
-                    <p className="text-sm text-muted-foreground">
-                      Your generated image will appear here
-                    </p>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Download buttons */}
-            {imageUrl && !isGenerating && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="flex gap-3"
-              >
-                <Button
-                  onClick={() => handleDownload("png")}
-                  className="flex-1 gradient-primary text-primary-foreground font-display font-semibold hover:opacity-90"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PNG
-                </Button>
-                <Button
-                  onClick={() => handleDownload("jpg")}
-                  variant="outline"
-                  className="flex-1 border-border text-foreground hover:bg-muted font-display font-semibold"
-                >
-                  <Download className="h-4 w-4 mr-2" />
-                  Download JPG
-                </Button>
-              </motion.div>
-            )}
-
-            {description && (
-              <p className="text-xs text-muted-foreground italic">{description}</p>
-            )}
+            <ImageResults
+              images={images}
+              isGenerating={isGenerating}
+              prompt={prompt}
+              sceneCount={sceneCount}
+            />
           </motion.div>
         </div>
       </main>
