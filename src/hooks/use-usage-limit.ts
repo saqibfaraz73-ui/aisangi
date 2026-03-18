@@ -186,5 +186,61 @@ export function useUsageLimit(section: string) {
     return true;
   }, [checkLimit, trackUsage]);
 
-  return { checkLimit, trackUsage, checkAndTrack };
+  /** Get remaining uses available for this user in the current window */
+  const getRemainingUses = useCallback(async (): Promise<number> => {
+    if (!user) return 0;
+
+    // Check per-user limit
+    const { data: userLimitData } = await supabase
+      .from("user_usage_limits")
+      .select("custom_limit, limit_type")
+      .eq("user_id", user.id)
+      .eq("section", section)
+      .maybeSingle();
+
+    let limit: number;
+    let limitType: string;
+
+    if (userLimitData) {
+      limit = userLimitData.custom_limit;
+      limitType = userLimitData.limit_type;
+    } else {
+      const { data: globalData } = await supabase
+        .from("usage_limits")
+        .select("daily_limit, limit_type")
+        .eq("section", section)
+        .single();
+
+      if (!globalData) return Infinity;
+      limit = globalData.daily_limit;
+      limitType = (globalData as any).limit_type || "per_day";
+    }
+
+    const now = new Date();
+    let windowStart: Date;
+    switch (limitType) {
+      case "per_minute":
+        windowStart = new Date(now.getTime() - 60 * 1000);
+        break;
+      case "per_hour":
+        windowStart = new Date(now.getTime() - 60 * 60 * 1000);
+        break;
+      case "per_day":
+      default:
+        windowStart = new Date(now);
+        windowStart.setHours(0, 0, 0, 0);
+        break;
+    }
+
+    const { count } = await supabase
+      .from("usage_log")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("section", section)
+      .gte("used_at", windowStart.toISOString());
+
+    return Math.max(0, limit - (count ?? 0));
+  }, [user, section]);
+
+  return { checkLimit, trackUsage, checkAndTrack, getRemainingUses };
 }

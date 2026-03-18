@@ -99,7 +99,7 @@ const Index = () => {
   const [characterImages, setCharacterImages] = usePersistedState<string[]>("sangi_characters", []);
   const [sceneCount, setSceneCount] = usePersistedState("sangi_sceneCount", 1);
   const { toast } = useToast();
-  const { checkLimit, trackUsage } = useUsageLimit("text_to_image");
+  const { checkLimit, trackUsage, getRemainingUses } = useUsageLimit("text_to_image");
 
   const handleGenerate = async () => {
     if (generationInFlightRef.current || isGenerating) return;
@@ -117,27 +117,41 @@ const Index = () => {
       const allowed = await checkLimit();
       if (!allowed) return;
 
+      // Determine how many images we can actually generate based on remaining limit
+      const remaining = await getRemainingUses();
+      const requestedCount = sceneCount ?? 4; // Auto defaults to 4 for the API
+      const actualCount = Math.min(requestedCount, remaining);
+
+      if (actualCount <= 0) {
+        toast({ title: "Usage limit reached", description: "You have no remaining uses. Try again later.", variant: "destructive" });
+        return;
+      }
+
+      if (actualCount < requestedCount) {
+        toast({ title: `Generating ${actualCount} of ${requestedCount} images`, description: `Your remaining limit allows ${actualCount} image(s).` });
+      }
+
       const { data, error } = await supabase.functions.invoke("generate-image", {
         body: {
           prompt: prompt.trim(),
           characterImageUrls: characterImages.length > 0 ? characterImages : undefined,
-          sceneCount,
+          sceneCount: actualCount,
         },
       });
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
 
-      // Track usage with tokens
-      await trackUsage(data?.tokensUsed || 0);
+      const generatedImages = data?.images?.length ? data.images : data?.imageUrl ? [{ imageUrl: data.imageUrl, description: data.description }] : [];
+      if (generatedImages.length === 0) throw new Error("No image returned");
 
-      if (data?.images?.length) {
-        setImages(data.images);
-      } else if (data?.imageUrl) {
-        setImages([{ imageUrl: data.imageUrl, description: data.description }]);
-      } else {
-        throw new Error("No image returned");
+      // Track usage for EACH image generated
+      for (let i = 0; i < generatedImages.length; i++) {
+        const tokensPerImage = Math.ceil((data?.tokensUsed || 0) / generatedImages.length);
+        await trackUsage(tokensPerImage);
       }
+
+      setImages(generatedImages);
     } catch (err) {
       const description = await extractFunctionErrorMessage(err);
       toast({
