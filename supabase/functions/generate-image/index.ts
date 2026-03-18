@@ -361,10 +361,10 @@ serve(async (req) => {
       if (allCharacterUrls.length > 0 && apiConfig.provider !== "openai") {
         const contentParts: any[] = [];
         allCharacterUrls.forEach((url, i) => {
-          contentParts.push({ type: "text", text: `[Reference face ${i + 1}]` });
+          contentParts.push({ type: "text", text: `[Reference photo of Person ${i + 1} - PRESERVE THIS EXACT FACE]` });
           contentParts.push({ type: "image_url", image_url: { url } });
         });
-        contentParts.push({ type: "text", text: `Generate image of this exact person in: ${prompt}${variationHint}${watermarkInstruction}` });
+        contentParts.push({ type: "text", text: `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image placing this EXACT person (identical face from reference) in: ${prompt}${variationHint}${watermarkInstruction}` });
         messages = [{ role: "user", content: contentParts }];
       } else {
         messages = [{ role: "user", content: `Generate a high-quality image: ${fullPrompt}` }];
