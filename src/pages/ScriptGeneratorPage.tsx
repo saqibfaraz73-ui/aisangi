@@ -41,7 +41,7 @@ const ScriptGeneratorPage = () => {
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [sceneVoices, setSceneVoices] = useState<Record<number, string>>({});
   const { toast } = useToast();
-  const { checkAndTrack } = useUsageLimit("script_ai");
+  const { checkLimit, trackUsage } = useUsageLimit("script_ai");
   const navigate = useNavigate();
 
   const getSceneVoice = (sceneNum: number) => sceneVoices[sceneNum] || "Kore";
@@ -54,7 +54,7 @@ const ScriptGeneratorPage = () => {
       return;
     }
 
-    const allowed = await checkAndTrack();
+    const allowed = await checkLimit();
     if (!allowed) return;
 
     setIsGenerating(true);
@@ -69,6 +69,7 @@ const ScriptGeneratorPage = () => {
       if (data?.error) throw new Error(data.error);
       if (!data?.scenes?.length) throw new Error("No script generated");
 
+      await trackUsage(data?.tokensUsed || 0);
       setScript(data);
     } catch (err: any) {
       toast({

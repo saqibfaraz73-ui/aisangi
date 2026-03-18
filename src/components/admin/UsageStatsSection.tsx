@@ -38,6 +38,8 @@ interface UserStats {
   image_to_video: number;
   script_ai: number;
   audio_overlay: number;
+  voice_tts: number;
+  tokens: number;
   total: number;
 }
 
@@ -53,7 +55,7 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
     d.setHours(23, 59, 59, 999);
     return d;
   });
-  const [logs, setLogs] = useState<{ user_id: string; section: string }[]>([]);
+  const [logs, setLogs] = useState<{ user_id: string; section: string; tokens_used: number }[]>([]);
   const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -67,11 +69,11 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
 
     const { data } = await supabase
       .from("usage_log")
-      .select("user_id, section")
+      .select("user_id, section, tokens_used")
       .gte("used_at", startISO)
       .lte("used_at", endISO);
 
-    setLogs(data || []);
+    setLogs((data as any[]) || []);
     setLoading(false);
   };
 
@@ -90,15 +92,18 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
         image_to_video: 0,
         script_ai: 0,
         audio_overlay: 0,
+        voice_tts: 0,
+        tokens: 0,
         total: 0,
       };
     }
     for (const log of logs) {
       if (!map[log.user_id]) continue;
-      const section = log.section as keyof Pick<UserStats, "text_to_image" | "image_to_video" | "script_ai" | "audio_overlay">;
+      const section = log.section as keyof Pick<UserStats, "text_to_image" | "image_to_video" | "script_ai" | "audio_overlay" | "voice_tts">;
       if (section in map[log.user_id] && typeof map[log.user_id][section] === "number") {
         (map[log.user_id][section] as number)++;
         map[log.user_id].total++;
+        map[log.user_id].tokens += (log.tokens_used || 0);
       }
     }
     return Object.values(map)
@@ -121,9 +126,11 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
         image_to_video: acc.image_to_video + s.image_to_video,
         script_ai: acc.script_ai + s.script_ai,
         audio_overlay: acc.audio_overlay + s.audio_overlay,
+        voice_tts: acc.voice_tts + s.voice_tts,
+        tokens: acc.tokens + s.tokens,
         total: acc.total + s.total,
       }),
-      { text_to_image: 0, image_to_video: 0, script_ai: 0, audio_overlay: 0, total: 0 }
+      { text_to_image: 0, image_to_video: 0, script_ai: 0, audio_overlay: 0, voice_tts: 0, tokens: 0, total: 0 }
     );
   }, [filtered]);
 
@@ -136,7 +143,6 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
         </div>
 
         <div className="flex flex-wrap items-end gap-3">
-          {/* From date */}
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground font-medium">From</label>
             <Popover>
@@ -150,18 +156,11 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={from}
-                  onSelect={setFrom}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
+                <Calendar mode="single" selected={from} onSelect={setFrom} initialFocus className="p-3 pointer-events-auto" />
               </PopoverContent>
             </Popover>
           </div>
 
-          {/* To date */}
           <div className="space-y-1">
             <label className="text-xs text-muted-foreground font-medium">To</label>
             <Popover>
@@ -175,13 +174,7 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={to}
-                  onSelect={setTo}
-                  initialFocus
-                  className="p-3 pointer-events-auto"
-                />
+                <Calendar mode="single" selected={to} onSelect={setTo} initialFocus className="p-3 pointer-events-auto" />
               </PopoverContent>
             </Popover>
           </div>
@@ -203,16 +196,18 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 p-4 border-b border-border">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 p-4 border-b border-border">
         {[
           { label: "Images", value: totals.text_to_image, color: "text-blue-500" },
           { label: "Videos", value: totals.image_to_video, color: "text-purple-500" },
           { label: "Scripts", value: totals.script_ai, color: "text-green-500" },
           { label: "Audio", value: totals.audio_overlay, color: "text-orange-500" },
+          { label: "Voice", value: totals.voice_tts, color: "text-pink-500" },
+          { label: "Tokens", value: totals.tokens, color: "text-yellow-500" },
           { label: "Total", value: totals.total, color: "text-primary" },
         ].map((item) => (
           <div key={item.label} className="text-center p-2 rounded-lg bg-muted/50">
-            <p className={cn("text-2xl font-bold", item.color)}>{item.value}</p>
+            <p className={cn("text-2xl font-bold", item.color)}>{item.value.toLocaleString()}</p>
             <p className="text-xs text-muted-foreground">{item.label}</p>
           </div>
         ))}
@@ -226,6 +221,8 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
             <TableHead className="text-center">Videos</TableHead>
             <TableHead className="text-center">Scripts</TableHead>
             <TableHead className="text-center">Audio</TableHead>
+            <TableHead className="text-center">Voice</TableHead>
+            <TableHead className="text-center">Tokens</TableHead>
             <TableHead className="text-center">Total</TableHead>
           </TableRow>
         </TableHeader>
@@ -242,12 +239,14 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
               <TableCell className="text-center">{s.image_to_video}</TableCell>
               <TableCell className="text-center">{s.script_ai}</TableCell>
               <TableCell className="text-center">{s.audio_overlay}</TableCell>
+              <TableCell className="text-center">{s.voice_tts}</TableCell>
+              <TableCell className="text-center font-mono text-xs">{s.tokens.toLocaleString()}</TableCell>
               <TableCell className="text-center font-bold">{s.total}</TableCell>
             </TableRow>
           ))}
           {filtered.length === 0 && (
             <TableRow>
-              <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                 No usage data for this period
               </TableCell>
             </TableRow>

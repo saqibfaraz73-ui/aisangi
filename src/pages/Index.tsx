@@ -99,7 +99,7 @@ const Index = () => {
   const [characterImages, setCharacterImages] = usePersistedState<string[]>("sangi_characters", []);
   const [sceneCount, setSceneCount] = usePersistedState("sangi_sceneCount", 1);
   const { toast } = useToast();
-  const { checkAndTrack } = useUsageLimit("text_to_image");
+  const { checkLimit, trackUsage } = useUsageLimit("text_to_image");
 
   const handleGenerate = async () => {
     if (generationInFlightRef.current || isGenerating) return;
@@ -114,7 +114,7 @@ const Index = () => {
     setImages([]);
 
     try {
-      const allowed = await checkAndTrack();
+      const allowed = await checkLimit();
       if (!allowed) return;
 
       const { data, error } = await supabase.functions.invoke("generate-image", {
@@ -127,6 +127,9 @@ const Index = () => {
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
+
+      // Track usage with tokens
+      await trackUsage(data?.tokensUsed || 0);
 
       if (data?.images?.length) {
         setImages(data.images);

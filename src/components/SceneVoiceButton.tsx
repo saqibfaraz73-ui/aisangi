@@ -37,12 +37,12 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
   const [fileName, setFileName] = useState(`Scene_${sceneNumber}_Voice`);
   const [editingName, setEditingName] = useState(false);
   const { toast } = useToast();
-  const { checkAndTrack } = useUsageLimit("voice_tts");
+  const { checkLimit, trackUsage } = useUsageLimit("voice_tts");
 
   const handleGenerate = async () => {
     if (!narration.trim()) return;
 
-    const allowed = await checkAndTrack();
+    const allowed = await checkLimit();
     if (!allowed) return;
 
     setGenerating(true);
@@ -54,6 +54,8 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       if (!data?.audioContent) throw new Error("No audio returned");
+
+      await trackUsage(data?.tokensUsed || 0);
 
       const url = `data:audio/wav;base64,${data.audioContent}`;
       setAudioUrl(url);

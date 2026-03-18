@@ -436,8 +436,12 @@ serve(async (req) => {
       if (i < count - 1) await new Promise(r => setTimeout(r, 1000));
     }
 
+    // Estimate tokens for image generation (Gemini image models don't always report tokens)
+    // Use a rough estimate: ~100 tokens per image + prompt tokens
+    const estimatedTokens = results.length * 100 + Math.ceil(prompt.length / 4);
+
     return new Response(
-      JSON.stringify({ images: results, imageUrl: results[0]?.imageUrl, description: results[0]?.description }),
+      JSON.stringify({ images: results, imageUrl: results[0]?.imageUrl, description: results[0]?.description, tokensUsed: estimatedTokens }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (e) {

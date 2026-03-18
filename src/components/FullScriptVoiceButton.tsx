@@ -26,12 +26,12 @@ const FullScriptVoiceButton = ({ fullNarration, title }: FullScriptVoiceButtonPr
   });
   const [editingName, setEditingName] = useState(false);
   const { toast } = useToast();
-  const { checkAndTrack } = useUsageLimit("voice_tts");
+  const { checkLimit, trackUsage } = useUsageLimit("voice_tts");
 
   const handleGenerate = async () => {
     if (!fullNarration.trim()) return;
 
-    const allowed = await checkAndTrack();
+    const allowed = await checkLimit();
     if (!allowed) return;
 
     setGenerating(true);
@@ -43,6 +43,8 @@ const FullScriptVoiceButton = ({ fullNarration, title }: FullScriptVoiceButtonPr
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
       if (!data?.audioContent) throw new Error("No audio returned");
+
+      await trackUsage(data?.tokensUsed || 0);
 
       const url = `data:audio/wav;base64,${data.audioContent}`;
       setAudioUrl(url);
