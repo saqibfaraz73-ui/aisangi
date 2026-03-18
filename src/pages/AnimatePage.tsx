@@ -200,6 +200,15 @@ const AnimatePage = () => {
         </div>
 
         <canvas ref={canvasRef} className="hidden" />
+
+        {/* Audio Overlay Section - appears after video is generated */}
+        {videoUrl && (
+          <AudioOverlaySection
+            videoUrl={videoUrl}
+            platform={platform}
+            onPlatformChange={setPlatform}
+          />
+        )}
       </main>
     </div>
   );
