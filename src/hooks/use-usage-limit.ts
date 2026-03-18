@@ -7,17 +7,15 @@ export function useUsageLimit(section: string) {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const checkAndTrack = useCallback(async (): Promise<boolean> => {
+  const checkLimit = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
 
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    // Sections that are processed entirely client-side and do NOT use Gemini credits
     const clientOnlySections = ["image_to_video", "audio_overlay"];
     const usesGeminiCredits = !clientOnlySections.includes(section);
 
-    // Only check global/image/script/voice caps for features that actually use API credits
     if (usesGeminiCredits) {
       // Check global daily cap
       const { data: capData } = await supabase
@@ -27,7 +25,6 @@ export function useUsageLimit(section: string) {
         .maybeSingle();
 
       if (capData?.enabled) {
-        // Count only API-consuming sections for global cap
         const { count: globalCount } = await supabase
           .from("usage_log")
           .select("*", { count: "exact", head: true })
@@ -43,27 +40,27 @@ export function useUsageLimit(section: string) {
           return false;
         }
       }
-    }
 
-    // Check image generation daily cap (for text_to_image section only)
-    if (section === "text_to_image") {
-      const { data: imageCapData } = await supabase
-        .from("image_generation_cap")
+      // Check daily token cap
+      const { data: tokenCapData } = await supabase
+        .from("daily_token_cap")
         .select("enabled, daily_limit")
         .limit(1)
         .maybeSingle();
 
-      if (imageCapData?.enabled) {
-        const { count: imageCount } = await supabase
+      if (tokenCapData?.enabled) {
+        const { data: tokenLogs } = await supabase
           .from("usage_log")
-          .select("*", { count: "exact", head: true })
-          .eq("section", "text_to_image")
+          .select("tokens_used")
+          .in("section", ["text_to_image", "script_ai", "voice_tts"])
           .gte("used_at", todayStart.toISOString());
 
-        if ((imageCount ?? 0) >= imageCapData.daily_limit) {
+        const totalTokens = (tokenLogs || []).reduce((sum, log) => sum + (log.tokens_used || 0), 0);
+
+        if (totalTokens >= tokenCapData.daily_limit) {
           toast({
-            title: "Image generation limit reached",
-            description: `The platform has reached its daily limit of ${imageCapData.daily_limit} image generations. Try again tomorrow.`,
+            title: "Daily token limit reached",
+            description: `The platform has used ${totalTokens.toLocaleString()} / ${tokenCapData.daily_limit.toLocaleString()} tokens today. Try again tomorrow.`,
             variant: "destructive",
           });
           return false;
@@ -71,25 +68,37 @@ export function useUsageLimit(section: string) {
       }
     }
 
-    // Check script generation daily cap (for script_ai section only)
-    if (section === "script_ai") {
-      const { data: scriptCapData } = await supabase
-        .from("script_generation_cap")
+    // Check section-specific caps
+    const sectionCapMap: Record<string, string> = {
+      text_to_image: "image_generation_cap",
+      script_ai: "script_generation_cap",
+      voice_tts: "voice_generation_cap",
+    };
+
+    const capTable = sectionCapMap[section];
+    if (capTable) {
+      const { data: sectionCapData } = await supabase
+        .from(capTable as any)
         .select("enabled, daily_limit")
         .limit(1)
         .maybeSingle();
 
-      if (scriptCapData?.enabled) {
-        const { count: scriptCount } = await supabase
+      if (sectionCapData?.enabled) {
+        const { count: sectionCount } = await supabase
           .from("usage_log")
           .select("*", { count: "exact", head: true })
-          .eq("section", "script_ai")
+          .eq("section", section)
           .gte("used_at", todayStart.toISOString());
 
-        if ((scriptCount ?? 0) >= scriptCapData.daily_limit) {
+        if ((sectionCount ?? 0) >= sectionCapData.daily_limit) {
+          const labels: Record<string, string> = {
+            text_to_image: "Image generation",
+            script_ai: "Script generation",
+            voice_tts: "Voice generation",
+          };
           toast({
-            title: "Script generation limit reached",
-            description: `The platform has reached its daily limit of ${scriptCapData.daily_limit} script generations. Try again tomorrow.`,
+            title: `${labels[section] || section} limit reached`,
+            description: `The platform has reached its daily limit of ${sectionCapData.daily_limit}. Try again tomorrow.`,
             variant: "destructive",
           });
           return false;
@@ -97,33 +106,7 @@ export function useUsageLimit(section: string) {
       }
     }
 
-    // Check voice generation daily cap (for voice_tts section only)
-    if (section === "voice_tts") {
-      const { data: voiceCapData } = await supabase
-        .from("voice_generation_cap")
-        .select("enabled, daily_limit")
-        .limit(1)
-        .maybeSingle();
-
-      if (voiceCapData?.enabled) {
-        const { count: voiceCount } = await supabase
-          .from("usage_log")
-          .select("*", { count: "exact", head: true })
-          .eq("section", "voice_tts")
-          .gte("used_at", todayStart.toISOString());
-
-        if ((voiceCount ?? 0) >= voiceCapData.daily_limit) {
-          toast({
-            title: "Voice generation limit reached",
-            description: `The platform has reached its daily limit of ${voiceCapData.daily_limit} voice generations. Try again tomorrow.`,
-            variant: "destructive",
-          });
-          return false;
-        }
-      }
-    }
-
-    // Check for per-user limit first
+    // Check per-user limit
     const { data: userLimitData } = await supabase
       .from("user_usage_limits")
       .select("custom_limit, limit_type")
@@ -138,37 +121,32 @@ export function useUsageLimit(section: string) {
       limit = userLimitData.custom_limit;
       limitType = userLimitData.limit_type;
     } else {
-      // Fall back to global limit
       const { data: globalData } = await supabase
         .from("usage_limits")
         .select("daily_limit, limit_type")
         .eq("section", section)
         .single();
 
-      if (!globalData) return true; // No limit set
+      if (!globalData) return true;
       limit = globalData.daily_limit;
       limitType = (globalData as any).limit_type || "per_day";
     }
 
-    // Calculate time window based on limit_type
     const now = new Date();
     let windowStart: Date;
 
     switch (limitType) {
-      case "per_minute": {
+      case "per_minute":
         windowStart = new Date(now.getTime() - 60 * 1000);
         break;
-      }
-      case "per_hour": {
+      case "per_hour":
         windowStart = new Date(now.getTime() - 60 * 60 * 1000);
         break;
-      }
       case "per_day":
-      default: {
+      default:
         windowStart = new Date(now);
         windowStart.setHours(0, 0, 0, 0);
         break;
-      }
     }
 
     const { count } = await supabase
@@ -188,14 +166,25 @@ export function useUsageLimit(section: string) {
       return false;
     }
 
-    // Track usage
-    await supabase.from("usage_log").insert({
-      user_id: user.id,
-      section,
-    });
-
     return true;
   }, [user, section, toast]);
 
-  return { checkAndTrack };
+  const trackUsage = useCallback(async (tokensUsed: number = 0) => {
+    if (!user) return;
+    await supabase.from("usage_log").insert({
+      user_id: user.id,
+      section,
+      tokens_used: tokensUsed,
+    });
+  }, [user, section]);
+
+  /** Legacy: check + track in one call (no token info) */
+  const checkAndTrack = useCallback(async (): Promise<boolean> => {
+    const allowed = await checkLimit();
+    if (!allowed) return false;
+    await trackUsage(0);
+    return true;
+  }, [checkLimit, trackUsage]);
+
+  return { checkLimit, trackUsage, checkAndTrack };
 }
