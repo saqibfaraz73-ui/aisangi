@@ -14,6 +14,7 @@ import type { UserUsageLimit } from "@/components/admin/UserLimitsSection";
 import AdminPasswordSection from "@/components/admin/AdminPasswordSection";
 import WatermarkSection from "@/components/admin/WatermarkSection";
 import UsageStatsSection from "@/components/admin/UsageStatsSection";
+import ApiSettingsSection from "@/components/admin/ApiSettingsSection";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -122,6 +123,8 @@ const AdminPage = () => {
           </div>
           <p className="text-muted-foreground text-sm">Manage users, limits, and settings.</p>
         </motion.div>
+
+        <ApiSettingsSection />
 
         <AdminPasswordSection />
 

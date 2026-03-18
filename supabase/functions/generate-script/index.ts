@@ -1,10 +1,38 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+async function getApiConfig(supabase: any): Promise<{ apiKey: string; model: string; baseUrl: string; useCustom: boolean }> {
+  const { data } = await supabase
+    .from("api_settings")
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+
+  if (data?.enabled && data?.api_key) {
+    return {
+      apiKey: data.api_key,
+      model: data.model || "gemini-2.0-flash",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      useCustom: true,
+    };
+  }
+
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!lovableKey) throw new Error("No API key configured. Please set up your Gemini API key in Admin settings.");
+
+  return {
+    apiKey: lovableKey,
+    model: "google/gemini-3-flash-preview",
+    baseUrl: "https://ai.gateway.lovable.dev/v1/chat/completions",
+    useCustom: false,
+  };
+}
 
 serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -21,10 +49,12 @@ serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const apiConfig = await getApiConfig(supabase);
+    console.log(`Using ${apiConfig.useCustom ? "custom Gemini" : "Lovable AI"} with model: ${apiConfig.model}`);
 
     const count = sceneCount || 3;
 
@@ -48,14 +78,14 @@ Respond ONLY with valid JSON using this exact structure:
 
 Generate exactly ${count} scenes. Make the image prompts highly detailed with lighting, style, colors, and mood. Make the narration engaging and suitable for short-form viral content.`;
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    const response = await fetch(apiConfig.baseUrl, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
+        Authorization: `Bearer ${apiConfig.apiKey}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: apiConfig.model,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: `Video idea: ${idea}` },
@@ -71,13 +101,13 @@ Generate exactly ${count} scenes. Make the image prompts highly detailed with li
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Please add funds in Settings → Workspace → Usage." }), {
+        return new Response(JSON.stringify({ error: "AI credits exhausted. Add your own Gemini API key in Admin settings." }), {
           status: 402,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
       const errText = await response.text();
-      console.error("AI gateway error:", response.status, errText);
+      console.error("API error:", response.status, errText);
       throw new Error("AI generation failed");
     }
 
@@ -88,7 +118,6 @@ Generate exactly ${count} scenes. Make the image prompts highly detailed with li
       throw new Error("No content returned from AI");
     }
 
-    // Parse JSON from the response (handle markdown code blocks)
     let parsed;
     try {
       const jsonMatch = content.match(/```(?:json)?\s*([\s\S]*?)```/);

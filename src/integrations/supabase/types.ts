@@ -14,6 +14,33 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_settings: {
+        Row: {
+          api_key: string
+          enabled: boolean
+          id: string
+          model: string
+          provider: string
+          updated_at: string
+        }
+        Insert: {
+          api_key?: string
+          enabled?: boolean
+          id?: string
+          model?: string
+          provider?: string
+          updated_at?: string
+        }
+        Update: {
+          api_key?: string
+          enabled?: boolean
+          id?: string
+          model?: string
+          provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

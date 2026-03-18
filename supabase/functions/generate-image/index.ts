@@ -7,6 +7,40 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type",
 };
 
+interface ApiSettings {
+  api_key: string;
+  provider: string;
+  model: string;
+  enabled: boolean;
+}
+
+async function getApiConfig(supabase: any): Promise<{ apiKey: string; model: string; baseUrl: string; useCustom: boolean }> {
+  const { data } = await supabase
+    .from("api_settings")
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+
+  if (data?.enabled && data?.api_key) {
+    return {
+      apiKey: data.api_key,
+      model: data.model || "gemini-2.0-flash",
+      baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+      useCustom: true,
+    };
+  }
+
+  const lovableKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!lovableKey) throw new Error("No API key configured. Please set up your Gemini API key in Admin settings.");
+
+  return {
+    apiKey: lovableKey,
+    model: "google/gemini-3.1-flash-image-preview",
+    baseUrl: "https://ai.gateway.lovable.dev/v1/chat/completions",
+    useCustom: false,
+  };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -22,20 +56,19 @@ serve(async (req) => {
       );
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
-      throw new Error("LOVABLE_API_KEY is not configured");
-    }
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Check watermark setting for the user
+    // Get API configuration (custom Gemini or Lovable AI)
+    const apiConfig = await getApiConfig(supabase);
+    console.log(`Using ${apiConfig.useCustom ? "custom Gemini" : "Lovable AI"} with model: ${apiConfig.model}`);
+
+    // Check watermark setting
     let watermarkEnabled = true;
     let watermarkColor = "white";
     try {
       const authHeader = req.headers.get("authorization");
-      const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-      const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-      const supabase = createClient(supabaseUrl, supabaseKey);
-
       let userId: string | null = null;
       if (authHeader) {
         const token = authHeader.replace("Bearer ", "");
@@ -83,12 +116,11 @@ serve(async (req) => {
     }
 
     const count = Math.min(Math.max(1, Number(sceneCount) || 1), 4);
-    console.log(`Generating ${count} image(s) with ${allCharacterUrls.length} character ref(s), watermark: ${watermarkEnabled}, color: ${watermarkColor}`);
+    console.log(`Generating ${count} image(s) with ${allCharacterUrls.length} character ref(s), watermark: ${watermarkEnabled}`);
 
     const generateOne = async (index: number) => {
       const variationHint = count > 1 ? ` (variation ${index + 1} of ${count}, create a unique composition)` : "";
 
-      // Add watermark instruction if enabled
       const watermarkInstruction = watermarkEnabled
         ? `\n\nIMPORTANT: Add a subtle semi-transparent watermark text "SANGIAi" in the upper-left corner of the image. The watermark should be visible but not distracting — use ${watermarkColor} colored text with ~40% opacity, slightly tilted, medium font size.`
         : "";
@@ -97,106 +129,106 @@ serve(async (req) => {
 
       if (allCharacterUrls.length > 0) {
         const contentParts: any[] = [];
-
-        // Put reference images FIRST so the model anchors on them
         allCharacterUrls.forEach((url, i) => {
           contentParts.push({
             type: "text",
             text: allCharacterUrls.length > 1 ? `[Reference face for Person ${i + 1}]` : `[Reference face photo]`,
           });
-          contentParts.push({
-            type: "image_url",
-            image_url: { url },
-          });
+          contentParts.push({ type: "image_url", image_url: { url } });
         });
 
-        // Then add the generation instruction
         const faceInstruction = allCharacterUrls.length === 1
-          ? `Generate a NEW image of the EXACT SAME PERSON shown in the reference photo above, placed in this scene: ${prompt}${variationHint}
-
-CRITICAL RULES:
-- The person's face MUST be identical to the reference — same eyes, nose, lips, jawline, skin tone, facial marks
-- Do NOT replace, alter, beautify, age, or change the face in any way
-- Keep the same hair color and style
-- Only change clothing, pose, and background to fit the scene
-- Output must be photorealistic — like a real photograph of this exact person${watermarkInstruction}`
-          : `Generate a NEW image with ALL ${allCharacterUrls.length} people from the reference photos above, placed in this scene: ${prompt}${variationHint}
-
-CRITICAL RULES:
-- Each person's face MUST be identical to their reference — same eyes, nose, lips, jawline, skin tone
-- Person 1 = first reference, Person 2 = second reference, etc.
-- Do NOT swap, blend, or alter any faces
-- Do NOT omit any person — ALL must appear
-- Keep same hair color and style for each person
-- Only change clothing, pose, and background to fit the scene
-- Output must be photorealistic — like a real group photograph${watermarkInstruction}`;
+          ? `Generate a NEW image of the EXACT SAME PERSON shown in the reference photo above, placed in this scene: ${prompt}${variationHint}\n\nCRITICAL RULES:\n- The person's face MUST be identical to the reference\n- Do NOT alter the face in any way\n- Keep same hair color and style\n- Only change clothing, pose, and background\n- Output must be photorealistic${watermarkInstruction}`
+          : `Generate a NEW image with ALL ${allCharacterUrls.length} people from the reference photos above, placed in this scene: ${prompt}${variationHint}\n\nCRITICAL RULES:\n- Each person's face MUST be identical to their reference\n- Do NOT swap, blend, or alter any faces\n- ALL must appear\n- Output must be photorealistic${watermarkInstruction}`;
 
         contentParts.push({ type: "text", text: faceInstruction });
-
         messages = [{ role: "user", content: contentParts }];
-
       } else {
-        messages = [
-          {
-            role: "user",
-            content: `Generate a high-quality, realistic image based on this description: ${prompt}${variationHint}${watermarkInstruction}`,
-          },
-        ];
+        messages = [{
+          role: "user",
+          content: `Generate a high-quality, realistic image based on this description: ${prompt}${variationHint}${watermarkInstruction}`,
+        }];
       }
 
       let response: Response | null = null;
       let lastErrorText = "";
 
       for (let attempt = 1; attempt <= 3; attempt++) {
-        console.log(`Calling AI gateway for image ${index + 1} (attempt ${attempt})...`);
-        response = await fetch(
-          "https://ai.gateway.lovable.dev/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${LOVABLE_API_KEY}`,
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              model: "google/gemini-3.1-flash-image-preview",
-              messages,
-              modalities: ["image", "text"],
-            }),
-          }
-        );
+        console.log(`Calling ${apiConfig.useCustom ? "Gemini API" : "AI gateway"} for image ${index + 1} (attempt ${attempt})...`);
 
-        console.log(`AI gateway responded with status: ${response.status}`);
+        const headers: Record<string, string> = {
+          "Content-Type": "application/json",
+        };
+
+        if (apiConfig.useCustom) {
+          headers["Authorization"] = `Bearer ${apiConfig.apiKey}`;
+        } else {
+          headers["Authorization"] = `Bearer ${apiConfig.apiKey}`;
+        }
+
+        response = await fetch(apiConfig.baseUrl, {
+          method: "POST",
+          headers,
+          body: JSON.stringify({
+            model: apiConfig.model,
+            messages,
+            modalities: ["image", "text"],
+          }),
+        });
+
+        console.log(`API responded with status: ${response.status}`);
 
         if (response.ok) break;
 
         if (response.status === 429) {
           lastErrorText = await response.text();
           if (attempt < 3) {
-            const retryDelay = attempt * 2000;
-            console.warn(`AI gateway rate limited request. Retrying in ${retryDelay}ms...`);
-            await new Promise((resolve) => setTimeout(resolve, retryDelay));
+            await new Promise((resolve) => setTimeout(resolve, attempt * 2000));
             continue;
           }
-          throw { status: 429, message: "Too many image requests right now. Please wait a few seconds and try again." };
+          throw { status: 429, message: "Too many requests. Please wait a few seconds and try again." };
         }
 
         if (response.status === 402) {
-          throw { status: 402, message: "AI credits exhausted. Please add funds in Settings → Workspace → Usage." };
+          throw { status: 402, message: "AI credits exhausted. Please add your own Gemini API key in Admin settings." };
         }
 
         lastErrorText = await response.text();
-        console.error("AI gateway error:", response.status, lastErrorText);
+        console.error("API error:", response.status, lastErrorText);
         throw { status: 500, message: "Failed to generate image. Please try again." };
       }
 
       if (!response || !response.ok) {
-        console.error("AI gateway failed after retries:", lastErrorText);
-        throw { status: 500, message: "Image generation is temporarily unavailable. Please try again." };
+        throw { status: 500, message: "Image generation temporarily unavailable." };
       }
 
       const data = await response.json();
-      const imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
-      const textContent = data.choices?.[0]?.message?.content || "";
+      
+      // Handle response - Gemini direct API has different response format
+      let imageUrl: string | undefined;
+      let textContent = "";
+
+      if (apiConfig.useCustom) {
+        // Google Gemini OpenAI-compatible endpoint
+        imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        textContent = data.choices?.[0]?.message?.content || "";
+        
+        // Fallback: check inline_data format
+        if (!imageUrl) {
+          const parts = data.candidates?.[0]?.content?.parts;
+          if (parts) {
+            for (const part of parts) {
+              if (part.inline_data?.data) {
+                imageUrl = `data:${part.inline_data.mime_type};base64,${part.inline_data.data}`;
+              }
+              if (part.text) textContent = part.text;
+            }
+          }
+        }
+      } else {
+        imageUrl = data.choices?.[0]?.message?.images?.[0]?.image_url?.url;
+        textContent = data.choices?.[0]?.message?.content || "";
+      }
 
       if (!imageUrl) {
         console.error("No image in response:", JSON.stringify(data).substring(0, 500));
