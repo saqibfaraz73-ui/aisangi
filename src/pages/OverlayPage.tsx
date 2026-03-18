@@ -25,6 +25,7 @@ const OverlayPage = () => {
   const [sceneCount, setSceneCount] = useState(1);
   const videoRef = useRef<HTMLVideoElement>(null);
   const { toast } = useToast();
+  const { checkAndTrack } = useUsageLimit("audio_overlay");
 
   const handleVideoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
