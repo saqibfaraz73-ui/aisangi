@@ -10,13 +10,12 @@ function drawWatermark(ctx: CanvasRenderingContext2D, W: number, H: number) {
   const fontSize = Math.max(16, Math.min(W, H) * 0.04);
   ctx.font = `bold ${fontSize}px 'Plus Jakarta Sans', sans-serif`;
   ctx.fillStyle = "rgba(255, 255, 255, 0.4)";
-  ctx.textAlign = "right";
-  ctx.textBaseline = "bottom";
-  // Slight rotation
-  const x = W - fontSize * 0.5;
-  const y = H - fontSize * 0.4;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "top";
+  const x = fontSize * 0.5;
+  const y = fontSize * 0.4;
   ctx.translate(x, y);
-  ctx.rotate(-0.05);
+  ctx.rotate(0.05);
   ctx.fillText("SANGIAi", 0, 0);
   ctx.restore();
 }
