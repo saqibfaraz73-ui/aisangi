@@ -38,9 +38,10 @@ const FullScriptVoiceButton = ({ fullNarration, title }: FullScriptVoiceButtonPr
 
     setGenerating(true);
     try {
-      const { data, error } = await supabase.functions.invoke("generate-voice", {
-        body: { text: fullNarration, voice },
-      });
+      const isClone = voice === "__clone__";
+      const fnName = isClone ? "generate-voice-elevenlabs" : "generate-voice";
+      const body = isClone ? { text: fullNarration } : { text: fullNarration, voice };
+      const { data, error } = await supabase.functions.invoke(fnName, { body });
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
