@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Globe, Image, FileText, Volume2, Save, Loader2 } from "lucide-react";
+import { Globe, Image, FileText, Volume2, Zap, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -24,6 +24,7 @@ const CapCard = ({
   onChange,
   onSave,
   saving,
+  usageLabel,
 }: {
   icon: any;
   title: string;
@@ -32,6 +33,7 @@ const CapCard = ({
   onChange: (s: Partial<CapState>) => void;
   onSave: () => void;
   saving: boolean;
+  usageLabel?: string;
 }) => {
   const usagePercent = state.dailyLimit > 0 ? Math.round((state.todayUsage / state.dailyLimit) * 100) : 0;
   const isNearLimit = usagePercent >= 80;
@@ -63,9 +65,9 @@ const CapCard = ({
 
       <div className="space-y-1.5">
         <div className="flex justify-between text-sm">
-          <span className="text-muted-foreground">Today's usage</span>
+          <span className="text-muted-foreground">Today's {usageLabel || "usage"}</span>
           <span className={`font-semibold ${isAtLimit ? "text-destructive" : isNearLimit ? "text-yellow-500" : "text-foreground"}`}>
-            {state.todayUsage} / {state.dailyLimit}
+            {state.todayUsage.toLocaleString()} / {state.dailyLimit.toLocaleString()}
           </span>
         </div>
         <div className="w-full h-3 rounded-full bg-muted overflow-hidden">
@@ -94,10 +96,12 @@ const GlobalCapSection = () => {
   const [savingImage, setSavingImage] = useState(false);
   const [savingScript, setSavingScript] = useState(false);
   const [savingVoice, setSavingVoice] = useState(false);
+  const [savingToken, setSavingToken] = useState(false);
   const [globalCap, setGlobalCap] = useState<CapState>(defaultCap(1400));
   const [imageCap, setImageCap] = useState<CapState>(defaultCap(240));
   const [scriptCap, setScriptCap] = useState<CapState>(defaultCap(1160));
   const [voiceCap, setVoiceCap] = useState<CapState>(defaultCap(100));
+  const [tokenCap, setTokenCap] = useState<CapState>({ id: null, enabled: false, dailyLimit: 1000000, todayUsage: 0 });
 
   useEffect(() => {
     fetchData();
@@ -108,15 +112,17 @@ const GlobalCapSection = () => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [capRes, imageCapRes, scriptCapRes, voiceCapRes, totalUsageRes, imageUsageRes, scriptUsageRes, voiceUsageRes] = await Promise.all([
+    const [capRes, imageCapRes, scriptCapRes, voiceCapRes, tokenCapRes, totalUsageRes, imageUsageRes, scriptUsageRes, voiceUsageRes, tokenUsageRes] = await Promise.all([
       supabase.from("global_usage_cap").select("*").limit(1).maybeSingle(),
       supabase.from("image_generation_cap").select("*").limit(1).maybeSingle(),
       supabase.from("script_generation_cap").select("*").limit(1).maybeSingle(),
       supabase.from("voice_generation_cap").select("*").limit(1).maybeSingle(),
+      supabase.from("daily_token_cap" as any).select("*").limit(1).maybeSingle(),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).in("section", ["text_to_image", "script_ai", "voice_tts"]).gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "text_to_image").gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "script_ai").gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "voice_tts").gte("used_at", todayStart.toISOString()),
+      supabase.from("usage_log").select("tokens_used").in("section", ["text_to_image", "script_ai", "voice_tts"]).gte("used_at", todayStart.toISOString()),
     ]);
 
     if (capRes.data) {
@@ -143,11 +149,20 @@ const GlobalCapSection = () => {
       setVoiceCap((p) => ({ ...p, todayUsage: voiceUsageRes.count ?? 0 }));
     }
 
+    // Token cap
+    const totalTokensUsed = (tokenUsageRes.data || []).reduce((sum: number, log: any) => sum + (log.tokens_used || 0), 0);
+    if (tokenCapRes.data) {
+      const tc = tokenCapRes.data as any;
+      setTokenCap({ id: tc.id, enabled: tc.enabled, dailyLimit: tc.daily_limit, todayUsage: totalTokensUsed });
+    } else {
+      setTokenCap((p) => ({ ...p, todayUsage: totalTokensUsed }));
+    }
+
     setLoading(false);
   };
 
   const saveCap = async (
-    table: "global_usage_cap" | "image_generation_cap" | "script_generation_cap" | "voice_generation_cap",
+    table: string,
     cap: CapState,
     setSaving: (v: boolean) => void,
     label: string
@@ -155,10 +170,10 @@ const GlobalCapSection = () => {
     setSaving(true);
     try {
       if (cap.id) {
-        const { error } = await supabase.from(table).update({ enabled: cap.enabled, daily_limit: cap.dailyLimit, updated_at: new Date().toISOString() }).eq("id", cap.id);
+        const { error } = await supabase.from(table as any).update({ enabled: cap.enabled, daily_limit: cap.dailyLimit, updated_at: new Date().toISOString() }).eq("id", cap.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase.from(table).insert({ enabled: cap.enabled, daily_limit: cap.dailyLimit });
+        const { error } = await supabase.from(table as any).insert({ enabled: cap.enabled, daily_limit: cap.dailyLimit });
         if (error) throw error;
       }
       toast({ title: `${label} saved!` });
@@ -185,7 +200,7 @@ const GlobalCapSection = () => {
         <h2 className="font-display font-bold text-lg text-foreground">Daily Caps (Gemini Quota Protection)</h2>
       </div>
 
-      <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-6">
         <CapCard
           icon={Globe}
           title="Global Request Cap"
@@ -221,6 +236,16 @@ const GlobalCapSection = () => {
           onChange={(s) => setVoiceCap((p) => ({ ...p, ...s }))}
           onSave={() => saveCap("voice_generation_cap", voiceCap, setSavingVoice, "Voice generation cap")}
           saving={savingVoice}
+        />
+        <CapCard
+          icon={Zap}
+          title="Daily Token Cap"
+          description="Limits total AI tokens consumed across all features per day."
+          state={tokenCap}
+          onChange={(s) => setTokenCap((p) => ({ ...p, ...s }))}
+          onSave={() => saveCap("daily_token_cap", tokenCap, setSavingToken, "Token cap")}
+          saving={savingToken}
+          usageLabel="tokens"
         />
       </div>
     </motion.div>
