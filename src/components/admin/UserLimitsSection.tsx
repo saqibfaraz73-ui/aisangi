@@ -107,13 +107,14 @@ const UserLimitsSection = ({ users, userLimits, onRefresh }: Props) => {
         <h2 className="font-display font-bold text-lg text-foreground">Per-User Limits</h2>
       </div>
 
-      <div className="mb-4">
+      <div className="mb-4 space-y-2">
+        <UserSearch value={userSearch} onChange={setUserSearch} />
         <Select value={selectedUser} onValueChange={setSelectedUser}>
           <SelectTrigger className="bg-background border-border">
             <SelectValue placeholder="Select a user..." />
           </SelectTrigger>
           <SelectContent>
-            {users.map((u) => (
+            {filteredUsers.map((u) => (
               <SelectItem key={u.id} value={u.id}>
                 {u.full_name || u.email} — {u.email}
               </SelectItem>
