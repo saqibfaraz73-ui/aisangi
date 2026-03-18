@@ -2,3 +2,6 @@ project_id = "qxevmduydqbxdwdxyteq"
 
 [functions.generate-script]
 verify_jwt = false
+
+[functions.generate-image]
+verify_jwt = false
