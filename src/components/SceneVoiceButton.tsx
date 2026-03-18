@@ -60,7 +60,8 @@ const SceneVoiceButton = ({ sceneNumber, narration, voice, onVoiceChange }: Scen
 
       await trackUsage(data?.tokensUsed || 0);
 
-      const url = `data:audio/wav;base64,${data.audioContent}`;
+      const mime = isClone ? "audio/mpeg" : "audio/wav";
+      const url = `data:${mime};base64,${data.audioContent}`;
       setAudioUrl(url);
       toast({ title: `Scene ${sceneNumber} voice generated!` });
     } catch (err: any) {
