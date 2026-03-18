@@ -314,6 +314,12 @@ const ScriptGeneratorPage = () => {
                           <p className="text-sm text-foreground italic bg-accent/30 rounded-lg p-2.5">
                             "{scene.narration}"
                           </p>
+                          <SceneVoiceButton
+                            sceneNumber={scene.sceneNumber}
+                            narration={scene.narration}
+                            voice={getSceneVoice(scene.sceneNumber)}
+                            onVoiceChange={(v) => setSceneVoice(scene.sceneNumber, v)}
+                          />
                         </div>
                       </motion.div>
                     ))}
