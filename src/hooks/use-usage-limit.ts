@@ -176,7 +176,6 @@ export function useUsageLimit(section: string) {
       section,
       tokens_used: tokensUsed,
     } as any);
-    });
   }, [user, section]);
 
   /** Legacy: check + track in one call (no token info) */
