@@ -133,6 +133,8 @@ const AdminPage = () => {
 
         <GlobalCapSection />
 
+        <LipSyncSection />
+
         <WatermarkSection users={users} />
 
         <GlobalLimitsSection
