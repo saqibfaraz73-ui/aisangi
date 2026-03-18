@@ -124,6 +124,8 @@ const AdminPage = () => {
 
         <AdminPasswordSection />
 
+        <WatermarkSection users={users} />
+
         <GlobalLimitsSection
           limits={limits}
           editedLimits={editedLimits}
