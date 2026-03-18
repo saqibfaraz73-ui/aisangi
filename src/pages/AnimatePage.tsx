@@ -231,13 +231,6 @@ const AnimatePage = () => {
 
         <canvas ref={canvasRef} className="hidden" />
 
-        {videoUrl && (
-          <AudioOverlaySection
-            videoUrl={videoUrl}
-            platform={platform}
-            onPlatformChange={setPlatform}
-          />
-        )}
       </main>
     </div>
   );
