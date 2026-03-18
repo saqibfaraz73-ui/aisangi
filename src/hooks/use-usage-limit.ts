@@ -43,24 +43,24 @@ export function useUsageLimit(section: string) {
 
       // Check daily token cap
       const { data: tokenCapData } = await supabase
-        .from("daily_token_cap")
+        .from("daily_token_cap" as any)
         .select("enabled, daily_limit")
         .limit(1)
         .maybeSingle();
 
-      if (tokenCapData?.enabled) {
+      if ((tokenCapData as any)?.enabled) {
         const { data: tokenLogs } = await supabase
           .from("usage_log")
           .select("tokens_used")
           .in("section", ["text_to_image", "script_ai", "voice_tts"])
           .gte("used_at", todayStart.toISOString());
 
-        const totalTokens = (tokenLogs || []).reduce((sum, log) => sum + (log.tokens_used || 0), 0);
+        const totalTokens = (tokenLogs || []).reduce((sum, log) => sum + ((log as any).tokens_used || 0), 0);
 
-        if (totalTokens >= tokenCapData.daily_limit) {
+        if (totalTokens >= (tokenCapData as any).daily_limit) {
           toast({
             title: "Daily token limit reached",
-            description: `The platform has used ${totalTokens.toLocaleString()} / ${tokenCapData.daily_limit.toLocaleString()} tokens today. Try again tomorrow.`,
+            description: `The platform has used ${totalTokens.toLocaleString()} / ${(tokenCapData as any).daily_limit.toLocaleString()} tokens today. Try again tomorrow.`,
             variant: "destructive",
           });
           return false;
