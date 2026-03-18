@@ -10,6 +10,7 @@ import OverlayPage from "./pages/OverlayPage.tsx";
 import ScriptGeneratorPage from "./pages/ScriptGeneratorPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import { Loader2 } from "lucide-react";
 
