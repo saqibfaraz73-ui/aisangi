@@ -12,7 +12,8 @@ import { useVideoGenerator } from "@/components/animate/useVideoGenerator";
 const AnimatePage = () => {
   const [images, setImages] = useState<string[]>([]);
   const [durations, setDurations] = useState<number[]>([]);
-  const [style, setStyle] = useState<AnimationStyle>("ken-burns");
+  const [styles, setStyles] = useState<AnimationStyle[]>([]);
+  const [defaultStyle, setDefaultStyle] = useState<AnimationStyle>("ken-burns");
   const [platform, setPlatform] = useState<PlatformPreset>("youtube");
   const [isGenerating, setIsGenerating] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
