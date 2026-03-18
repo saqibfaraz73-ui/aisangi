@@ -101,7 +101,7 @@ const ScriptGeneratorPage = () => {
   const handleClear = () => {
     setIdea("");
     setScript(null);
-    setSceneCount(3);
+    setSceneCount(null);
     toast({ title: "Cleared all data" });
   };
 
