@@ -127,18 +127,21 @@ export type Database = {
       }
       watermark_settings: {
         Row: {
+          color: string
           enabled: boolean
           id: string
           updated_at: string
           user_id: string | null
         }
         Insert: {
+          color?: string
           enabled?: boolean
           id?: string
           updated_at?: string
           user_id?: string | null
         }
         Update: {
+          color?: string
           enabled?: boolean
           id?: string
           updated_at?: string
