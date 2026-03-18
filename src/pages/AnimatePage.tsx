@@ -97,6 +97,8 @@ const AnimatePage = () => {
     setVideoUrl(null);
     setDefaultStyle("ken-burns");
     setPlatform("youtube");
+    audioTracks.forEach((t) => URL.revokeObjectURL(t.url));
+    setAudioTracks([]);
     toast({ title: "Cleared all data" });
   };
 
