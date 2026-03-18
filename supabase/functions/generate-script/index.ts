@@ -7,29 +7,30 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function getApiConfig(supabase: any): Promise<{ apiKey: string; model: string; baseUrl: string; useCustom: boolean }> {
-  const { data } = await supabase
-    .from("api_settings")
-    .select("*")
-    .limit(1)
-    .maybeSingle();
+async function getApiConfig(supabase: any) {
+  const { data } = await supabase.from("api_settings").select("*").limit(1).maybeSingle();
 
   if (data?.enabled && data?.api_key) {
-    return {
-      apiKey: data.api_key,
-      model: data.model || "gemini-2.0-flash",
-      baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-      useCustom: true,
-    };
+    const provider = data.provider || "gemini";
+    const model = data.model || (provider === "openai" ? "gpt-4o" : "gemini-2.0-flash");
+    // For script generation with DALL-E selected, fall back to GPT-4o for text
+    const textModel = provider === "openai" && model === "dall-e-3" ? "gpt-4o" : model;
+
+    const baseUrl = provider === "openai"
+      ? "https://api.openai.com/v1/chat/completions"
+      : "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
+
+    return { apiKey: data.api_key, model: textModel, baseUrl, provider, useCustom: true };
   }
 
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
-  if (!lovableKey) throw new Error("No API key configured. Please set up your Gemini API key in Admin settings.");
+  if (!lovableKey) throw new Error("No API key configured. Set up your API key in Admin settings.");
 
   return {
     apiKey: lovableKey,
     model: "google/gemini-3-flash-preview",
     baseUrl: "https://ai.gateway.lovable.dev/v1/chat/completions",
+    provider: "lovable",
     useCustom: false,
   };
 }
@@ -44,39 +45,28 @@ serve(async (req) => {
 
     if (!idea || typeof idea !== "string") {
       return new Response(JSON.stringify({ error: "Please provide a video idea" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
+    const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
     const apiConfig = await getApiConfig(supabase);
-    console.log(`Using ${apiConfig.useCustom ? "custom Gemini" : "Lovable AI"} with model: ${apiConfig.model}`);
+    console.log(`Script gen using ${apiConfig.provider} model: ${apiConfig.model}`);
 
     const count = sceneCount || 3;
-
     const systemPrompt = `You are an expert viral video scriptwriter. Given a video idea, generate:
-1. A list of scene descriptions (visual prompts for AI image generation) — each should be vivid, detailed, and suitable for generating a realistic image.
-2. A voiceover narration script that tells the story across all scenes.
+1. Scene descriptions (visual prompts for AI image generation) — vivid, detailed, realistic.
+2. A voiceover narration script across all scenes.
 
-Respond ONLY with valid JSON using this exact structure:
+Respond ONLY with valid JSON:
 {
   "title": "Short catchy video title",
-  "scenes": [
-    {
-      "sceneNumber": 1,
-      "imagePrompt": "Detailed visual description for AI image generation...",
-      "narration": "The voiceover text for this scene..."
-    }
-  ],
-  "fullNarration": "The complete voiceover script combining all scenes...",
+  "scenes": [{"sceneNumber": 1, "imagePrompt": "...", "narration": "..."}],
+  "fullNarration": "Complete voiceover...",
   "hashtags": ["relevant", "hashtags"]
 }
 
-Generate exactly ${count} scenes. Make the image prompts highly detailed with lighting, style, colors, and mood. Make the narration engaging and suitable for short-form viral content.`;
+Generate exactly ${count} scenes. Detailed image prompts with lighting, style, colors, mood. Engaging narration for viral short-form content.`;
 
     const response = await fetch(apiConfig.baseUrl, {
       method: "POST",
@@ -95,28 +85,25 @@ Generate exactly ${count} scenes. Make the image prompts highly detailed with li
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: "Rate limit exceeded. Please try again in a moment." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(JSON.stringify({ error: "Rate limited. Try again shortly." }), {
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      if (response.status === 401) {
+        return new Response(JSON.stringify({ error: `Invalid ${apiConfig.provider} API key. Check Admin settings.` }), {
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: "AI credits exhausted. Add your own Gemini API key in Admin settings." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(JSON.stringify({ error: "Credits exhausted. Add your own API key in Admin." }), {
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       const errText = await response.text();
       console.error("API error:", response.status, errText);
-      throw new Error("AI generation failed");
+      throw new Error("Script generation failed");
     }
 
     const data = await response.json();
     const content = data.choices?.[0]?.message?.content;
-
-    if (!content) {
-      throw new Error("No content returned from AI");
-    }
+    if (!content) throw new Error("No content from AI");
 
     let parsed;
     try {
@@ -124,7 +111,7 @@ Generate exactly ${count} scenes. Make the image prompts highly detailed with li
       const jsonStr = jsonMatch ? jsonMatch[1].trim() : content.trim();
       parsed = JSON.parse(jsonStr);
     } catch {
-      throw new Error("Failed to parse AI response as JSON");
+      throw new Error("Failed to parse AI response");
     }
 
     return new Response(JSON.stringify(parsed), {
