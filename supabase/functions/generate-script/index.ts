@@ -8,8 +8,22 @@ const corsHeaders = {
 };
 
 const DEFAULT_LOVABLE_MODEL = "google/gemini-3-flash-preview";
-const DEFAULT_GEMINI_TEXT_MODEL = "gemini-2.0-flash";
+const DEFAULT_GEMINI_TEXT_MODEL = "gemini-2.5-flash";
 const DEFAULT_OPENAI_TEXT_MODEL = "gpt-4o";
+const FALLBACK_GEMINI_TEXT_MODELS = [
+  "gemini-2.5-flash",
+  "gemini-2.5-flash-lite",
+  "gemini-1.5-flash",
+] as const;
+
+type ApiConfig = {
+  apiKey: string;
+  model: string;
+  provider: "gemini" | "openai" | "lovable";
+  useCustom: boolean;
+  useNativeGemini: boolean;
+  baseUrl?: string;
+};
 
 function normalizeCustomModel(provider: string, model?: string | null) {
   if (provider === "openai") {
@@ -31,7 +45,11 @@ function normalizeCustomModel(provider: string, model?: string | null) {
   return selectedModel;
 }
 
-async function getApiConfig(supabase: any) {
+function buildGeminiUrl(model: string, apiKey: string) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+}
+
+async function getApiConfig(supabase: any): Promise<ApiConfig> {
   const { data } = await supabase.from("api_settings").select("*").limit(1).maybeSingle();
 
   if (data?.enabled && data?.api_key) {
@@ -52,8 +70,7 @@ async function getApiConfig(supabase: any) {
     return {
       apiKey: data.api_key,
       model,
-      baseUrl: `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${data.api_key}`,
-      provider,
+      provider: "gemini",
       useCustom: true,
       useNativeGemini: true,
     };
@@ -91,6 +108,40 @@ function extractContentFromGeminiResponse(data: any) {
   return textPart?.text || null;
 }
 
+function shouldRetryGeminiWithFallback(status: number, message: string) {
+  const msg = message.toLowerCase();
+  return (
+    status === 404 ||
+    msg.includes("not found") ||
+    msg.includes("no longer available") ||
+    msg.includes("is not supported")
+  );
+}
+
+async function callGeminiScriptApi(model: string, apiKey: string, systemPrompt: string, idea: string) {
+  return fetch(buildGeminiUrl(model, apiKey), {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      systemInstruction: {
+        parts: [{ text: systemPrompt }],
+      },
+      contents: [
+        {
+          role: "user",
+          parts: [{ text: `Video idea: ${idea}` }],
+        },
+      ],
+      generationConfig: {
+        temperature: 0.8,
+        responseMimeType: "application/json",
+      },
+    }),
+  });
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -111,7 +162,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
     const apiConfig = await getApiConfig(supabase);
-    console.log(`Script gen using ${apiConfig.provider} model: ${apiConfig.model}`);
 
     const count = sceneCount || 3;
     const systemPrompt = `You are an expert viral video scriptwriter. Given a video idea, generate:
@@ -129,31 +179,36 @@ Respond ONLY with valid JSON:
 Generate exactly ${count} scenes. Detailed image prompts with lighting, style, colors, mood. Engaging narration for viral short-form content.`;
 
     let response: Response;
+    let activeModel = apiConfig.model;
 
     if (apiConfig.useNativeGemini) {
-      response = await fetch(apiConfig.baseUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          systemInstruction: {
-            parts: [{ text: systemPrompt }],
-          },
-          contents: [
-            {
-              role: "user",
-              parts: [{ text: `Video idea: ${idea}` }],
-            },
-          ],
-          generationConfig: {
-            temperature: 0.8,
-            responseMimeType: "application/json",
-          },
-        }),
-      });
+      console.log(`Script gen using gemini model: ${activeModel}`);
+      response = await callGeminiScriptApi(activeModel, apiConfig.apiKey, systemPrompt, idea);
+
+      if (!response.ok) {
+        const primaryError = await readErrorMessage(response);
+
+        if (shouldRetryGeminiWithFallback(response.status, primaryError)) {
+          const fallbackModels = FALLBACK_GEMINI_TEXT_MODELS.filter((m) => m !== activeModel);
+
+          for (const fallbackModel of fallbackModels) {
+            console.log(`Retrying script gen with fallback gemini model: ${fallbackModel}`);
+            const retryResponse = await callGeminiScriptApi(fallbackModel, apiConfig.apiKey, systemPrompt, idea);
+
+            if (retryResponse.ok) {
+              response = retryResponse;
+              activeModel = fallbackModel;
+              break;
+            }
+
+            const retryError = await readErrorMessage(retryResponse);
+            console.error("Fallback Gemini model failed:", fallbackModel, retryError);
+          }
+        }
+      }
     } else {
-      response = await fetch(apiConfig.baseUrl, {
+      console.log(`Script gen using ${apiConfig.provider} model: ${apiConfig.model}`);
+      response = await fetch(apiConfig.baseUrl!, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${apiConfig.apiKey}`,
@@ -171,6 +226,8 @@ Generate exactly ${count} scenes. Detailed image prompts with lighting, style, c
     }
 
     if (!response.ok) {
+      const errText = await readErrorMessage(response);
+
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limited. Try again shortly." }), {
           status: 429,
@@ -192,7 +249,6 @@ Generate exactly ${count} scenes. Detailed image prompts with lighting, style, c
         });
       }
 
-      const errText = await readErrorMessage(response);
       console.error("API error:", response.status, errText);
 
       return new Response(JSON.stringify({
