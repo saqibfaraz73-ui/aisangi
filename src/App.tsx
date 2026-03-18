@@ -21,6 +21,7 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/animate" element={<AnimatePage />} />
           <Route path="/overlay" element={<OverlayPage />} />
+          <Route path="/script-generator" element={<ScriptGeneratorPage />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>
