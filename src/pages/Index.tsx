@@ -78,7 +78,7 @@ const Index = () => {
   const handleClear = () => {
     setPrompt("");
     setImages([]);
-    setCharacterImage(null);
+    setCharacterImages([]);
     setSceneCount(1);
     toast({ title: "Cleared all data" });
   };
