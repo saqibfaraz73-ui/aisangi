@@ -83,7 +83,7 @@ serve(async (req) => {
     }
 
     const count = Math.min(Math.max(1, Number(sceneCount) || 1), 4);
-    console.log(`Generating ${count} image(s) with ${allCharacterUrls.length} character ref(s), watermark: ${watermarkEnabled}`);
+    console.log(`Generating ${count} image(s) with ${allCharacterUrls.length} character ref(s), watermark: ${watermarkEnabled}, color: ${watermarkColor}`);
 
     const generateOne = async (index: number) => {
       const variationHint = count > 1 ? ` (variation ${index + 1} of ${count}, create a unique composition)` : "";
@@ -156,6 +156,7 @@ FACE PRESERVATION RULES (NON-NEGOTIABLE):
         ];
       }
 
+      console.log(`Calling AI gateway for image ${index + 1}...`);
       const response = await fetch(
         "https://ai.gateway.lovable.dev/v1/chat/completions",
         {
@@ -171,6 +172,7 @@ FACE PRESERVATION RULES (NON-NEGOTIABLE):
           }),
         }
       );
+      console.log(`AI gateway responded with status: ${response.status}`);
 
       if (!response.ok) {
         if (response.status === 429) {
