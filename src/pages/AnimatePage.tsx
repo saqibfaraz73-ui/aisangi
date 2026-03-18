@@ -25,6 +25,7 @@ const AnimatePage = () => {
   const { toast } = useToast();
   const { generate } = useVideoGenerator(canvasRef);
   const { checkAndTrack } = useUsageLimit("image_to_video");
+  const { watermarkEnabled } = useWatermark();
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
