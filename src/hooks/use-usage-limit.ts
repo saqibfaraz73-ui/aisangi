@@ -10,6 +10,32 @@ export function useUsageLimit(section: string) {
   const checkAndTrack = useCallback(async (): Promise<boolean> => {
     if (!user) return false;
 
+    // Check global daily cap first
+    const { data: capData } = await supabase
+      .from("global_usage_cap")
+      .select("enabled, daily_limit")
+      .limit(1)
+      .maybeSingle();
+
+    if (capData?.enabled) {
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
+      const { count: globalCount } = await supabase
+        .from("usage_log")
+        .select("*", { count: "exact", head: true })
+        .gte("used_at", todayStart.toISOString());
+
+      if ((globalCount ?? 0) >= capData.daily_limit) {
+        toast({
+          title: "Global daily limit reached",
+          description: `The platform has reached its daily limit of ${capData.daily_limit} total requests. Try again tomorrow.`,
+          variant: "destructive",
+        });
+        return false;
+      }
+    }
+
     // Check for per-user limit first
     const { data: userLimitData } = await supabase
       .from("user_usage_limits")

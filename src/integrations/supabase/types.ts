@@ -41,6 +41,27 @@ export type Database = {
         }
         Relationships: []
       }
+      global_usage_cap: {
+        Row: {
+          daily_limit: number
+          enabled: boolean
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          daily_limit?: number
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          daily_limit?: number
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
