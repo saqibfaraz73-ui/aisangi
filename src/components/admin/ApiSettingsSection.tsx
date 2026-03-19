@@ -199,7 +199,7 @@ const ApiSettingsSection = () => {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-foreground">Model</label>
+          <label className="text-sm font-semibold text-foreground">Image Model</label>
           <Select value={model} onValueChange={setModel} disabled={!enabled}>
             <SelectTrigger>
               <SelectValue />
@@ -212,10 +212,29 @@ const ApiSettingsSection = () => {
           </Select>
           <p className="text-xs text-muted-foreground">
             {provider === "openai"
-              ? "For images use DALL·E 3. For scripts use GPT-4o."
-              : "Preview Gemini models are used for images; script generation automatically falls back to a stable text model."}
+              ? "For images use DALL·E 3."
+              : "Used for image generation."}
           </p>
         </div>
+
+        {provider === "gemini" && (
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-foreground">Script Model</label>
+            <Select value={scriptModel} onValueChange={setScriptModel} disabled={!enabled}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {GEMINI_SCRIPT_MODELS.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Used for script generation. Flash Lite is cheapest.
+            </p>
+          </div>
+        )}
 
         <Button onClick={handleSave} disabled={saving} className="w-full">
           {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
