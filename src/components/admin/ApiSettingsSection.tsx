@@ -74,6 +74,7 @@ const ApiSettingsSection = () => {
       setApiKey(data.api_key || "");
       setProvider(nextProvider);
       setModel(nextProvider === "gemini" ? normalizeGeminiModel(data.model) : data.model || "gpt-4o");
+      setScriptModel((data as any).script_model || "gemini-2.5-flash-lite");
       setEnabled(Boolean(data.enabled));
     }
     setLoading(false);
