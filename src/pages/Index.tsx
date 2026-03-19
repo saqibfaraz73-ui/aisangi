@@ -118,9 +118,7 @@ const Index = () => {
       const allowed = await checkLimit();
       if (!allowed) return;
 
-      // Determine how many images we can actually generate based on remaining limit
       const remaining = await getRemainingUses();
-      const requestedCount = sceneCount ?? 4; // Auto defaults to 4 for the API
       const actualCount = Math.min(requestedCount, remaining);
 
       if (actualCount <= 0) {
