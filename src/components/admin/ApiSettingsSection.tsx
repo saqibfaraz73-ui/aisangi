@@ -81,6 +81,7 @@ const ApiSettingsSection = () => {
       setProvider(nextProvider);
       setModel(nextProvider === "gemini" ? normalizeGeminiModel(data.model) : data.model || "gpt-4o");
       setScriptModel((data as any).script_model || "gemini-2.5-flash-lite");
+      setVoiceModel((data as any).voice_model || "gemini-2.5-flash-preview-tts");
       setEnabled(Boolean(data.enabled));
     }
     setLoading(false);
