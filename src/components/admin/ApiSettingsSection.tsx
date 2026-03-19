@@ -222,7 +222,7 @@ const ApiSettingsSection = () => {
 
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-foreground">Image Model</label>
-          <Select value={model} onValueChange={setModel} disabled={!enabled}>
+          <Select value={model} onValueChange={setModel}>
             <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
@@ -243,7 +243,7 @@ const ApiSettingsSection = () => {
           <>
             <div className="space-y-1.5">
               <label className="text-sm font-semibold text-foreground">Script Model</label>
-              <Select value={scriptModel} onValueChange={setScriptModel} disabled={!enabled}>
+              <Select value={scriptModel} onValueChange={setScriptModel}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -260,7 +260,7 @@ const ApiSettingsSection = () => {
 
             <div className="space-y-1.5">
               <label className="text-sm font-semibold text-foreground">Voice Model (TTS)</label>
-              <Select value={voiceModel} onValueChange={setVoiceModel} disabled={!enabled}>
+              <Select value={voiceModel} onValueChange={setVoiceModel}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -277,7 +277,7 @@ const ApiSettingsSection = () => {
 
             <div className="space-y-1.5">
               <label className="text-sm font-semibold text-foreground">Music Model</label>
-              <Select value={musicModel} onValueChange={setMusicModel} disabled={!enabled}>
+              <Select value={musicModel} onValueChange={setMusicModel}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
