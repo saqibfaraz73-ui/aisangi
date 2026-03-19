@@ -23,6 +23,7 @@ export type Database = {
           provider: string
           script_model: string
           updated_at: string
+          voice_model: string
         }
         Insert: {
           api_key?: string
@@ -32,6 +33,7 @@ export type Database = {
           provider?: string
           script_model?: string
           updated_at?: string
+          voice_model?: string
         }
         Update: {
           api_key?: string
@@ -41,6 +43,7 @@ export type Database = {
           provider?: string
           script_model?: string
           updated_at?: string
+          voice_model?: string
         }
         Relationships: []
       }
