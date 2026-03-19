@@ -245,6 +245,7 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
               <TableCell className="text-center">{s.script_ai}</TableCell>
               <TableCell className="text-center">{s.audio_overlay}</TableCell>
               <TableCell className="text-center">{s.voice_tts}</TableCell>
+              <TableCell className="text-center">{s.music_gen}</TableCell>
               <TableCell className="text-center font-mono text-xs">{s.tokens.toLocaleString()}</TableCell>
               <TableCell className="text-center font-bold">{s.total}</TableCell>
             </TableRow>
