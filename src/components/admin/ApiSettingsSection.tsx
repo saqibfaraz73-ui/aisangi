@@ -104,6 +104,7 @@ const ApiSettingsSection = () => {
         api_key: apiKey.trim(),
         provider,
         model,
+        script_model: scriptModel,
         enabled,
         updated_at: new Date().toISOString(),
       };
