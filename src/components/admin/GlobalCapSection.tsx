@@ -249,6 +249,15 @@ const GlobalCapSection = () => {
           saving={savingVoice}
         />
         <CapCard
+          icon={Music}
+          title="Music Generation Cap"
+          description="Limits total music generations across all users per day (default 50/day)."
+          state={musicCap}
+          onChange={(s) => setMusicCap((p) => ({ ...p, ...s }))}
+          onSave={() => saveCap("music_generation_cap", musicCap, setSavingMusic, "Music generation cap")}
+          saving={savingMusic}
+        />
+        <CapCard
           icon={Zap}
           title="Daily Token Cap"
           description="Limits total AI tokens consumed across all features per day."
