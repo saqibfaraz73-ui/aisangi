@@ -68,8 +68,17 @@ const VoiceGeneratorPage = () => {
         variant: "destructive",
       });
     } finally {
+      abortRef.current = null;
       setGenerating(false);
     }
+  };
+
+  const handleCancel = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setGenerating(false);
+    if (audioEl) { audioEl.pause(); }
+    toast({ title: "Generation cancelled" });
   };
 
   const togglePlay = () => {
