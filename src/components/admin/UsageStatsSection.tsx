@@ -199,13 +199,14 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 p-4 border-b border-border">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 p-4 border-b border-border">
         {[
           { label: "Images", value: totals.text_to_image, color: "text-blue-500" },
           { label: "Videos", value: totals.image_to_video, color: "text-purple-500" },
           { label: "Scripts", value: totals.script_ai, color: "text-green-500" },
           { label: "Audio", value: totals.audio_overlay, color: "text-orange-500" },
           { label: "Voice", value: totals.voice_tts, color: "text-pink-500" },
+          { label: "Music", value: totals.music_gen, color: "text-cyan-500" },
           { label: "Tokens", value: totals.tokens, color: "text-yellow-500" },
           { label: "Total", value: totals.total, color: "text-primary" },
         ].map((item) => (
