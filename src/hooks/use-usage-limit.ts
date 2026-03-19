@@ -73,6 +73,7 @@ export function useUsageLimit(section: string) {
       text_to_image: "image_generation_cap",
       script_ai: "script_generation_cap",
       voice_tts: "voice_generation_cap",
+      music_gen: "music_generation_cap",
     };
 
     const capTable = sectionCapMap[section];
