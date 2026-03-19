@@ -325,7 +325,7 @@ const Index = () => {
               images={images}
               isGenerating={isGenerating}
               prompt={prompt}
-              sceneCount={sceneCount}
+              sceneCount={1}
             />
           </motion.div>
         </div>
