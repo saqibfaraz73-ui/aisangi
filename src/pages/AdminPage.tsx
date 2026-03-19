@@ -136,6 +136,8 @@ const AdminPage = () => {
 
         <LipSyncSection />
 
+        <RateLimitSection />
+
         <WatermarkSection users={users} />
 
         <GlobalLimitsSection
