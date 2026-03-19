@@ -162,60 +162,63 @@ const ApiSettingsSection = () => {
       </div>
 
       <p className="text-sm text-muted-foreground mb-2">
-        Use your own API key for image & script generation. No Lovable credits needed.
+        Configure AI models and optionally use your own API key.
       </p>
       <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
         <span className="text-xs font-semibold text-green-600">✅ Vertex AI Active</span>
-        <span className="text-xs text-muted-foreground">— All Gemini requests use your $300 Cloud credit via service account.</span>
+        <span className="text-xs text-muted-foreground">— All Gemini requests use your Cloud credit via service account.</span>
       </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <label className="text-sm font-semibold text-foreground">Enable Custom API</label>
+          <label className="text-sm font-semibold text-foreground">Enable Custom API Key (optional)</label>
           <Switch checked={enabled} onCheckedChange={setEnabled} />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-foreground">Provider</label>
-          <Select value={provider} onValueChange={handleProviderChange} disabled={!enabled}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {PROVIDERS.map((p) => (
-                <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {enabled && (
+          <>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground">Provider</label>
+              <Select value={provider} onValueChange={handleProviderChange}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {PROVIDERS.map((p) => (
+                    <SelectItem key={p.value} value={p.value}>{p.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-foreground">API Key</label>
-          <div className="relative">
-            <Input
-              type={showKey ? "text" : "password"}
-              value={apiKey}
-              onChange={(e) => setApiKey(e.target.value)}
-              placeholder={provider === "openai" ? "sk-..." : "AIzaSy..."}
-              className="pr-10"
-              disabled={!enabled}
-            />
-            <button
-              type="button"
-              onClick={() => setShowKey(!showKey)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-            >
-              {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            {provider === "openai" ? (
-              <>Get your key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary underline">OpenAI Dashboard</a></>
-            ) : (
-              <>Get a free key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google AI Studio</a></>
-            )}
-          </p>
-        </div>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground">API Key</label>
+              <div className="relative">
+                <Input
+                  type={showKey ? "text" : "password"}
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                  placeholder={provider === "openai" ? "sk-..." : "AIzaSy..."}
+                  className="pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowKey(!showKey)}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                {provider === "openai" ? (
+                  <>Get your key from <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer" className="text-primary underline">OpenAI Dashboard</a></>
+                ) : (
+                  <>Get a free key from <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" className="text-primary underline">Google AI Studio</a></>
+                )}
+              </p>
+            </div>
+          </>
+        )}
 
         <div className="space-y-1.5">
           <label className="text-sm font-semibold text-foreground">Image Model</label>
