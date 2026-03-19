@@ -119,15 +119,10 @@ const Index = () => {
       if (!allowed) return;
 
       const remaining = await getRemainingUses();
-      const actualCount = Math.min(requestedCount, remaining);
-
-      if (actualCount <= 0) {
+      const actualCount = 1;
+      if (remaining <= 0) {
         toast({ title: "Usage limit reached", description: "You have no remaining uses. Try again later.", variant: "destructive" });
         return;
-      }
-
-      if (actualCount < requestedCount) {
-        toast({ title: `Generating ${actualCount} of ${requestedCount} images`, description: `Your remaining limit allows ${actualCount} image(s).` });
       }
 
       const controller = new AbortController();
