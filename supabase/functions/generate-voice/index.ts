@@ -88,6 +88,14 @@ serve(async (req) => {
   }
 
   try {
+    const allowed = await checkRateLimit();
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please wait a moment and try again." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { text, voice = "Kore" } = await req.json();
 
     if (!text || typeof text !== "string" || text.trim().length === 0) {

@@ -74,6 +74,14 @@ serve(async (req) => {
   }
 
   try {
+    const allowed = await checkRateLimit();
+    if (!allowed) {
+      return new Response(
+        JSON.stringify({ error: "Rate limit exceeded. Please wait a moment and try again." }),
+        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const { prompt, negative_prompt } = await req.json();
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
