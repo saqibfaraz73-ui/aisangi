@@ -50,6 +50,10 @@ const GEMINI_VOICE_MODELS = [
   { value: "gemini-2.0-flash-preview-tts", label: "Gemini 2.0 Flash TTS (Older)" },
 ];
 
+const GEMINI_MUSIC_MODELS = [
+  { value: "lyria-002", label: "Lyria 002 (Default, ~30s instrumental)" },
+];
+
 const ApiSettingsSection = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -61,6 +65,7 @@ const ApiSettingsSection = () => {
   const [model, setModel] = useState(DEFAULT_GEMINI_MODEL);
   const [scriptModel, setScriptModel] = useState("gemini-2.5-flash-lite");
   const [voiceModel, setVoiceModel] = useState("gemini-2.5-flash-preview-tts");
+  const [musicModel, setMusicModel] = useState("lyria-002");
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
@@ -82,6 +87,7 @@ const ApiSettingsSection = () => {
       setModel(nextProvider === "gemini" ? normalizeGeminiModel(data.model) : data.model || "gpt-4o");
       setScriptModel((data as any).script_model || "gemini-2.5-flash-lite");
       setVoiceModel((data as any).voice_model || "gemini-2.5-flash-preview-tts");
+      setMusicModel((data as any).music_model || "lyria-002");
       setEnabled(Boolean(data.enabled));
     }
     setLoading(false);
@@ -113,6 +119,7 @@ const ApiSettingsSection = () => {
         model,
         script_model: scriptModel,
         voice_model: voiceModel,
+        music_model: musicModel,
         enabled,
         updated_at: new Date().toISOString(),
       };
@@ -258,6 +265,23 @@ const ApiSettingsSection = () => {
               </Select>
               <p className="text-xs text-muted-foreground">
                 Used for text-to-speech voice generation.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground">Music Model</label>
+              <Select value={musicModel} onValueChange={setMusicModel} disabled={!enabled}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {GEMINI_MUSIC_MODELS.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Used for instrumental music generation (~30s clips).
               </p>
             </div>
           </>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Globe, Image, FileText, Volume2, Zap, Save, Loader2 } from "lucide-react";
+import { Globe, Image, FileText, Volume2, Music, Zap, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -96,11 +96,13 @@ const GlobalCapSection = () => {
   const [savingImage, setSavingImage] = useState(false);
   const [savingScript, setSavingScript] = useState(false);
   const [savingVoice, setSavingVoice] = useState(false);
+  const [savingMusic, setSavingMusic] = useState(false);
   const [savingToken, setSavingToken] = useState(false);
   const [globalCap, setGlobalCap] = useState<CapState>(defaultCap(1400));
   const [imageCap, setImageCap] = useState<CapState>(defaultCap(240));
   const [scriptCap, setScriptCap] = useState<CapState>(defaultCap(1160));
   const [voiceCap, setVoiceCap] = useState<CapState>(defaultCap(100));
+  const [musicCap, setMusicCap] = useState<CapState>(defaultCap(50));
   const [tokenCap, setTokenCap] = useState<CapState>({ id: null, enabled: false, dailyLimit: 1000000, todayUsage: 0 });
 
   useEffect(() => {
@@ -112,17 +114,19 @@ const GlobalCapSection = () => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [capRes, imageCapRes, scriptCapRes, voiceCapRes, tokenCapRes, totalUsageRes, imageUsageRes, scriptUsageRes, voiceUsageRes, tokenUsageRes] = await Promise.all([
+    const [capRes, imageCapRes, scriptCapRes, voiceCapRes, musicCapRes, tokenCapRes, totalUsageRes, imageUsageRes, scriptUsageRes, voiceUsageRes, musicUsageRes, tokenUsageRes] = await Promise.all([
       supabase.from("global_usage_cap").select("*").limit(1).maybeSingle(),
       supabase.from("image_generation_cap").select("*").limit(1).maybeSingle(),
       supabase.from("script_generation_cap").select("*").limit(1).maybeSingle(),
       supabase.from("voice_generation_cap").select("*").limit(1).maybeSingle(),
+      supabase.from("music_generation_cap" as any).select("*").limit(1).maybeSingle(),
       supabase.from("daily_token_cap" as any).select("*").limit(1).maybeSingle(),
-      supabase.from("usage_log").select("*", { count: "exact", head: true }).in("section", ["text_to_image", "script_ai", "voice_tts"]).gte("used_at", todayStart.toISOString()),
+      supabase.from("usage_log").select("*", { count: "exact", head: true }).in("section", ["text_to_image", "script_ai", "voice_tts", "music_gen"]).gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "text_to_image").gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "script_ai").gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "voice_tts").gte("used_at", todayStart.toISOString()),
-      supabase.from("usage_log").select("tokens_used").in("section", ["text_to_image", "script_ai", "voice_tts"]).gte("used_at", todayStart.toISOString()),
+      supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "music_gen").gte("used_at", todayStart.toISOString()),
+      supabase.from("usage_log").select("tokens_used").in("section", ["text_to_image", "script_ai", "voice_tts", "music_gen"]).gte("used_at", todayStart.toISOString()),
     ]);
 
     if (capRes.data) {
@@ -147,6 +151,13 @@ const GlobalCapSection = () => {
       setVoiceCap({ id: voiceCapRes.data.id, enabled: voiceCapRes.data.enabled, dailyLimit: voiceCapRes.data.daily_limit, todayUsage: voiceUsageRes.count ?? 0 });
     } else {
       setVoiceCap((p) => ({ ...p, todayUsage: voiceUsageRes.count ?? 0 }));
+    }
+
+    if (musicCapRes.data) {
+      const mc = musicCapRes.data as any;
+      setMusicCap({ id: mc.id, enabled: mc.enabled, dailyLimit: mc.daily_limit, todayUsage: musicUsageRes.count ?? 0 });
+    } else {
+      setMusicCap((p) => ({ ...p, todayUsage: musicUsageRes.count ?? 0 }));
     }
 
     // Token cap
@@ -236,6 +247,15 @@ const GlobalCapSection = () => {
           onChange={(s) => setVoiceCap((p) => ({ ...p, ...s }))}
           onSave={() => saveCap("voice_generation_cap", voiceCap, setSavingVoice, "Voice generation cap")}
           saving={savingVoice}
+        />
+        <CapCard
+          icon={Music}
+          title="Music Generation Cap"
+          description="Limits total music generations across all users per day (default 50/day)."
+          state={musicCap}
+          onChange={(s) => setMusicCap((p) => ({ ...p, ...s }))}
+          onSave={() => saveCap("music_generation_cap", musicCap, setSavingMusic, "Music generation cap")}
+          saving={savingMusic}
         />
         <CapCard
           icon={Zap}

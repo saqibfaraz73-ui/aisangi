@@ -20,6 +20,7 @@ export type Database = {
           enabled: boolean
           id: string
           model: string
+          music_model: string
           provider: string
           script_model: string
           updated_at: string
@@ -30,6 +31,7 @@ export type Database = {
           enabled?: boolean
           id?: string
           model?: string
+          music_model?: string
           provider?: string
           script_model?: string
           updated_at?: string
@@ -40,6 +42,7 @@ export type Database = {
           enabled?: boolean
           id?: string
           model?: string
+          music_model?: string
           provider?: string
           script_model?: string
           updated_at?: string
@@ -160,6 +163,27 @@ export type Database = {
           heygen_api_key?: string
           id?: string
           provider?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      music_generation_cap: {
+        Row: {
+          daily_limit: number
+          enabled: boolean
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          daily_limit?: number
+          enabled?: boolean
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          daily_limit?: number
+          enabled?: boolean
+          id?: string
           updated_at?: string
         }
         Relationships: []

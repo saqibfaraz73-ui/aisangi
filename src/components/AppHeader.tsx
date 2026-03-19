@@ -14,6 +14,7 @@ const NAV_ITEMS = [
   { to: "/overlay", label: "Audio Overlay" },
   { to: "/script-generator", label: "Script AI" },
   { to: "/voice-generator", label: "Voice AI" },
+  { to: "/music-generator", label: "Music AI" },
 ];
 
 const AppHeader = () => {

@@ -39,6 +39,7 @@ interface UserStats {
   script_ai: number;
   audio_overlay: number;
   voice_tts: number;
+  music_gen: number;
   tokens: number;
   total: number;
 }
@@ -93,13 +94,14 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
         script_ai: 0,
         audio_overlay: 0,
         voice_tts: 0,
+        music_gen: 0,
         tokens: 0,
         total: 0,
       };
     }
     for (const log of logs) {
       if (!map[log.user_id]) continue;
-      const section = log.section as keyof Pick<UserStats, "text_to_image" | "image_to_video" | "script_ai" | "audio_overlay" | "voice_tts">;
+      const section = log.section as keyof Pick<UserStats, "text_to_image" | "image_to_video" | "script_ai" | "audio_overlay" | "voice_tts" | "music_gen">;
       if (section in map[log.user_id] && typeof map[log.user_id][section] === "number") {
         (map[log.user_id][section] as number)++;
         map[log.user_id].total++;
@@ -127,10 +129,11 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
         script_ai: acc.script_ai + s.script_ai,
         audio_overlay: acc.audio_overlay + s.audio_overlay,
         voice_tts: acc.voice_tts + s.voice_tts,
+        music_gen: acc.music_gen + s.music_gen,
         tokens: acc.tokens + s.tokens,
         total: acc.total + s.total,
       }),
-      { text_to_image: 0, image_to_video: 0, script_ai: 0, audio_overlay: 0, voice_tts: 0, tokens: 0, total: 0 }
+      { text_to_image: 0, image_to_video: 0, script_ai: 0, audio_overlay: 0, voice_tts: 0, music_gen: 0, tokens: 0, total: 0 }
     );
   }, [filtered]);
 
@@ -196,13 +199,14 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
       </div>
 
       {/* Summary cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3 p-4 border-b border-border">
+      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-3 p-4 border-b border-border">
         {[
           { label: "Images", value: totals.text_to_image, color: "text-blue-500" },
           { label: "Videos", value: totals.image_to_video, color: "text-purple-500" },
           { label: "Scripts", value: totals.script_ai, color: "text-green-500" },
           { label: "Audio", value: totals.audio_overlay, color: "text-orange-500" },
           { label: "Voice", value: totals.voice_tts, color: "text-pink-500" },
+          { label: "Music", value: totals.music_gen, color: "text-cyan-500" },
           { label: "Tokens", value: totals.tokens, color: "text-yellow-500" },
           { label: "Total", value: totals.total, color: "text-primary" },
         ].map((item) => (
@@ -222,6 +226,7 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
             <TableHead className="text-center">Scripts</TableHead>
             <TableHead className="text-center">Audio</TableHead>
             <TableHead className="text-center">Voice</TableHead>
+            <TableHead className="text-center">Music</TableHead>
             <TableHead className="text-center">Tokens</TableHead>
             <TableHead className="text-center">Total</TableHead>
           </TableRow>
@@ -240,13 +245,14 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
               <TableCell className="text-center">{s.script_ai}</TableCell>
               <TableCell className="text-center">{s.audio_overlay}</TableCell>
               <TableCell className="text-center">{s.voice_tts}</TableCell>
+              <TableCell className="text-center">{s.music_gen}</TableCell>
               <TableCell className="text-center font-mono text-xs">{s.tokens.toLocaleString()}</TableCell>
               <TableCell className="text-center font-bold">{s.total}</TableCell>
             </TableRow>
           ))}
           {filtered.length === 0 && (
             <TableRow>
-              <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+              <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                 No usage data for this period
               </TableCell>
             </TableRow>

@@ -28,7 +28,7 @@ export function useUsageLimit(section: string) {
         const { count: globalCount } = await supabase
           .from("usage_log")
           .select("*", { count: "exact", head: true })
-          .in("section", ["text_to_image", "script_ai", "voice_tts"])
+          .in("section", ["text_to_image", "script_ai", "voice_tts", "music_gen"])
           .gte("used_at", todayStart.toISOString());
 
         if ((globalCount ?? 0) >= capData.daily_limit) {
@@ -52,7 +52,7 @@ export function useUsageLimit(section: string) {
         const { data: tokenLogs } = await supabase
           .from("usage_log")
           .select("tokens_used")
-          .in("section", ["text_to_image", "script_ai", "voice_tts"])
+          .in("section", ["text_to_image", "script_ai", "voice_tts", "music_gen"])
           .gte("used_at", todayStart.toISOString());
 
         const totalTokens = (tokenLogs || []).reduce((sum, log) => sum + ((log as any).tokens_used || 0), 0);
@@ -73,12 +73,13 @@ export function useUsageLimit(section: string) {
       text_to_image: "image_generation_cap",
       script_ai: "script_generation_cap",
       voice_tts: "voice_generation_cap",
+      music_gen: "music_generation_cap",
     };
 
     const capTable = sectionCapMap[section];
     if (capTable) {
       const { data: sectionCapData } = await supabase
-        .from(capTable as "image_generation_cap" | "script_generation_cap" | "voice_generation_cap")
+        .from(capTable as "image_generation_cap" | "script_generation_cap" | "voice_generation_cap" | "music_generation_cap")
         .select("enabled, daily_limit")
         .limit(1)
         .maybeSingle();
@@ -95,6 +96,7 @@ export function useUsageLimit(section: string) {
             text_to_image: "Image generation",
             script_ai: "Script generation",
             voice_tts: "Voice generation",
+            music_gen: "Music generation",
           };
           toast({
             title: `${labels[section] || section} limit reached`,
