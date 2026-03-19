@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Upload, Mic, Video, Loader2, Download, Play, AlertCircle, Type } from "lucide-react";
+import { Upload, Mic, Video, Loader2, Download, Play, AlertCircle, Type, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
