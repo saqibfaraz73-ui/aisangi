@@ -177,7 +177,6 @@ const Index = () => {
     setPrompt("");
     setImages([]);
     setCharacterImages([]);
-    setSceneCount(1);
     toast({ title: "Cleared all data" });
   };
 
