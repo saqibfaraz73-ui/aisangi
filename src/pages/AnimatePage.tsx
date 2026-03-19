@@ -256,7 +256,16 @@ const AnimatePage = () => {
                   </>
                 )}
               </Button>
-              {(items.length > 0 || videoUrl) && (
+              {isGenerating && (
+                <Button
+                  onClick={handleCancelGenerate}
+                  variant="outline"
+                  className="h-12 px-4 border-destructive/30 text-destructive hover:bg-destructive/10"
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
+              )}
+              {!isGenerating && (items.length > 0 || videoUrl) && (
                 <Button
                   onClick={handleClear}
                   variant="outline"

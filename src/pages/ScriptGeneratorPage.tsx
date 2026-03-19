@@ -180,6 +180,15 @@ const ScriptGeneratorPage = () => {
                   </>
                 )}
               </Button>
+              {isGenerating && (
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
+                  className="h-12 px-4 border-destructive/30 text-destructive hover:bg-destructive/10"
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
+              )}
               {(script || idea) && (
                 <Button
                   onClick={handleClear}

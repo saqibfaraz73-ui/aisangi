@@ -185,6 +185,17 @@ const VoiceGeneratorPage = () => {
             )}
           </Button>
 
+          {generating && (
+            <Button
+              onClick={handleCancel}
+              variant="outline"
+              className="w-full h-10 border-destructive/30 text-destructive hover:bg-destructive/10 font-display font-semibold"
+            >
+              <Square className="h-4 w-4 mr-2" />
+              Stop
+            </Button>
+          )}
+
           {audioUrl && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
