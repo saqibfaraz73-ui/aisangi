@@ -236,7 +236,7 @@ const Index = () => {
               </p>
             </div>
 
-            <SceneCountSelector count={sceneCount} onChange={setSceneCount} />
+            
 
             <div className="flex gap-3">
               <Button
