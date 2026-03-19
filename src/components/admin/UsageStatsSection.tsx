@@ -129,10 +129,11 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
         script_ai: acc.script_ai + s.script_ai,
         audio_overlay: acc.audio_overlay + s.audio_overlay,
         voice_tts: acc.voice_tts + s.voice_tts,
+        music_gen: acc.music_gen + s.music_gen,
         tokens: acc.tokens + s.tokens,
         total: acc.total + s.total,
       }),
-      { text_to_image: 0, image_to_video: 0, script_ai: 0, audio_overlay: 0, voice_tts: 0, tokens: 0, total: 0 }
+      { text_to_image: 0, image_to_video: 0, script_ai: 0, audio_overlay: 0, voice_tts: 0, music_gen: 0, tokens: 0, total: 0 }
     );
   }, [filtered]);
 
