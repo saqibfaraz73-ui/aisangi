@@ -1,7 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
-import { getAccessToken, buildVertexUrl, hasServiceAccount } from "../_shared/vertex-auth.ts";
+import { getAccessToken, buildVertexUrl, hasServiceAccount, getGeminiApiKeyFromEnv } from "../_shared/vertex-auth.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
@@ -42,6 +42,16 @@ async function getGeminiSettings(supabase: any): Promise<{ apiKey: string; voice
       apiKey: "",
       voiceModel: data?.voice_model || DEFAULT_TTS_MODEL,
       useVertexAI: true,
+    };
+  }
+
+  // Check for plain Gemini API key stored in GCP_SERVICE_ACCOUNT_JSON
+  const envApiKey = getGeminiApiKeyFromEnv();
+  if (envApiKey) {
+    return {
+      apiKey: envApiKey,
+      voiceModel: data?.voice_model || DEFAULT_TTS_MODEL,
+      useVertexAI: false,
     };
   }
 

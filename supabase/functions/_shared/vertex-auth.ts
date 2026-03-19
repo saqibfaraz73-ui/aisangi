@@ -117,7 +117,28 @@ export function getProjectId(): string {
 }
 
 export function hasServiceAccount(): boolean {
-  return !!Deno.env.get("GCP_SERVICE_ACCOUNT_JSON");
+  const json = Deno.env.get("GCP_SERVICE_ACCOUNT_JSON");
+  if (!json) return false;
+  try {
+    const parsed = JSON.parse(json);
+    return !!(parsed.project_id && parsed.client_email && parsed.private_key);
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Check if GCP_SERVICE_ACCOUNT_JSON contains a plain Gemini API key (not JSON).
+ */
+export function getGeminiApiKeyFromEnv(): string | null {
+  const val = Deno.env.get("GCP_SERVICE_ACCOUNT_JSON");
+  if (!val) return null;
+  try {
+    JSON.parse(val);
+    return null; // It's valid JSON, not a plain API key
+  } catch {
+    return val; // It's a plain string, treat as API key
+  }
 }
 
 /**

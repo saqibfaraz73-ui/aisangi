@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { getAccessToken, buildVertexUrl, hasServiceAccount } from "../_shared/vertex-auth.ts";
+import { getAccessToken, buildVertexUrl, hasServiceAccount, getGeminiApiKeyFromEnv } from "../_shared/vertex-auth.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
@@ -94,6 +94,20 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
       useCustom: false,
       useNativeGemini: true,
       useVertexAI: true,
+    };
+  }
+
+  // Check for plain Gemini API key stored in GCP_SERVICE_ACCOUNT_JSON
+  const envApiKey = getGeminiApiKeyFromEnv();
+  if (envApiKey) {
+    const scriptModel = data?.script_model || DEFAULT_GEMINI_TEXT_MODEL;
+    return {
+      apiKey: envApiKey,
+      model: scriptModel,
+      provider: "gemini",
+      useCustom: true,
+      useNativeGemini: true,
+      useVertexAI: false,
     };
   }
 
