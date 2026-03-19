@@ -43,7 +43,13 @@ const VoiceGeneratorPage = () => {
       const isClone = voice === "__clone__";
       const fnName = isClone ? "generate-voice-elevenlabs" : "generate-voice";
       const body = isClone ? { text: text.trim() } : { text: text.trim(), voice };
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       const { data, error } = await supabase.functions.invoke(fnName, { body });
+
+      if (controller.signal.aborted) return;
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
