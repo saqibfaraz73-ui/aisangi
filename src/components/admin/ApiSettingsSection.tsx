@@ -119,6 +119,7 @@ const ApiSettingsSection = () => {
         model,
         script_model: scriptModel,
         voice_model: voiceModel,
+        music_model: musicModel,
         enabled,
         updated_at: new Date().toISOString(),
       };
