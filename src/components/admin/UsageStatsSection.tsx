@@ -101,7 +101,7 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
     }
     for (const log of logs) {
       if (!map[log.user_id]) continue;
-      const section = log.section as keyof Pick<UserStats, "text_to_image" | "image_to_video" | "script_ai" | "audio_overlay" | "voice_tts">;
+      const section = log.section as keyof Pick<UserStats, "text_to_image" | "image_to_video" | "script_ai" | "audio_overlay" | "voice_tts" | "music_gen">;
       if (section in map[log.user_id] && typeof map[log.user_id][section] === "number") {
         (map[log.user_id][section] as number)++;
         map[log.user_id].total++;
