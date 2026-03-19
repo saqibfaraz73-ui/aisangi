@@ -2,17 +2,68 @@
 // Generates OAuth2 access tokens from GCP_SERVICE_ACCOUNT_JSON secret
 
 const GCP_LOCATION = "us-central1";
+const GEMINI_API_KEY_PREFIX = "AIza";
 
 interface ServiceAccount {
+  type?: string;
   project_id: string;
   client_email: string;
   private_key: string;
 }
 
+function isServiceAccount(value: unknown): value is ServiceAccount {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Record<string, unknown>;
+  return typeof candidate.project_id === "string"
+    && typeof candidate.client_email === "string"
+    && typeof candidate.private_key === "string"
+    && (candidate.type === undefined || candidate.type === "service_account");
+}
+
+function stripCodeFences(value: string): string {
+  return value
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/i, "")
+    .trim();
+}
+
+function parseServiceAccountSecret(raw: string | null): ServiceAccount | null {
+  if (!raw) return null;
+
+  const trimmed = stripCodeFences(raw.trim());
+  const candidates = new Set<string>([trimmed]);
+
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace > firstBrace) {
+    candidates.add(trimmed.slice(firstBrace, lastBrace + 1));
+  }
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+
+    try {
+      const parsed = JSON.parse(candidate);
+      if (isServiceAccount(parsed)) return parsed;
+
+      if (typeof parsed === "string") {
+        const nested = JSON.parse(parsed);
+        if (isServiceAccount(nested)) return nested;
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  return null;
+}
+
 function getServiceAccount(): ServiceAccount {
-  const json = Deno.env.get("GCP_SERVICE_ACCOUNT_JSON");
-  if (!json) throw new Error("GCP_SERVICE_ACCOUNT_JSON not configured");
-  return JSON.parse(json);
+  const raw = Deno.env.get("GCP_SERVICE_ACCOUNT_JSON");
+  const parsed = parseServiceAccountSecret(raw);
+  if (!parsed) throw new Error("GCP_SERVICE_ACCOUNT_JSON is missing or is not valid service account JSON");
+  return parsed;
 }
 
 function b64url(data: Uint8Array): string {
@@ -117,14 +168,7 @@ export function getProjectId(): string {
 }
 
 export function hasServiceAccount(): boolean {
-  const json = Deno.env.get("GCP_SERVICE_ACCOUNT_JSON");
-  if (!json) return false;
-  try {
-    const parsed = JSON.parse(json);
-    return !!(parsed.project_id && parsed.client_email && parsed.private_key);
-  } catch {
-    return false;
-  }
+  return parseServiceAccountSecret(Deno.env.get("GCP_SERVICE_ACCOUNT_JSON")) !== null;
 }
 
 /**
@@ -133,12 +177,13 @@ export function hasServiceAccount(): boolean {
 export function getGeminiApiKeyFromEnv(): string | null {
   const val = Deno.env.get("GCP_SERVICE_ACCOUNT_JSON");
   if (!val) return null;
-  try {
-    JSON.parse(val);
-    return null; // It's valid JSON, not a plain API key
-  } catch {
-    return val; // It's a plain string, treat as API key
+
+  if (parseServiceAccountSecret(val)) {
+    return null;
   }
+
+  const trimmed = stripCodeFences(val.trim()).replace(/^['"]|['"]$/g, "");
+  return trimmed.startsWith(GEMINI_API_KEY_PREFIX) ? trimmed : null;
 }
 
 /**
