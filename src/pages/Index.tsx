@@ -252,7 +252,7 @@ const Index = () => {
                 disabled={isGenerating || !prompt.trim()}
                 className="flex-1 h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
               >
-                {isGenerating ? (
+              {isGenerating ? (
                   <>
                     <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                     Generating {sceneCount > 1 ? `${sceneCount} scenes` : ""}...
@@ -264,6 +264,15 @@ const Index = () => {
                   </>
                 )}
               </Button>
+              {isGenerating && (
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
+                  className="h-12 px-4 border-destructive/30 text-destructive hover:bg-destructive/10"
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
+              )}
               {(images.length > 0 || prompt || characterImages.length > 0) && (
                 <Button
                   onClick={handleClear}
