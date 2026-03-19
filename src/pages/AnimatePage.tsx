@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Download, Loader2, Film, Play, Trash2 } from "lucide-react";
+import { Download, Loader2, Film, Play, Trash2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
