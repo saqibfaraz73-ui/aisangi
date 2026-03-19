@@ -247,12 +247,12 @@ const Index = () => {
               {isGenerating ? (
                   <>
                     <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                    Generating {sceneCount > 1 ? `${sceneCount} scenes` : ""}...
+                    Generating...
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-5 w-5 mr-2" />
-                    Generate {sceneCount > 1 ? `${sceneCount} Scenes` : "Image"}
+                    Generate Image
                   </>
                 )}
               </Button>
