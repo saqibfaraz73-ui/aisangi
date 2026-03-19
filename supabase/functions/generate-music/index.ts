@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { getAccessToken, buildVertexUrl, hasServiceAccount } from "../_shared/vertex-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,6 +19,7 @@ async function getSettings(supabase: any) {
     return {
       apiKey: data.api_key,
       musicModel: data.music_model || "lyria-002",
+      useVertexAI: hasServiceAccount(),
     };
   }
 
@@ -27,11 +28,16 @@ async function getSettings(supabase: any) {
   );
 }
 
-async function callWithRetry(url: string, body: any, maxRetries = 3): Promise<Response> {
+async function callWithRetry(
+  url: string,
+  headers: Record<string, string>,
+  body: any,
+  maxRetries = 3,
+): Promise<Response> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify(body),
     });
 
@@ -45,7 +51,11 @@ async function callWithRetry(url: string, body: any, maxRetries = 3): Promise<Re
     }
     return response;
   }
-  return fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(body),
+  });
 }
 
 serve(async (req) => {
@@ -67,26 +77,51 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { apiKey, musicModel } = await getSettings(supabase);
+    const { apiKey, musicModel, useVertexAI } = await getSettings(supabase);
 
-    console.log(`Generating music with model: ${musicModel}, prompt length: ${prompt.length}`);
+    let url: string;
+    let authHeaders: Record<string, string> = {};
+    let requestBody: any;
 
-    // Use generateContent endpoint with audio response modality
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${musicModel}:generateContent?key=${apiKey}`;
+    if (useVertexAI) {
+      // Lyria uses the "predict" endpoint on Vertex AI
+      url = buildVertexUrl(musicModel, "predict");
+      const token = await getAccessToken();
+      authHeaders = { Authorization: `Bearer ${token}` };
 
-    const requestBody: any = {
-      contents: [{ parts: [{ text: prompt.trim() }] }],
-      generationConfig: {
-        responseModalities: ["AUDIO"],
-      },
-    };
+      console.log(`Music gen using Vertex AI model: ${musicModel}`);
 
-    // Add negative prompt if provided
-    if (negative_prompt?.trim()) {
-      requestBody.contents[0].parts.push({ text: `Negative prompt: ${negative_prompt.trim()}` });
+      // Vertex AI Lyria predict format
+      const instance: any = { prompt: prompt.trim() };
+      if (negative_prompt?.trim()) {
+        instance.negative_prompt = negative_prompt.trim();
+      }
+
+      requestBody = {
+        instances: [instance],
+        parameters: {
+          sample_count: 1,
+        },
+      };
+    } else {
+      // AI Studio / generativelanguage.googleapis.com format
+      url = `https://generativelanguage.googleapis.com/v1beta/models/${musicModel}:generateContent?key=${apiKey}`;
+
+      console.log(`Music gen using AI Studio model: ${musicModel}`);
+
+      requestBody = {
+        contents: [{ parts: [{ text: prompt.trim() }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+        },
+      };
+
+      if (negative_prompt?.trim()) {
+        requestBody.contents[0].parts.push({ text: `Negative prompt: ${negative_prompt.trim()}` });
+      }
     }
 
-    const response = await callWithRetry(url, requestBody);
+    const response = await callWithRetry(url, authHeaders, requestBody);
 
     if (!response.ok) {
       const errText = await response.text();
@@ -100,7 +135,7 @@ serve(async (req) => {
       }
       if (response.status === 401 || response.status === 403) {
         return new Response(
-          JSON.stringify({ error: "Invalid API key or Lyria not enabled. Check Admin settings." }),
+          JSON.stringify({ error: "Invalid API credentials or Lyria not enabled. Check Admin settings." }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -118,23 +153,31 @@ serve(async (req) => {
     }
 
     const data = await response.json();
-    const parts = data?.candidates?.[0]?.content?.parts;
-
-    if (!Array.isArray(parts)) {
-      throw new Error("No audio data in response");
-    }
 
     let audioData: string | null = null;
     let mimeType = "audio/wav";
 
-    for (const part of parts) {
-      if (part.inlineData?.data) {
-        audioData = part.inlineData.data;
-        mimeType = part.inlineData.mimeType || mimeType;
+    if (useVertexAI) {
+      // Vertex AI Lyria predict response format
+      const predictions = data?.predictions;
+      if (Array.isArray(predictions) && predictions.length > 0) {
+        audioData = predictions[0].bytesBase64Encoded;
+        mimeType = predictions[0].mimeType || "audio/wav";
       }
-      if (part.inline_data?.data) {
-        audioData = part.inline_data.data;
-        mimeType = part.inline_data.mime_type || mimeType;
+    } else {
+      // Standard Gemini generateContent response
+      const parts = data?.candidates?.[0]?.content?.parts;
+      if (Array.isArray(parts)) {
+        for (const part of parts) {
+          if (part.inlineData?.data) {
+            audioData = part.inlineData.data;
+            mimeType = part.inlineData.mimeType || mimeType;
+          }
+          if (part.inline_data?.data) {
+            audioData = part.inline_data.data;
+            mimeType = part.inline_data.mime_type || mimeType;
+          }
+        }
       }
     }
 
