@@ -59,6 +59,7 @@ const LipSyncPage = () => {
     
     const maxAttempts = 120; // 10 minutes max
     for (let i = 0; i < maxAttempts; i++) {
+      if (cancelledRef.current) break;
       await new Promise((r) => setTimeout(r, 5000));
       
       try {
