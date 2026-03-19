@@ -20,6 +20,7 @@ const LipSyncPage = () => {
   const [polling, setPolling] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState("");
+  const cancelledRef = useRef(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
 
