@@ -8,15 +8,15 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const TTS_MODEL = "gemini-2.5-flash-preview-tts";
+const DEFAULT_TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
 const AVAILABLE_VOICES = [
   "Zephyr", "Puck", "Charon", "Kore", "Fenrir", "Aoede",
   "Leda", "Orus", "Perseus", "Schedar", "Vega",
 ];
 
-function buildGeminiTtsUrl(apiKey: string) {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${apiKey}`;
+function buildGeminiTtsUrl(apiKey: string, model: string) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 }
 
 async function getGeminiApiKey(supabase: any): Promise<string> {
