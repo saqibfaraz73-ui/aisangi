@@ -144,7 +144,7 @@ serve(async (req) => {
     }
 
     const requestBody = {
-      contents: [{ parts: [{ text: text.trim() }] }],
+      contents: [{ role: "user", parts: [{ text: text.trim() }] }],
       generationConfig: {
         responseModalities: ["AUDIO"],
         speechConfig: {
