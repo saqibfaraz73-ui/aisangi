@@ -23,8 +23,17 @@ async function getSettings(supabase: any) {
     };
   }
 
+  // Fallback to Vertex AI if service account is available
+  if (hasServiceAccount()) {
+    return {
+      apiKey: "",
+      musicModel: data?.music_model || "lyria-002",
+      useVertexAI: true,
+    };
+  }
+
   throw new Error(
-    "Music generation requires a custom Gemini API key with Lyria enabled. Configure in Admin → Custom AI API settings."
+    "Music generation requires a custom Gemini API key or a GCP service account. Configure in Admin → Custom AI API settings."
   );
 }
 
