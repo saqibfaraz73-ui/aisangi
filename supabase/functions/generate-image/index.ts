@@ -271,6 +271,7 @@ async function generateWithCustomGemini(
 
     const response = await fetchGeminiImage(url, authHeaders, {
       contents: [{
+        role: "user",
         parts: buildGeminiParts(allCharacterUrls, prompt, variationHint, watermarkInstruction, fullPrompt),
       }],
       generationConfig: {
