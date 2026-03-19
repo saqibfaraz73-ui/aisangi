@@ -158,6 +158,14 @@ const LipSyncPage = () => {
     }
   };
 
+  const handleCancel = () => {
+    cancelledRef.current = true;
+    setGenerating(false);
+    setPolling(false);
+    setStatusMsg("");
+    toast({ title: "Generation cancelled" });
+  };
+
   const downloadVideo = () => {
     if (!videoUrl) return;
     const a = document.createElement("a");
