@@ -96,11 +96,13 @@ const GlobalCapSection = () => {
   const [savingImage, setSavingImage] = useState(false);
   const [savingScript, setSavingScript] = useState(false);
   const [savingVoice, setSavingVoice] = useState(false);
+  const [savingMusic, setSavingMusic] = useState(false);
   const [savingToken, setSavingToken] = useState(false);
   const [globalCap, setGlobalCap] = useState<CapState>(defaultCap(1400));
   const [imageCap, setImageCap] = useState<CapState>(defaultCap(240));
   const [scriptCap, setScriptCap] = useState<CapState>(defaultCap(1160));
   const [voiceCap, setVoiceCap] = useState<CapState>(defaultCap(100));
+  const [musicCap, setMusicCap] = useState<CapState>(defaultCap(50));
   const [tokenCap, setTokenCap] = useState<CapState>({ id: null, enabled: false, dailyLimit: 1000000, todayUsage: 0 });
 
   useEffect(() => {
