@@ -39,6 +39,7 @@ interface UserStats {
   script_ai: number;
   audio_overlay: number;
   voice_tts: number;
+  music_gen: number;
   tokens: number;
   total: number;
 }
