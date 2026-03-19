@@ -118,6 +118,7 @@ const LipSyncPage = () => {
     }
 
     setGenerating(true);
+    cancelledRef.current = false;
     setVideoUrl(null);
     setStatusMsg("Uploading and starting generation...");
 
