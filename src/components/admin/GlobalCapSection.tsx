@@ -153,6 +153,13 @@ const GlobalCapSection = () => {
       setVoiceCap((p) => ({ ...p, todayUsage: voiceUsageRes.count ?? 0 }));
     }
 
+    if (musicCapRes.data) {
+      const mc = musicCapRes.data as any;
+      setMusicCap({ id: mc.id, enabled: mc.enabled, dailyLimit: mc.daily_limit, todayUsage: musicUsageRes.count ?? 0 });
+    } else {
+      setMusicCap((p) => ({ ...p, todayUsage: musicUsageRes.count ?? 0 }));
+    }
+
     // Token cap
     const totalTokensUsed = (tokenUsageRes.data || []).reduce((sum: number, log: any) => sum + (log.tokens_used || 0), 0);
     if (tokenCapRes.data) {
