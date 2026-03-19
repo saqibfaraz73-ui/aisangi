@@ -226,22 +226,41 @@ const ApiSettingsSection = () => {
         </div>
 
         {provider === "gemini" && (
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-foreground">Script Model</label>
-            <Select value={scriptModel} onValueChange={setScriptModel} disabled={!enabled}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {GEMINI_SCRIPT_MODELS.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Used for script generation. Flash Lite is cheapest.
-            </p>
-          </div>
+          <>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground">Script Model</label>
+              <Select value={scriptModel} onValueChange={setScriptModel} disabled={!enabled}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {GEMINI_SCRIPT_MODELS.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Used for script generation. Flash Lite is cheapest.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground">Voice Model (TTS)</label>
+              <Select value={voiceModel} onValueChange={setVoiceModel} disabled={!enabled}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {GEMINI_VOICE_MODELS.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Used for text-to-speech voice generation.
+              </p>
+            </div>
+          </>
         )}
 
         <Button onClick={handleSave} disabled={saving} className="w-full">

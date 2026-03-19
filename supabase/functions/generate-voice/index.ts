@@ -119,7 +119,7 @@ serve(async (req) => {
       },
     };
 
-    const response = await callGeminiTtsWithRetry(buildGeminiTtsUrl(apiKey), requestBody);
+    const response = await callGeminiTtsWithRetry(buildGeminiTtsUrl(apiKey, voiceModel), requestBody);
 
     if (!response.ok) {
       const errText = await response.text();
