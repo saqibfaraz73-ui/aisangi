@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
 import CharacterUpload from "@/components/CharacterUpload";
-import SceneCountSelector from "@/components/SceneCountSelector";
+
 import ImageResults from "@/components/ImageResults";
 import AppHeader from "@/components/AppHeader";
 import { usePersistedState } from "@/hooks/use-persisted-state";
