@@ -209,6 +209,42 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_log: {
+        Row: {
+          id: string
+          requested_at: string
+        }
+        Insert: {
+          id?: string
+          requested_at?: string
+        }
+        Update: {
+          id?: string
+          requested_at?: string
+        }
+        Relationships: []
+      }
+      rate_limit_settings: {
+        Row: {
+          enabled: boolean
+          id: string
+          requests_per_second: number
+          updated_at: string
+        }
+        Insert: {
+          enabled?: boolean
+          id?: string
+          requests_per_second?: number
+          updated_at?: string
+        }
+        Update: {
+          enabled?: boolean
+          id?: string
+          requests_per_second?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       script_generation_cap: {
         Row: {
           daily_limit: number
@@ -373,6 +409,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: { Args: never; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
