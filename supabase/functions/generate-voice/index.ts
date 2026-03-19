@@ -8,18 +8,18 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-const TTS_MODEL = "gemini-2.5-flash-preview-tts";
+const DEFAULT_TTS_MODEL = "gemini-2.5-flash-preview-tts";
 
 const AVAILABLE_VOICES = [
   "Zephyr", "Puck", "Charon", "Kore", "Fenrir", "Aoede",
   "Leda", "Orus", "Perseus", "Schedar", "Vega",
 ];
 
-function buildGeminiTtsUrl(apiKey: string) {
-  return `https://generativelanguage.googleapis.com/v1beta/models/${TTS_MODEL}:generateContent?key=${apiKey}`;
+function buildGeminiTtsUrl(apiKey: string, model: string) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 }
 
-async function getGeminiApiKey(supabase: any): Promise<string> {
+async function getGeminiSettings(supabase: any): Promise<{ apiKey: string; voiceModel: string }> {
   const { data } = await supabase
     .from("api_settings")
     .select("*")
@@ -27,7 +27,10 @@ async function getGeminiApiKey(supabase: any): Promise<string> {
     .maybeSingle();
 
   if (data?.enabled && data?.api_key && data?.provider === "gemini") {
-    return data.api_key;
+    return {
+      apiKey: data.api_key,
+      voiceModel: data.voice_model || DEFAULT_TTS_MODEL,
+    };
   }
 
   throw new Error(
@@ -98,9 +101,9 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const apiKey = await getGeminiApiKey(supabase);
+    const { apiKey, voiceModel } = await getGeminiSettings(supabase);
 
-    console.log(`Generating TTS with voice: ${selectedVoice}, text length: ${text.length}`);
+    console.log(`Generating TTS with model: ${voiceModel}, voice: ${selectedVoice}, text length: ${text.length}`);
 
     const requestBody = {
       contents: [{ parts: [{ text: text.trim() }] }],
@@ -116,7 +119,7 @@ serve(async (req) => {
       },
     };
 
-    const response = await callGeminiTtsWithRetry(buildGeminiTtsUrl(apiKey), requestBody);
+    const response = await callGeminiTtsWithRetry(buildGeminiTtsUrl(apiKey, voiceModel), requestBody);
 
     if (!response.ok) {
       const errText = await response.text();

@@ -43,14 +43,20 @@ const LipSyncPage = () => {
   };
 
   const uploadToStorage = async (file: File, prefix: string): Promise<string> => {
-    // Upload to a temporary public URL using base64 data URL
-    // Since we need a public URL for the API, we convert to base64
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
+    const ext = file.name.split('.').pop() || 'bin';
+    const filePath = `${prefix}-${Date.now()}.${ext}`;
+    
+    const { error } = await supabase.storage
+      .from('lipsync-files')
+      .upload(filePath, file, { contentType: file.type, upsert: true });
+    
+    if (error) throw new Error(`Upload failed: ${error.message}`);
+    
+    const { data: urlData } = supabase.storage
+      .from('lipsync-files')
+      .getPublicUrl(filePath);
+    
+    return urlData.publicUrl;
   };
 
   const pollStatus = async (videoId: string, provider: string) => {

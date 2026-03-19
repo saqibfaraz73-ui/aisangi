@@ -45,6 +45,11 @@ const GEMINI_SCRIPT_MODELS = [
   { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Legacy)" },
 ];
 
+const GEMINI_VOICE_MODELS = [
+  { value: "gemini-2.5-flash-preview-tts", label: "Gemini 2.5 Flash TTS (Default)" },
+  { value: "gemini-2.0-flash-preview-tts", label: "Gemini 2.0 Flash TTS (Older)" },
+];
+
 const ApiSettingsSection = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -55,6 +60,7 @@ const ApiSettingsSection = () => {
   const [provider, setProvider] = useState("gemini");
   const [model, setModel] = useState(DEFAULT_GEMINI_MODEL);
   const [scriptModel, setScriptModel] = useState("gemini-2.5-flash-lite");
+  const [voiceModel, setVoiceModel] = useState("gemini-2.5-flash-preview-tts");
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
@@ -75,6 +81,7 @@ const ApiSettingsSection = () => {
       setProvider(nextProvider);
       setModel(nextProvider === "gemini" ? normalizeGeminiModel(data.model) : data.model || "gpt-4o");
       setScriptModel((data as any).script_model || "gemini-2.5-flash-lite");
+      setVoiceModel((data as any).voice_model || "gemini-2.5-flash-preview-tts");
       setEnabled(Boolean(data.enabled));
     }
     setLoading(false);
@@ -105,6 +112,7 @@ const ApiSettingsSection = () => {
         provider,
         model,
         script_model: scriptModel,
+        voice_model: voiceModel,
         enabled,
         updated_at: new Date().toISOString(),
       };
@@ -218,22 +226,41 @@ const ApiSettingsSection = () => {
         </div>
 
         {provider === "gemini" && (
-          <div className="space-y-1.5">
-            <label className="text-sm font-semibold text-foreground">Script Model</label>
-            <Select value={scriptModel} onValueChange={setScriptModel} disabled={!enabled}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {GEMINI_SCRIPT_MODELS.map((m) => (
-                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <p className="text-xs text-muted-foreground">
-              Used for script generation. Flash Lite is cheapest.
-            </p>
-          </div>
+          <>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground">Script Model</label>
+              <Select value={scriptModel} onValueChange={setScriptModel} disabled={!enabled}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {GEMINI_SCRIPT_MODELS.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Used for script generation. Flash Lite is cheapest.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground">Voice Model (TTS)</label>
+              <Select value={voiceModel} onValueChange={setVoiceModel} disabled={!enabled}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {GEMINI_VOICE_MODELS.map((m) => (
+                    <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Used for text-to-speech voice generation.
+              </p>
+            </div>
+          </>
         )}
 
         <Button onClick={handleSave} disabled={saving} className="w-full">
