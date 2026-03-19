@@ -8,6 +8,7 @@ const SECTION_LABELS: Record<string, string> = {
   image_to_video: "Image to Video",
   audio_overlay: "Audio Overlay",
   script_ai: "Script AI",
+  music_gen: "Music AI",
 };
 
 const LIMIT_TYPE_LABELS: Record<string, string> = {

@@ -96,6 +96,7 @@ export function useUsageLimit(section: string) {
             text_to_image: "Image generation",
             script_ai: "Script generation",
             voice_tts: "Voice generation",
+            music_gen: "Music generation",
           };
           toast({
             title: `${labels[section] || section} limit reached`,
