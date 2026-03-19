@@ -398,7 +398,7 @@ serve(async (req) => {
         return generateWithDalle(apiConfig.apiKey, fullPrompt);
       }
 
-      if (apiConfig.useCustom && apiConfig.provider === "gemini") {
+      if ((apiConfig.useCustom || apiConfig.useVertexAI) && apiConfig.provider === "gemini") {
         return generateWithCustomGemini(
           apiConfig.apiKey,
           apiConfig.model,
