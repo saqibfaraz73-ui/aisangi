@@ -226,6 +226,7 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
             <TableHead className="text-center">Scripts</TableHead>
             <TableHead className="text-center">Audio</TableHead>
             <TableHead className="text-center">Voice</TableHead>
+            <TableHead className="text-center">Music</TableHead>
             <TableHead className="text-center">Tokens</TableHead>
             <TableHead className="text-center">Total</TableHead>
           </TableRow>
