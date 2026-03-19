@@ -131,21 +131,32 @@ const AnimatePage = () => {
 
   const totalDuration = items.reduce((sum, item) => sum + item.duration, 0);
 
+  const cancelledRef = useRef(false);
+
   const handleGenerate = async () => {
     if (items.length === 0) return;
     const allowed = await checkAndTrack();
     if (!allowed) return;
+    cancelledRef.current = false;
     setIsGenerating(true);
     setVideoUrl(null);
     try {
       const url = await generate(items, platform, watermarkEnabled, watermarkColor, audioTracks);
+      if (cancelledRef.current) return;
       setVideoUrl(url);
       toast({ title: "Video generated successfully!" });
     } catch (err: any) {
+      if (cancelledRef.current) return;
       toast({ title: "Video generation failed", description: err.message, variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleCancelGenerate = () => {
+    cancelledRef.current = true;
+    setIsGenerating(false);
+    toast({ title: "Generation cancelled" });
   };
 
   const downloadVideo = () => {
