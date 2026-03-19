@@ -167,8 +167,17 @@ const Index = () => {
       });
     } finally {
       generationInFlightRef.current = false;
+      abortRef.current = null;
       setIsGenerating(false);
     }
+  };
+
+  const handleCancel = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    generationInFlightRef.current = false;
+    setIsGenerating(false);
+    toast({ title: "Generation cancelled" });
   };
 
   const handleClear = () => {
