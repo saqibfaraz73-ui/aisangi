@@ -38,6 +38,13 @@ const OPENAI_MODELS = [
   { value: "dall-e-3", label: "DALL·E 3 (Image only)" },
 ];
 
+const GEMINI_SCRIPT_MODELS = [
+  { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite (Cheapest, good for scripts)" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Better quality)" },
+  { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Legacy)" },
+  { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Legacy)" },
+];
+
 const ApiSettingsSection = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -47,6 +54,7 @@ const ApiSettingsSection = () => {
   const [apiKey, setApiKey] = useState("");
   const [provider, setProvider] = useState("gemini");
   const [model, setModel] = useState(DEFAULT_GEMINI_MODEL);
+  const [scriptModel, setScriptModel] = useState("gemini-2.5-flash-lite");
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
