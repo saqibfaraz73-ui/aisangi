@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Upload, Mic, Video, Loader2, Download, Play, AlertCircle, Type } from "lucide-react";
+import { Upload, Mic, Video, Loader2, Download, Play, AlertCircle, Type, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -20,6 +20,7 @@ const LipSyncPage = () => {
   const [polling, setPolling] = useState(false);
   const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [statusMsg, setStatusMsg] = useState("");
+  const cancelledRef = useRef(false);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const audioInputRef = useRef<HTMLInputElement>(null);
 
@@ -58,6 +59,7 @@ const LipSyncPage = () => {
     
     const maxAttempts = 120; // 10 minutes max
     for (let i = 0; i < maxAttempts; i++) {
+      if (cancelledRef.current) break;
       await new Promise((r) => setTimeout(r, 5000));
       
       try {
@@ -116,6 +118,7 @@ const LipSyncPage = () => {
     }
 
     setGenerating(true);
+    cancelledRef.current = false;
     setVideoUrl(null);
     setStatusMsg("Uploading and starting generation...");
 
@@ -153,6 +156,14 @@ const LipSyncPage = () => {
       setGenerating(false);
       setStatusMsg("");
     }
+  };
+
+  const handleCancel = () => {
+    cancelledRef.current = true;
+    setGenerating(false);
+    setPolling(false);
+    setStatusMsg("");
+    toast({ title: "Generation cancelled" });
   };
 
   const downloadVideo = () => {
@@ -290,6 +301,17 @@ const LipSyncPage = () => {
                 </>
               )}
             </Button>
+
+            {(generating || polling) && (
+              <Button
+                onClick={handleCancel}
+                variant="outline"
+                className="w-full h-10 border-destructive/30 text-destructive hover:bg-destructive/10 font-display font-semibold"
+              >
+                <Square className="h-4 w-4 mr-2" />
+                Stop
+              </Button>
+            )}
           </motion.div>
 
           {/* Right: Preview */}

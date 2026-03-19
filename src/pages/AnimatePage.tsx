@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Download, Loader2, Film, Play, Trash2 } from "lucide-react";
+import { Download, Loader2, Film, Play, Trash2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
@@ -131,21 +131,32 @@ const AnimatePage = () => {
 
   const totalDuration = items.reduce((sum, item) => sum + item.duration, 0);
 
+  const cancelledRef = useRef(false);
+
   const handleGenerate = async () => {
     if (items.length === 0) return;
     const allowed = await checkAndTrack();
     if (!allowed) return;
+    cancelledRef.current = false;
     setIsGenerating(true);
     setVideoUrl(null);
     try {
       const url = await generate(items, platform, watermarkEnabled, watermarkColor, audioTracks);
+      if (cancelledRef.current) return;
       setVideoUrl(url);
       toast({ title: "Video generated successfully!" });
     } catch (err: any) {
+      if (cancelledRef.current) return;
       toast({ title: "Video generation failed", description: err.message, variant: "destructive" });
     } finally {
       setIsGenerating(false);
     }
+  };
+
+  const handleCancelGenerate = () => {
+    cancelledRef.current = true;
+    setIsGenerating(false);
+    toast({ title: "Generation cancelled" });
   };
 
   const downloadVideo = () => {
@@ -245,7 +256,16 @@ const AnimatePage = () => {
                   </>
                 )}
               </Button>
-              {(items.length > 0 || videoUrl) && (
+              {isGenerating && (
+                <Button
+                  onClick={handleCancelGenerate}
+                  variant="outline"
+                  className="h-12 px-4 border-destructive/30 text-destructive hover:bg-destructive/10"
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
+              )}
+              {!isGenerating && (items.length > 0 || videoUrl) && (
                 <Button
                   onClick={handleClear}
                   variant="outline"

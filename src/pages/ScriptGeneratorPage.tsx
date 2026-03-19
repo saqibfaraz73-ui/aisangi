@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Loader2, Copy, Check, Film, Mic, Hash, ArrowRight, Trash2 } from "lucide-react";
+import { Sparkles, Loader2, Copy, Check, Film, Mic, Hash, ArrowRight, Trash2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -37,6 +37,7 @@ const ScriptGeneratorPage = () => {
   const [idea, setIdea] = usePersistedState("sangi_script_idea", "");
   const [sceneCount, setSceneCount] = usePersistedState<number | null>("sangi_script_sceneCount", null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const [script, setScript] = usePersistedState<GeneratedScript | null>("sangi_script_result", null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [sceneVoices, setSceneVoices] = useState<Record<number, string>>({});
@@ -61,9 +62,14 @@ const ScriptGeneratorPage = () => {
     setScript(null);
 
     try {
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       const { data, error } = await supabase.functions.invoke("generate-script", {
         body: { idea: idea.trim(), sceneCount: sceneCount ?? undefined },
       });
+
+      if (controller.signal.aborted) return;
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
@@ -78,8 +84,16 @@ const ScriptGeneratorPage = () => {
         variant: "destructive",
       });
     } finally {
+      abortRef.current = null;
       setIsGenerating(false);
     }
+  };
+
+  const handleCancel = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsGenerating(false);
+    toast({ title: "Generation cancelled" });
   };
 
   const copyToClipboard = async (text: string, field: string) => {
@@ -166,6 +180,15 @@ const ScriptGeneratorPage = () => {
                   </>
                 )}
               </Button>
+              {isGenerating && (
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
+                  className="h-12 px-4 border-destructive/30 text-destructive hover:bg-destructive/10"
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
+              )}
               {(script || idea) && (
                 <Button
                   onClick={handleClear}

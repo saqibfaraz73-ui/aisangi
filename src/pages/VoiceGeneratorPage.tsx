@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Volume2, Loader2, Play, Pause, Download, Edit3, Check } from "lucide-react";
+import { Volume2, Loader2, Play, Pause, Download, Edit3, Check, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
@@ -21,6 +21,7 @@ const VoiceGeneratorPage = () => {
   const [audioEl, setAudioEl] = useState<HTMLAudioElement | null>(null);
   const [fileName, setFileName] = useState("My_Voice");
   const [editingName, setEditingName] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const { checkLimit, trackUsage } = useUsageLimit("voice_tts");
   const elevenLabs = useElevenLabsVoice();
@@ -42,7 +43,13 @@ const VoiceGeneratorPage = () => {
       const isClone = voice === "__clone__";
       const fnName = isClone ? "generate-voice-elevenlabs" : "generate-voice";
       const body = isClone ? { text: text.trim() } : { text: text.trim(), voice };
+
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       const { data, error } = await supabase.functions.invoke(fnName, { body });
+
+      if (controller.signal.aborted) return;
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
@@ -61,8 +68,17 @@ const VoiceGeneratorPage = () => {
         variant: "destructive",
       });
     } finally {
+      abortRef.current = null;
       setGenerating(false);
     }
+  };
+
+  const handleCancel = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setGenerating(false);
+    if (audioEl) { audioEl.pause(); }
+    toast({ title: "Generation cancelled" });
   };
 
   const togglePlay = () => {
@@ -168,6 +184,17 @@ const VoiceGeneratorPage = () => {
               </>
             )}
           </Button>
+
+          {generating && (
+            <Button
+              onClick={handleCancel}
+              variant="outline"
+              className="w-full h-10 border-destructive/30 text-destructive hover:bg-destructive/10 font-display font-semibold"
+            >
+              <Square className="h-4 w-4 mr-2" />
+              Stop
+            </Button>
+          )}
 
           {audioUrl && (
             <motion.div

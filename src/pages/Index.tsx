@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, Trash2 } from "lucide-react";
+import { Sparkles, Loader2, Trash2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -96,6 +96,7 @@ const Index = () => {
   const [images, setImages] = usePersistedState<ImageResult[]>("sangi_images", []);
   const [isGenerating, setIsGenerating] = useState(false);
   const generationInFlightRef = useRef(false);
+  const abortRef = useRef<AbortController | null>(null);
   const [characterImages, setCharacterImages] = usePersistedState<string[]>("sangi_characters", []);
   const [sceneCount, setSceneCount] = usePersistedState("sangi_sceneCount", 1);
   const { toast } = useToast();
@@ -131,6 +132,9 @@ const Index = () => {
         toast({ title: `Generating ${actualCount} of ${requestedCount} images`, description: `Your remaining limit allows ${actualCount} image(s).` });
       }
 
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       const { data, error } = await supabase.functions.invoke("generate-image", {
         body: {
           prompt: prompt.trim(),
@@ -138,6 +142,8 @@ const Index = () => {
           sceneCount: actualCount,
         },
       });
+
+      if (controller.signal.aborted) return;
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
@@ -161,8 +167,17 @@ const Index = () => {
       });
     } finally {
       generationInFlightRef.current = false;
+      abortRef.current = null;
       setIsGenerating(false);
     }
+  };
+
+  const handleCancel = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    generationInFlightRef.current = false;
+    setIsGenerating(false);
+    toast({ title: "Generation cancelled" });
   };
 
   const handleClear = () => {
@@ -237,7 +252,7 @@ const Index = () => {
                 disabled={isGenerating || !prompt.trim()}
                 className="flex-1 h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
               >
-                {isGenerating ? (
+              {isGenerating ? (
                   <>
                     <Loader2 className="h-5 w-5 mr-2 animate-spin" />
                     Generating {sceneCount > 1 ? `${sceneCount} scenes` : ""}...
@@ -249,6 +264,15 @@ const Index = () => {
                   </>
                 )}
               </Button>
+              {isGenerating && (
+                <Button
+                  onClick={handleCancel}
+                  variant="outline"
+                  className="h-12 px-4 border-destructive/30 text-destructive hover:bg-destructive/10"
+                >
+                  <Square className="h-4 w-4" />
+                </Button>
+              )}
               {(images.length > 0 || prompt || characterImages.length > 0) && (
                 <Button
                   onClick={handleClear}
