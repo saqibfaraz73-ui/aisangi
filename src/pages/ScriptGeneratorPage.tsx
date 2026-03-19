@@ -62,9 +62,14 @@ const ScriptGeneratorPage = () => {
     setScript(null);
 
     try {
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       const { data, error } = await supabase.functions.invoke("generate-script", {
         body: { idea: idea.trim(), sceneCount: sceneCount ?? undefined },
       });
+
+      if (controller.signal.aborted) return;
 
       if (error) throw new Error(error.message);
       if (data?.error) throw new Error(data.error);
