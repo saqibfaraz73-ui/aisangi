@@ -35,8 +35,17 @@ async function getGeminiSettings(supabase: any): Promise<{ apiKey: string; voice
     };
   }
 
+  // Fallback to Vertex AI if service account is available
+  if (hasServiceAccount()) {
+    return {
+      apiKey: "",
+      voiceModel: data?.voice_model || DEFAULT_TTS_MODEL,
+      useVertexAI: true,
+    };
+  }
+
   throw new Error(
-    "Text-to-Speech requires a custom Gemini API key. Please configure one in Admin → Custom AI API settings."
+    "Text-to-Speech requires a custom Gemini API key or a GCP service account. Please configure one in Admin settings."
   );
 }
 
