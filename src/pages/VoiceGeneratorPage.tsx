@@ -21,6 +21,7 @@ const VoiceGeneratorPage = () => {
   const [audioEl, setAudioEl] = useState<HTMLAudioElement | null>(null);
   const [fileName, setFileName] = useState("My_Voice");
   const [editingName, setEditingName] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const { toast } = useToast();
   const { checkLimit, trackUsage } = useUsageLimit("voice_tts");
   const elevenLabs = useElevenLabsVoice();
