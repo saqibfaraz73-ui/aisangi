@@ -8,7 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
 import CharacterUpload from "@/components/CharacterUpload";
-import SceneCountSelector from "@/components/SceneCountSelector";
+
 import ImageResults from "@/components/ImageResults";
 import AppHeader from "@/components/AppHeader";
 import { usePersistedState } from "@/hooks/use-persisted-state";
@@ -98,7 +98,7 @@ const Index = () => {
   const generationInFlightRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
   const [characterImages, setCharacterImages] = usePersistedState<string[]>("sangi_characters", []);
-  const [sceneCount, setSceneCount] = usePersistedState("sangi_sceneCount", 1);
+  
   const { toast } = useToast();
   const { checkLimit, trackUsage, getRemainingUses } = useUsageLimit("text_to_image");
 
@@ -118,18 +118,11 @@ const Index = () => {
       const allowed = await checkLimit();
       if (!allowed) return;
 
-      // Determine how many images we can actually generate based on remaining limit
       const remaining = await getRemainingUses();
-      const requestedCount = sceneCount ?? 4; // Auto defaults to 4 for the API
-      const actualCount = Math.min(requestedCount, remaining);
-
-      if (actualCount <= 0) {
+      const actualCount = 1;
+      if (remaining <= 0) {
         toast({ title: "Usage limit reached", description: "You have no remaining uses. Try again later.", variant: "destructive" });
         return;
-      }
-
-      if (actualCount < requestedCount) {
-        toast({ title: `Generating ${actualCount} of ${requestedCount} images`, description: `Your remaining limit allows ${actualCount} image(s).` });
       }
 
       const controller = new AbortController();
@@ -184,7 +177,6 @@ const Index = () => {
     setPrompt("");
     setImages([]);
     setCharacterImages([]);
-    setSceneCount(1);
     toast({ title: "Cleared all data" });
   };
 
@@ -244,7 +236,7 @@ const Index = () => {
               </p>
             </div>
 
-            <SceneCountSelector count={sceneCount} onChange={setSceneCount} />
+            
 
             <div className="flex gap-3">
               <Button
@@ -255,12 +247,12 @@ const Index = () => {
               {isGenerating ? (
                   <>
                     <Loader2 className="h-5 w-5 mr-2 animate-spin" />
-                    Generating {sceneCount > 1 ? `${sceneCount} scenes` : ""}...
+                    Generating...
                   </>
                 ) : (
                   <>
                     <Sparkles className="h-5 w-5 mr-2" />
-                    Generate {sceneCount > 1 ? `${sceneCount} Scenes` : "Image"}
+                    Generate Image
                   </>
                 )}
               </Button>
@@ -333,7 +325,7 @@ const Index = () => {
               images={images}
               isGenerating={isGenerating}
               prompt={prompt}
-              sceneCount={sceneCount}
+              sceneCount={1}
             />
           </motion.div>
         </div>
