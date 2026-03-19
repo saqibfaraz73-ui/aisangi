@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Globe, Image, FileText, Volume2, Zap, Save, Loader2 } from "lucide-react";
+import { Globe, Image, FileText, Volume2, Music, Zap, Save, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
