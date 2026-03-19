@@ -84,8 +84,16 @@ const ScriptGeneratorPage = () => {
         variant: "destructive",
       });
     } finally {
+      abortRef.current = null;
       setIsGenerating(false);
     }
+  };
+
+  const handleCancel = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setIsGenerating(false);
+    toast({ title: "Generation cancelled" });
   };
 
   const copyToClipboard = async (text: string, field: string) => {
