@@ -97,6 +97,20 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
     };
   }
 
+  // Check for plain Gemini API key stored in GCP_SERVICE_ACCOUNT_JSON
+  const envApiKey = getGeminiApiKeyFromEnv();
+  if (envApiKey) {
+    const scriptModel = data?.script_model || DEFAULT_GEMINI_TEXT_MODEL;
+    return {
+      apiKey: envApiKey,
+      model: scriptModel,
+      provider: "gemini",
+      useCustom: true,
+      useNativeGemini: true,
+      useVertexAI: false,
+    };
+  }
+
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableKey) throw new Error("No API key configured. Set up your API key in Admin settings.");
 

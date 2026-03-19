@@ -33,6 +33,16 @@ async function getSettings(supabase: any) {
     };
   }
 
+  // Check for plain Gemini API key stored in GCP_SERVICE_ACCOUNT_JSON
+  const envApiKey = getGeminiApiKeyFromEnv();
+  if (envApiKey) {
+    return {
+      apiKey: envApiKey,
+      musicModel: data?.music_model || "lyria-002",
+      useVertexAI: false,
+    };
+  }
+
   throw new Error(
     "Music generation requires a custom Gemini API key or a GCP service account. Configure in Admin → Custom AI API settings."
   );

@@ -45,6 +45,16 @@ async function getGeminiSettings(supabase: any): Promise<{ apiKey: string; voice
     };
   }
 
+  // Check for plain Gemini API key stored in GCP_SERVICE_ACCOUNT_JSON
+  const envApiKey = getGeminiApiKeyFromEnv();
+  if (envApiKey) {
+    return {
+      apiKey: envApiKey,
+      voiceModel: data?.voice_model || DEFAULT_TTS_MODEL,
+      useVertexAI: false,
+    };
+  }
+
   throw new Error(
     "Text-to-Speech requires a custom Gemini API key or a GCP service account. Please configure one in Admin settings."
   );
