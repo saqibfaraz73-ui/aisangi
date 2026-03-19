@@ -94,6 +94,7 @@ const UsageStatsSection = ({ users }: UsageStatsProps) => {
         script_ai: 0,
         audio_overlay: 0,
         voice_tts: 0,
+        music_gen: 0,
         tokens: 0,
         total: 0,
       };
