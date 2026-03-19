@@ -60,6 +60,7 @@ const ApiSettingsSection = () => {
   const [provider, setProvider] = useState("gemini");
   const [model, setModel] = useState(DEFAULT_GEMINI_MODEL);
   const [scriptModel, setScriptModel] = useState("gemini-2.5-flash-lite");
+  const [voiceModel, setVoiceModel] = useState("gemini-2.5-flash-preview-tts");
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
