@@ -1,0 +1,1 @@
+ALTER TABLE public.api_settings ADD COLUMN IF NOT EXISTS script_model text NOT NULL DEFAULT 'gemini-2.5-flash-lite';

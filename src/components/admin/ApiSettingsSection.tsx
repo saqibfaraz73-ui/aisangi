@@ -38,6 +38,13 @@ const OPENAI_MODELS = [
   { value: "dall-e-3", label: "DALL·E 3 (Image only)" },
 ];
 
+const GEMINI_SCRIPT_MODELS = [
+  { value: "gemini-2.5-flash-lite", label: "Gemini 2.5 Flash Lite (Cheapest, good for scripts)" },
+  { value: "gemini-2.5-flash", label: "Gemini 2.5 Flash (Better quality)" },
+  { value: "gemini-1.5-flash", label: "Gemini 1.5 Flash (Legacy)" },
+  { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Legacy)" },
+];
+
 const ApiSettingsSection = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
@@ -47,6 +54,7 @@ const ApiSettingsSection = () => {
   const [apiKey, setApiKey] = useState("");
   const [provider, setProvider] = useState("gemini");
   const [model, setModel] = useState(DEFAULT_GEMINI_MODEL);
+  const [scriptModel, setScriptModel] = useState("gemini-2.5-flash-lite");
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
@@ -66,6 +74,7 @@ const ApiSettingsSection = () => {
       setApiKey(data.api_key || "");
       setProvider(nextProvider);
       setModel(nextProvider === "gemini" ? normalizeGeminiModel(data.model) : data.model || "gpt-4o");
+      setScriptModel((data as any).script_model || "gemini-2.5-flash-lite");
       setEnabled(Boolean(data.enabled));
     }
     setLoading(false);
@@ -95,6 +104,7 @@ const ApiSettingsSection = () => {
         api_key: apiKey.trim(),
         provider,
         model,
+        script_model: scriptModel,
         enabled,
         updated_at: new Date().toISOString(),
       };
@@ -189,7 +199,7 @@ const ApiSettingsSection = () => {
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-sm font-semibold text-foreground">Model</label>
+          <label className="text-sm font-semibold text-foreground">Image Model</label>
           <Select value={model} onValueChange={setModel} disabled={!enabled}>
             <SelectTrigger>
               <SelectValue />
@@ -202,10 +212,29 @@ const ApiSettingsSection = () => {
           </Select>
           <p className="text-xs text-muted-foreground">
             {provider === "openai"
-              ? "For images use DALL·E 3. For scripts use GPT-4o."
-              : "Preview Gemini models are used for images; script generation automatically falls back to a stable text model."}
+              ? "For images use DALL·E 3."
+              : "Used for image generation."}
           </p>
         </div>
+
+        {provider === "gemini" && (
+          <div className="space-y-1.5">
+            <label className="text-sm font-semibold text-foreground">Script Model</label>
+            <Select value={scriptModel} onValueChange={setScriptModel} disabled={!enabled}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {GEMINI_SCRIPT_MODELS.map((m) => (
+                  <SelectItem key={m.value} value={m.value}>{m.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Used for script generation. Flash Lite is cheapest.
+            </p>
+          </div>
+        )}
 
         <Button onClick={handleSave} disabled={saving} className="w-full">
           {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}

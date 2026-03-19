@@ -21,6 +21,7 @@ export type Database = {
           id: string
           model: string
           provider: string
+          script_model: string
           updated_at: string
         }
         Insert: {
@@ -29,6 +30,7 @@ export type Database = {
           id?: string
           model?: string
           provider?: string
+          script_model?: string
           updated_at?: string
         }
         Update: {
@@ -37,6 +39,7 @@ export type Database = {
           id?: string
           model?: string
           provider?: string
+          script_model?: string
           updated_at?: string
         }
         Relationships: []

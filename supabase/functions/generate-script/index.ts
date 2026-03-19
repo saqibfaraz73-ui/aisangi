@@ -54,9 +54,9 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
 
   if (data?.enabled && data?.api_key) {
     const provider = data.provider || "gemini";
-    const model = normalizeCustomModel(provider, data.model);
 
     if (provider === "openai") {
+      const model = normalizeCustomModel(provider, data.model);
       return {
         apiKey: data.api_key,
         model,
@@ -67,9 +67,12 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
       };
     }
 
+    // For Gemini: use dedicated script_model if set, otherwise fall back to normalized model
+    const scriptModel = data.script_model || normalizeCustomModel(provider, data.model);
+
     return {
       apiKey: data.api_key,
-      model,
+      model: scriptModel,
       provider: "gemini",
       useCustom: true,
       useNativeGemini: true,
