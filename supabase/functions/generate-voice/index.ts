@@ -19,7 +19,7 @@ function buildGeminiTtsUrl(apiKey: string, model: string) {
   return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 }
 
-async function getGeminiApiKey(supabase: any): Promise<string> {
+async function getGeminiSettings(supabase: any): Promise<{ apiKey: string; voiceModel: string }> {
   const { data } = await supabase
     .from("api_settings")
     .select("*")
@@ -27,7 +27,10 @@ async function getGeminiApiKey(supabase: any): Promise<string> {
     .maybeSingle();
 
   if (data?.enabled && data?.api_key && data?.provider === "gemini") {
-    return data.api_key;
+    return {
+      apiKey: data.api_key,
+      voiceModel: data.voice_model || DEFAULT_TTS_MODEL,
+    };
   }
 
   throw new Error(
