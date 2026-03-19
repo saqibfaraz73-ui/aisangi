@@ -161,9 +161,13 @@ const ApiSettingsSection = () => {
         <h2 className="font-display font-bold text-lg text-foreground">Custom AI API</h2>
       </div>
 
-      <p className="text-sm text-muted-foreground mb-4">
+      <p className="text-sm text-muted-foreground mb-2">
         Use your own API key for image & script generation. No Lovable credits needed.
       </p>
+      <div className="flex items-center gap-2 mb-4 px-3 py-2 rounded-lg bg-green-500/10 border border-green-500/20">
+        <span className="text-xs font-semibold text-green-600">✅ Vertex AI Active</span>
+        <span className="text-xs text-muted-foreground">— All Gemini requests use your $300 Cloud credit via service account.</span>
+      </div>
 
       <div className="space-y-4">
         <div className="flex items-center justify-between">
