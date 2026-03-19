@@ -45,6 +45,11 @@ const GEMINI_SCRIPT_MODELS = [
   { value: "gemini-1.5-pro", label: "Gemini 1.5 Pro (Legacy)" },
 ];
 
+const GEMINI_VOICE_MODELS = [
+  { value: "gemini-2.5-flash-preview-tts", label: "Gemini 2.5 Flash TTS (Default)" },
+  { value: "gemini-2.0-flash-preview-tts", label: "Gemini 2.0 Flash TTS (Older)" },
+];
+
 const ApiSettingsSection = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
