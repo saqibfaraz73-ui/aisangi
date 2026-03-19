@@ -114,17 +114,19 @@ const GlobalCapSection = () => {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [capRes, imageCapRes, scriptCapRes, voiceCapRes, tokenCapRes, totalUsageRes, imageUsageRes, scriptUsageRes, voiceUsageRes, tokenUsageRes] = await Promise.all([
+    const [capRes, imageCapRes, scriptCapRes, voiceCapRes, musicCapRes, tokenCapRes, totalUsageRes, imageUsageRes, scriptUsageRes, voiceUsageRes, musicUsageRes, tokenUsageRes] = await Promise.all([
       supabase.from("global_usage_cap").select("*").limit(1).maybeSingle(),
       supabase.from("image_generation_cap").select("*").limit(1).maybeSingle(),
       supabase.from("script_generation_cap").select("*").limit(1).maybeSingle(),
       supabase.from("voice_generation_cap").select("*").limit(1).maybeSingle(),
+      supabase.from("music_generation_cap" as any).select("*").limit(1).maybeSingle(),
       supabase.from("daily_token_cap" as any).select("*").limit(1).maybeSingle(),
-      supabase.from("usage_log").select("*", { count: "exact", head: true }).in("section", ["text_to_image", "script_ai", "voice_tts"]).gte("used_at", todayStart.toISOString()),
+      supabase.from("usage_log").select("*", { count: "exact", head: true }).in("section", ["text_to_image", "script_ai", "voice_tts", "music_gen"]).gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "text_to_image").gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "script_ai").gte("used_at", todayStart.toISOString()),
       supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "voice_tts").gte("used_at", todayStart.toISOString()),
-      supabase.from("usage_log").select("tokens_used").in("section", ["text_to_image", "script_ai", "voice_tts"]).gte("used_at", todayStart.toISOString()),
+      supabase.from("usage_log").select("*", { count: "exact", head: true }).eq("section", "music_gen").gte("used_at", todayStart.toISOString()),
+      supabase.from("usage_log").select("tokens_used").in("section", ["text_to_image", "script_ai", "voice_tts", "music_gen"]).gte("used_at", todayStart.toISOString()),
     ]);
 
     if (capRes.data) {
