@@ -50,6 +50,10 @@ const GEMINI_VOICE_MODELS = [
   { value: "gemini-2.0-flash-preview-tts", label: "Gemini 2.0 Flash TTS (Older)" },
 ];
 
+const GEMINI_MUSIC_MODELS = [
+  { value: "lyria-002", label: "Lyria 002 (Default, ~30s instrumental)" },
+];
+
 const ApiSettingsSection = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
