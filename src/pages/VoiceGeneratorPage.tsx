@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { motion } from "framer-motion";
-import { Volume2, Loader2, Play, Pause, Download, Edit3, Check } from "lucide-react";
+import { Volume2, Loader2, Play, Pause, Download, Edit3, Check, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
