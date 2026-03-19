@@ -37,6 +37,7 @@ const ScriptGeneratorPage = () => {
   const [idea, setIdea] = usePersistedState("sangi_script_idea", "");
   const [sceneCount, setSceneCount] = usePersistedState<number | null>("sangi_script_sceneCount", null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const [script, setScript] = usePersistedState<GeneratedScript | null>("sangi_script_result", null);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [sceneVoices, setSceneVoices] = useState<Record<number, string>>({});
