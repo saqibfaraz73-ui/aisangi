@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getAccessToken, buildVertexUrl, hasServiceAccount } from "../_shared/vertex-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -20,11 +21,11 @@ interface ApiConfig {
   baseUrl?: string;
   provider: string;
   useCustom: boolean;
+  useVertexAI: boolean;
 }
 
 function normalizeCustomGeminiImageModel(model?: string | null) {
   const selectedModel = (model || DEFAULT_CUSTOM_GEMINI_IMAGE_MODEL).trim();
-
   return FALLBACK_GEMINI_IMAGE_MODELS.includes(
     selectedModel as (typeof FALLBACK_GEMINI_IMAGE_MODELS)[number],
   )
@@ -38,7 +39,6 @@ function buildGeminiImageUrl(model: string, apiKey: string) {
 
 async function readErrorMessage(response: Response) {
   const rawText = await response.text();
-
   try {
     const parsed = JSON.parse(rawText);
     return parsed?.error?.message || parsed?.message || rawText;
@@ -49,7 +49,6 @@ async function readErrorMessage(response: Response) {
 
 function shouldRetryGeminiImageModel(status: number, message: string) {
   const msg = message.toLowerCase();
-
   return (
     status === 404 ||
     msg.includes("not found") ||
@@ -98,10 +97,8 @@ function buildGeminiParts(
   const parts: any[] = [];
 
   if (allCharacterUrls.length > 0) {
-    // Place ALL reference images FIRST so the model anchors on them
     allCharacterUrls.forEach((url, index) => {
       parts.push({ text: `[Reference photo of Person ${index + 1} - PRESERVE THIS EXACT FACE]` });
-
       if (url.startsWith("data:")) {
         const [meta, b64] = url.split(",");
         const mime = meta.match(/data:(.*?);/)?.[1] || "image/png";
@@ -141,14 +138,19 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
         baseUrl: "https://api.openai.com/v1/chat/completions",
         provider,
         useCustom: true,
+        useVertexAI: false,
       };
     }
+
+    // Check if Vertex AI service account is available
+    const useVertex = hasServiceAccount();
 
     return {
       apiKey: data.api_key,
       model,
       provider: "gemini",
       useCustom: true,
+      useVertexAI: useVertex,
     };
   }
 
@@ -161,6 +163,7 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
     baseUrl: "https://ai.gateway.lovable.dev/v1/chat/completions",
     provider: "lovable",
     useCustom: false,
+    useVertexAI: false,
   };
 }
 
@@ -198,6 +201,18 @@ async function generateWithDalle(apiKey: string, prompt: string): Promise<{ imag
   };
 }
 
+async function fetchGeminiImage(
+  url: string,
+  headers: Record<string, string>,
+  body: any,
+): Promise<Response> {
+  return fetch(url, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...headers },
+    body: JSON.stringify(body),
+  });
+}
+
 async function generateWithCustomGemini(
   apiKey: string,
   selectedModel: string,
@@ -206,31 +221,36 @@ async function generateWithCustomGemini(
   allCharacterUrls: string[],
   variationHint: string,
   watermarkInstruction: string,
+  useVertexAI: boolean,
 ): Promise<{ imageUrl: string; description: string }> {
   const modelsToTry = [
     normalizeCustomGeminiImageModel(selectedModel),
     ...FALLBACK_GEMINI_IMAGE_MODELS.filter((model) => model !== normalizeCustomGeminiImageModel(selectedModel)),
   ];
 
+  // Get auth headers
+  let authHeaders: Record<string, string> = {};
+  if (useVertexAI) {
+    const token = await getAccessToken();
+    authHeaders = { Authorization: `Bearer ${token}` };
+  }
+
   for (let index = 0; index < modelsToTry.length; index++) {
     const activeModel = modelsToTry[index];
-    const response = await fetch(buildGeminiImageUrl(activeModel, apiKey), {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{
-          parts: buildGeminiParts(
-            allCharacterUrls,
-            prompt,
-            variationHint,
-            watermarkInstruction,
-            fullPrompt,
-          ),
-        }],
-        generationConfig: {
-          responseModalities: ["TEXT", "IMAGE"],
-        },
-      }),
+
+    const url = useVertexAI
+      ? buildVertexUrl(activeModel)
+      : buildGeminiImageUrl(activeModel, apiKey);
+
+    console.log(`Image gen using ${useVertexAI ? "Vertex AI" : "AI Studio"} model: ${activeModel}`);
+
+    const response = await fetchGeminiImage(url, authHeaders, {
+      contents: [{
+        parts: buildGeminiParts(allCharacterUrls, prompt, variationHint, watermarkInstruction, fullPrompt),
+      }],
+      generationConfig: {
+        responseModalities: ["TEXT", "IMAGE"],
+      },
     });
 
     if (response.ok) {
@@ -241,7 +261,7 @@ async function generateWithCustomGemini(
         return { imageUrl, description: textContent };
       }
 
-      console.error(`Gemini model ${activeModel} returned no image data.`, JSON.stringify(data));
+      console.error(`Model ${activeModel} returned no image data.`, JSON.stringify(data));
       if (index === modelsToTry.length - 1) {
         throw { status: 500, message: "No image generated. Try a different prompt or model." };
       }
@@ -249,13 +269,13 @@ async function generateWithCustomGemini(
     }
 
     const errorMessage = await readErrorMessage(response);
-    console.error("Gemini native API error:", response.status, errorMessage);
+    console.error("Gemini API error:", response.status, errorMessage);
 
     if (response.status === 429) {
       throw { status: 429, message: "Rate limited. Please wait and try again." };
     }
     if (response.status === 401 || response.status === 403) {
-      throw { status: 401, message: "Invalid Gemini API key. Check Admin settings." };
+      throw { status: 401, message: "Invalid API credentials. Check Admin settings." };
     }
 
     const shouldRetry = shouldRetryGeminiImageModel(response.status, errorMessage);
@@ -263,7 +283,7 @@ async function generateWithCustomGemini(
       throw { status: 500, message: errorMessage || "Image generation failed." };
     }
 
-    console.log(`Retrying image generation with fallback Gemini model: ${modelsToTry[index + 1]}`);
+    console.log(`Retrying with fallback model: ${modelsToTry[index + 1]}`);
   }
 
   throw { status: 500, message: "Image generation failed." };
@@ -289,7 +309,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     const apiConfig = await getApiConfig(supabase);
-    console.log(`Using ${apiConfig.provider} with model: ${apiConfig.model}`);
+    console.log(`Using ${apiConfig.provider}${apiConfig.useVertexAI ? " (Vertex AI)" : ""} with model: ${apiConfig.model}`);
 
     const useDalle = apiConfig.useCustom && apiConfig.provider === "openai" && apiConfig.model === "dall-e-3";
 
@@ -353,9 +373,11 @@ serve(async (req) => {
           allCharacterUrls,
           variationHint,
           watermarkInstruction,
+          apiConfig.useVertexAI,
         );
       }
 
+      // Lovable AI gateway path
       let messages: any[];
 
       if (allCharacterUrls.length > 0 && apiConfig.provider !== "openai") {
@@ -436,8 +458,6 @@ serve(async (req) => {
       if (i < count - 1) await new Promise(r => setTimeout(r, 1000));
     }
 
-    // Estimate tokens for image generation (Gemini image models don't always report tokens)
-    // Use a rough estimate: ~100 tokens per image + prompt tokens
     const estimatedTokens = results.length * 100 + Math.ceil(prompt.length / 4);
 
     return new Response(

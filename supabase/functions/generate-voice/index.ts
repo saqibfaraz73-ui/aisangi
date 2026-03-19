@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
+import { getAccessToken, buildVertexUrl, hasServiceAccount } from "../_shared/vertex-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,7 +20,7 @@ function buildGeminiTtsUrl(apiKey: string, model: string) {
   return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
 }
 
-async function getGeminiSettings(supabase: any): Promise<{ apiKey: string; voiceModel: string }> {
+async function getGeminiSettings(supabase: any): Promise<{ apiKey: string; voiceModel: string; useVertexAI: boolean }> {
   const { data } = await supabase
     .from("api_settings")
     .select("*")
@@ -30,6 +31,7 @@ async function getGeminiSettings(supabase: any): Promise<{ apiKey: string; voice
     return {
       apiKey: data.api_key,
       voiceModel: data.voice_model || DEFAULT_TTS_MODEL,
+      useVertexAI: hasServiceAccount(),
     };
   }
 
@@ -38,26 +40,24 @@ async function getGeminiSettings(supabase: any): Promise<{ apiKey: string; voice
   );
 }
 
-async function callGeminiTtsWithRetry(url: string, body: any, maxRetries = 3): Promise<Response> {
+async function callTtsWithRetry(url: string, headers: Record<string, string>, body: any, maxRetries = 3): Promise<Response> {
   for (let attempt = 0; attempt < maxRetries; attempt++) {
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...headers },
       body: JSON.stringify(body),
     });
 
-    // Retry on 500 internal errors (transient Gemini issues)
     if (response.status === 500 && attempt < maxRetries - 1) {
       const waitMs = Math.min(1000 * Math.pow(2, attempt), 8000);
-      console.log(`Gemini TTS returned 500, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+      console.log(`TTS returned 500, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
       await new Promise((r) => setTimeout(r, waitMs));
       continue;
     }
 
-    // Retry on 429 rate limit with backoff
     if (response.status === 429 && attempt < maxRetries - 1) {
       const waitMs = Math.min(2000 * Math.pow(2, attempt), 16000);
-      console.log(`Gemini TTS rate limited, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
+      console.log(`TTS rate limited, retrying in ${waitMs}ms (attempt ${attempt + 1}/${maxRetries})`);
       await new Promise((r) => setTimeout(r, waitMs));
       continue;
     }
@@ -65,10 +65,9 @@ async function callGeminiTtsWithRetry(url: string, body: any, maxRetries = 3): P
     return response;
   }
 
-  // Should not reach here, but return last attempt
   return fetch(url, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...headers },
     body: JSON.stringify(body),
   });
 }
@@ -101,9 +100,20 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { apiKey, voiceModel } = await getGeminiSettings(supabase);
+    const { apiKey, voiceModel, useVertexAI } = await getGeminiSettings(supabase);
 
-    console.log(`Generating TTS with model: ${voiceModel}, voice: ${selectedVoice}, text length: ${text.length}`);
+    let url: string;
+    let authHeaders: Record<string, string> = {};
+
+    if (useVertexAI) {
+      url = buildVertexUrl(voiceModel);
+      const token = await getAccessToken();
+      authHeaders = { Authorization: `Bearer ${token}` };
+      console.log(`TTS using Vertex AI model: ${voiceModel}, voice: ${selectedVoice}`);
+    } else {
+      url = buildGeminiTtsUrl(apiKey, voiceModel);
+      console.log(`TTS using AI Studio model: ${voiceModel}, voice: ${selectedVoice}`);
+    }
 
     const requestBody = {
       contents: [{ parts: [{ text: text.trim() }] }],
@@ -119,11 +129,11 @@ serve(async (req) => {
       },
     };
 
-    const response = await callGeminiTtsWithRetry(buildGeminiTtsUrl(apiKey, voiceModel), requestBody);
+    const response = await callTtsWithRetry(url, authHeaders, requestBody);
 
     if (!response.ok) {
       const errText = await response.text();
-      console.error("Gemini TTS error:", response.status, errText);
+      console.error("TTS error:", response.status, errText);
 
       if (response.status === 429) {
         return new Response(
@@ -133,7 +143,7 @@ serve(async (req) => {
       }
       if (response.status === 401 || response.status === 403) {
         return new Response(
-          JSON.stringify({ error: "Invalid Gemini API key. Check Admin settings." }),
+          JSON.stringify({ error: "Invalid API credentials. Check Admin settings." }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -183,11 +193,9 @@ serve(async (req) => {
     const wavHeader = new ArrayBuffer(44);
     const view = new DataView(wavHeader);
 
-    // RIFF header
     view.setUint32(0, 0x52494646, false); // "RIFF"
     view.setUint32(4, 36 + pcmBytes.length, true);
     view.setUint32(8, 0x57415645, false); // "WAVE"
-    // fmt chunk
     view.setUint32(12, 0x666d7420, false); // "fmt "
     view.setUint32(16, 16, true);
     view.setUint16(20, 1, true); // PCM
@@ -196,7 +204,6 @@ serve(async (req) => {
     view.setUint32(28, sampleRate * numChannels * (bitsPerSample / 8), true);
     view.setUint16(32, numChannels * (bitsPerSample / 8), true);
     view.setUint16(34, bitsPerSample, true);
-    // data chunk
     view.setUint32(36, 0x64617461, false); // "data"
     view.setUint32(40, pcmBytes.length, true);
 
@@ -205,8 +212,6 @@ serve(async (req) => {
     wavBytes.set(pcmBytes, 44);
 
     const wavBase64 = base64Encode(wavBytes);
-
-    // Extract token usage
     const tokensUsed = data?.usageMetadata?.totalTokenCount || 0;
 
     return new Response(

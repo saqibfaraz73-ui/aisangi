@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { getAccessToken, buildVertexUrl, hasServiceAccount } from "../_shared/vertex-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -22,6 +23,7 @@ type ApiConfig = {
   provider: "gemini" | "openai" | "lovable";
   useCustom: boolean;
   useNativeGemini: boolean;
+  useVertexAI: boolean;
   baseUrl?: string;
 };
 
@@ -64,11 +66,12 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
         provider,
         useCustom: true,
         useNativeGemini: false,
+        useVertexAI: false,
       };
     }
 
-    // For Gemini: use dedicated script_model if set, otherwise fall back to normalized model
     const scriptModel = data.script_model || normalizeCustomModel(provider, data.model);
+    const useVertex = hasServiceAccount();
 
     return {
       apiKey: data.api_key,
@@ -76,6 +79,7 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
       provider: "gemini",
       useCustom: true,
       useNativeGemini: true,
+      useVertexAI: useVertex,
     };
   }
 
@@ -89,12 +93,12 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
     provider: "lovable",
     useCustom: false,
     useNativeGemini: false,
+    useVertexAI: false,
   };
 }
 
 async function readErrorMessage(response: Response) {
   const rawText = await response.text();
-
   try {
     const parsed = JSON.parse(rawText);
     return parsed?.error?.message || parsed?.message || rawText;
@@ -106,7 +110,6 @@ async function readErrorMessage(response: Response) {
 function extractContentFromGeminiResponse(data: any) {
   const parts = data?.candidates?.[0]?.content?.parts;
   if (!Array.isArray(parts)) return null;
-
   const textPart = parts.find((part: any) => typeof part?.text === "string");
   return textPart?.text || null;
 }
@@ -121,12 +124,29 @@ function shouldRetryGeminiWithFallback(status: number, message: string) {
   );
 }
 
-async function callGeminiScriptApi(model: string, apiKey: string, systemPrompt: string, idea: string) {
-  return fetch(buildGeminiUrl(model, apiKey), {
+async function callGeminiScriptApi(
+  model: string,
+  apiKey: string,
+  systemPrompt: string,
+  idea: string,
+  useVertexAI: boolean,
+) {
+  let url: string;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+
+  if (useVertexAI) {
+    url = buildVertexUrl(model);
+    const token = await getAccessToken();
+    headers["Authorization"] = `Bearer ${token}`;
+  } else {
+    url = buildGeminiUrl(model, apiKey);
+  }
+
+  console.log(`Script gen using ${useVertexAI ? "Vertex AI" : "AI Studio"} model: ${model}`);
+
+  return fetch(url, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers,
     body: JSON.stringify({
       systemInstruction: {
         parts: [{ text: systemPrompt }],
@@ -188,8 +208,7 @@ ${sceneInstruction} Detailed image prompts with lighting, style, colors, mood. E
     let activeModel = apiConfig.model;
 
     if (apiConfig.useNativeGemini) {
-      console.log(`Script gen using gemini model: ${activeModel}`);
-      response = await callGeminiScriptApi(activeModel, apiConfig.apiKey, systemPrompt, idea);
+      response = await callGeminiScriptApi(activeModel, apiConfig.apiKey, systemPrompt, idea, apiConfig.useVertexAI);
 
       if (!response.ok) {
         const primaryError = await readErrorMessage(response);
@@ -198,8 +217,8 @@ ${sceneInstruction} Detailed image prompts with lighting, style, colors, mood. E
           const fallbackModels = FALLBACK_GEMINI_TEXT_MODELS.filter((m) => m !== activeModel);
 
           for (const fallbackModel of fallbackModels) {
-            console.log(`Retrying script gen with fallback gemini model: ${fallbackModel}`);
-            const retryResponse = await callGeminiScriptApi(fallbackModel, apiConfig.apiKey, systemPrompt, idea);
+            console.log(`Retrying with fallback model: ${fallbackModel}`);
+            const retryResponse = await callGeminiScriptApi(fallbackModel, apiConfig.apiKey, systemPrompt, idea, apiConfig.useVertexAI);
 
             if (retryResponse.ok) {
               response = retryResponse;
@@ -208,7 +227,7 @@ ${sceneInstruction} Detailed image prompts with lighting, style, colors, mood. E
             }
 
             const retryError = await readErrorMessage(retryResponse);
-            console.error("Fallback Gemini model failed:", fallbackModel, retryError);
+            console.error("Fallback model failed:", fallbackModel, retryError);
           }
         }
       }
@@ -236,30 +255,24 @@ ${sceneInstruction} Detailed image prompts with lighting, style, colors, mood. E
 
       if (response.status === 429) {
         return new Response(JSON.stringify({ error: "Rate limited. Try again shortly." }), {
-          status: 429,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-
       if (response.status === 401) {
         return new Response(JSON.stringify({ error: `Invalid ${apiConfig.provider} API key. Check Admin settings.` }), {
-          status: 401,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
-
       if (response.status === 402) {
         return new Response(JSON.stringify({ error: "Credits exhausted. Add your own API key in Admin." }), {
-          status: 402,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
       }
 
       console.error("API error:", response.status, errText);
-
       return new Response(JSON.stringify({
         error: apiConfig.provider === "gemini"
-          ? `Gemini script generation failed: ${errText}`
+          ? `Script generation failed: ${errText}`
           : "Script generation failed",
       }), {
         status: response.status,
@@ -284,7 +297,6 @@ ${sceneInstruction} Detailed image prompts with lighting, style, colors, mood. E
       throw new Error("Failed to parse AI response");
     }
 
-    // Extract token usage
     let tokensUsed = 0;
     if (apiConfig.useNativeGemini) {
       tokensUsed = data?.usageMetadata?.totalTokenCount || 0;
