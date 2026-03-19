@@ -65,6 +65,7 @@ const ApiSettingsSection = () => {
   const [model, setModel] = useState(DEFAULT_GEMINI_MODEL);
   const [scriptModel, setScriptModel] = useState("gemini-2.5-flash-lite");
   const [voiceModel, setVoiceModel] = useState("gemini-2.5-flash-preview-tts");
+  const [musicModel, setMusicModel] = useState("lyria-002");
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
