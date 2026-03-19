@@ -83,6 +83,19 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
     };
   }
 
+  // No custom key enabled — try Vertex AI with admin-configured script model
+  if (hasServiceAccount()) {
+    const scriptModel = data?.script_model || DEFAULT_GEMINI_TEXT_MODEL;
+    return {
+      apiKey: "",
+      model: scriptModel,
+      provider: "gemini",
+      useCustom: false,
+      useNativeGemini: true,
+      useVertexAI: true,
+    };
+  }
+
   const lovableKey = Deno.env.get("LOVABLE_API_KEY");
   if (!lovableKey) throw new Error("No API key configured. Set up your API key in Admin settings.");
 

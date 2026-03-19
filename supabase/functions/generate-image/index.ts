@@ -142,15 +142,26 @@ async function getApiConfig(supabase: any): Promise<ApiConfig> {
       };
     }
 
-    // Check if Vertex AI service account is available
+    // Custom Gemini key enabled — also check for Vertex AI
     const useVertex = hasServiceAccount();
-
     return {
       apiKey: data.api_key,
       model,
       provider: "gemini",
       useCustom: true,
       useVertexAI: useVertex,
+    };
+  }
+
+  // No custom key enabled — try Vertex AI with admin-configured model
+  if (hasServiceAccount()) {
+    const model = normalizeCustomGeminiImageModel(data?.model);
+    return {
+      apiKey: "",
+      model,
+      provider: "gemini",
+      useCustom: false,
+      useVertexAI: true,
     };
   }
 
