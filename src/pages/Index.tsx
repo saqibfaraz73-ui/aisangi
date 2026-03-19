@@ -132,6 +132,9 @@ const Index = () => {
         toast({ title: `Generating ${actualCount} of ${requestedCount} images`, description: `Your remaining limit allows ${actualCount} image(s).` });
       }
 
+      const controller = new AbortController();
+      abortRef.current = controller;
+
       const { data, error } = await supabase.functions.invoke("generate-image", {
         body: {
           prompt: prompt.trim(),
@@ -139,6 +142,8 @@ const Index = () => {
           sceneCount: actualCount,
         },
       });
+
+      if (controller.signal.aborted) return;
 
       if (error) throw error;
       if (data?.error) throw new Error(data.error);
