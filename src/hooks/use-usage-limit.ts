@@ -28,7 +28,7 @@ export function useUsageLimit(section: string) {
         const { count: globalCount } = await supabase
           .from("usage_log")
           .select("*", { count: "exact", head: true })
-          .in("section", ["text_to_image", "script_ai", "voice_tts"])
+          .in("section", ["text_to_image", "script_ai", "voice_tts", "music_gen"])
           .gte("used_at", todayStart.toISOString());
 
         if ((globalCount ?? 0) >= capData.daily_limit) {
