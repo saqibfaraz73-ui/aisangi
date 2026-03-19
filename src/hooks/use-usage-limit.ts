@@ -52,7 +52,7 @@ export function useUsageLimit(section: string) {
         const { data: tokenLogs } = await supabase
           .from("usage_log")
           .select("tokens_used")
-          .in("section", ["text_to_image", "script_ai", "voice_tts"])
+          .in("section", ["text_to_image", "script_ai", "voice_tts", "music_gen"])
           .gte("used_at", todayStart.toISOString());
 
         const totalTokens = (tokenLogs || []).reduce((sum, log) => sum + ((log as any).tokens_used || 0), 0);
