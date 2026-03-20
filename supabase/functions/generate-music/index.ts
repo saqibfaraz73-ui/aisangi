@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { encode as base64Encode } from "https://deno.land/std@0.168.0/encoding/base64.ts";
 import { getAccessToken, buildVertexUrl, hasServiceAccount, getGeminiApiKeyFromEnv } from "../_shared/vertex-auth.ts";
 import { checkRateLimit } from "../_shared/rate-limit.ts";
 
@@ -8,6 +9,16 @@ const corsHeaders = {
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+const DEFAULT_MUSIC_MODEL = "lyria-002";
+const DEFAULT_TTS_MODEL = "gemini-2.5-flash-preview-tts";
+const DEFAULT_VOICE = "Kore";
+const VOCAL_TRIGGER_PATTERN = /\b(sing|sings|singing|singer|vocal|vocals|lyric|lyrics|speak|speaks|speaking|spoken|voice|say|says|saying|meow|miaow|woof|bark)\b/i;
+const VOCAL_BLOCK_PATTERN = /\b(no vocals|instrumental only|without vocals|no singing|no lyrics|no voice|mute vocals)\b/i;
+
+function buildGeminiAudioUrl(apiKey: string, model: string) {
+  return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+}
 
 async function getSettings(supabase: any) {
   const { data } = await supabase
@@ -19,26 +30,27 @@ async function getSettings(supabase: any) {
   if (data?.enabled && data?.api_key && data?.provider === "gemini") {
     return {
       apiKey: data.api_key,
-      musicModel: data.music_model || "lyria-002",
+      musicModel: data.music_model || DEFAULT_MUSIC_MODEL,
+      voiceModel: data.voice_model || DEFAULT_TTS_MODEL,
       useVertexAI: hasServiceAccount(),
     };
   }
 
-  // Fallback to Vertex AI if service account is available
   if (hasServiceAccount()) {
     return {
       apiKey: "",
-      musicModel: data?.music_model || "lyria-002",
+      musicModel: data?.music_model || DEFAULT_MUSIC_MODEL,
+      voiceModel: data?.voice_model || DEFAULT_TTS_MODEL,
       useVertexAI: true,
     };
   }
 
-  // Check for plain Gemini API key stored in GCP_SERVICE_ACCOUNT_JSON
   const envApiKey = getGeminiApiKeyFromEnv();
   if (envApiKey) {
     return {
       apiKey: envApiKey,
-      musicModel: data?.music_model || "lyria-002",
+      musicModel: data?.music_model || DEFAULT_MUSIC_MODEL,
+      voiceModel: data?.voice_model || DEFAULT_TTS_MODEL,
       useVertexAI: false,
     };
   }
@@ -46,6 +58,61 @@ async function getSettings(supabase: any) {
   throw new Error(
     "Music generation requires a custom Gemini API key or a GCP service account. Configure in Admin → Custom AI API settings."
   );
+}
+
+function promptRequestsVocals(prompt: string, negativePrompt?: string) {
+  if (negativePrompt && VOCAL_BLOCK_PATTERN.test(negativePrompt)) {
+    return false;
+  }
+
+  return VOCAL_TRIGGER_PATTERN.test(prompt);
+}
+
+function extractVocalText(prompt: string) {
+  const quoted = prompt.match(/["“']([^"”']+)["”']/)?.[1]?.trim();
+  if (quoted) return quoted;
+
+  const trailingPhrase = prompt.match(/\b(?:sing|sings|singing|say|says|saying|lyrics?)\b[:\s-]*(.+)$/i)?.[1]?.trim();
+  if (trailingPhrase) {
+    return trailingPhrase
+      .replace(/^(like|with|about|of)\s+/i, "")
+      .replace(/[.,!?]+$/g, "")
+      .trim();
+  }
+
+  const repeatedSound = prompt.match(/\b(?:meow|miaow|woof|bark|la|na)(?:\s+(?:meow|miaow|woof|bark|la|na))+\b/i)?.[0]?.trim();
+  if (repeatedSound) return repeatedSound;
+
+  return prompt.trim();
+}
+
+function pcmBase64ToWavBase64(audioData: string) {
+  const pcmBytes = Uint8Array.from(atob(audioData), (c) => c.charCodeAt(0));
+  const sampleRate = 24000;
+  const numChannels = 1;
+  const bitsPerSample = 16;
+  const wavHeader = new ArrayBuffer(44);
+  const view = new DataView(wavHeader);
+
+  view.setUint32(0, 0x52494646, false);
+  view.setUint32(4, 36 + pcmBytes.length, true);
+  view.setUint32(8, 0x57415645, false);
+  view.setUint32(12, 0x666d7420, false);
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true);
+  view.setUint16(22, numChannels, true);
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * numChannels * (bitsPerSample / 8), true);
+  view.setUint16(32, numChannels * (bitsPerSample / 8), true);
+  view.setUint16(34, bitsPerSample, true);
+  view.setUint32(36, 0x64617461, false);
+  view.setUint32(40, pcmBytes.length, true);
+
+  const wavBytes = new Uint8Array(44 + pcmBytes.length);
+  wavBytes.set(new Uint8Array(wavHeader), 0);
+  wavBytes.set(pcmBytes, 44);
+
+  return base64Encode(wavBytes);
 }
 
 async function callWithRetry(
@@ -105,21 +172,48 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { apiKey, musicModel, useVertexAI } = await getSettings(supabase);
+    const { apiKey, musicModel, voiceModel, useVertexAI } = await getSettings(supabase);
+    const wantsVocals = promptRequestsVocals(prompt.trim(), negative_prompt);
 
     let url: string;
     let authHeaders: Record<string, string> = {};
     let requestBody: any;
+    let responseMode: "instrumental" | "vocal" = wantsVocals ? "vocal" : "instrumental";
 
-    if (useVertexAI) {
-      // Lyria uses the "predict" endpoint on Vertex AI
+    if (responseMode === "vocal") {
+      const vocalText = extractVocalText(prompt.trim());
+      const targetModel = voiceModel || DEFAULT_TTS_MODEL;
+
+      if (useVertexAI) {
+        url = buildVertexUrl(targetModel);
+        const token = await getAccessToken();
+        authHeaders = { Authorization: `Bearer ${token}` };
+      } else {
+        url = buildGeminiAudioUrl(apiKey, targetModel);
+      }
+
+      console.log(`Music gen routed to vocal model: ${targetModel}; text="${vocalText}"`);
+
+      requestBody = {
+        contents: [{ role: "user", parts: [{ text: vocalText }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName: DEFAULT_VOICE,
+              },
+            },
+          },
+        },
+      };
+    } else if (useVertexAI) {
       url = buildVertexUrl(musicModel, "predict");
       const token = await getAccessToken();
       authHeaders = { Authorization: `Bearer ${token}` };
 
-      console.log(`Music gen using Vertex AI model: ${musicModel}`);
+      console.log(`Music gen using Vertex AI instrumental model: ${musicModel}`);
 
-      // Vertex AI Lyria predict format
       const instance: any = { prompt: prompt.trim() };
       if (negative_prompt?.trim()) {
         instance.negative_prompt = negative_prompt.trim();
@@ -132,22 +226,14 @@ serve(async (req) => {
         },
       };
     } else {
-      // AI Studio / generativelanguage.googleapis.com format
-      url = `https://generativelanguage.googleapis.com/v1beta/models/${musicModel}:generateContent?key=${apiKey}`;
+      url = buildGeminiAudioUrl(apiKey, musicModel);
 
-      console.log(`Music gen using AI Studio model: ${musicModel}`);
+      console.log(`Music gen using AI Studio music model: ${musicModel}`);
 
       requestBody = {
         contents: [{ role: "user", parts: [{ text: prompt.trim() }] }],
         generationConfig: {
           responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: "Kore",
-              },
-            },
-          },
         },
       };
 
@@ -170,7 +256,7 @@ serve(async (req) => {
       }
       if (response.status === 401 || response.status === 403) {
         return new Response(
-          JSON.stringify({ error: "Invalid API credentials or Lyria not enabled. Check Admin settings." }),
+          JSON.stringify({ error: responseMode === "vocal" ? "Invalid voice model credentials. Check Admin settings." : "Invalid API credentials or Lyria not enabled. Check Admin settings." }),
           { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
@@ -190,17 +276,15 @@ serve(async (req) => {
     const data = await response.json();
 
     let audioData: string | null = null;
-    let mimeType = "audio/wav";
+    let mimeType = responseMode === "vocal" ? "audio/L16;rate=24000" : "audio/wav";
 
-    if (useVertexAI) {
-      // Vertex AI Lyria predict response format
+    if (responseMode === "instrumental" && useVertexAI) {
       const predictions = data?.predictions;
       if (Array.isArray(predictions) && predictions.length > 0) {
         audioData = predictions[0].bytesBase64Encoded;
         mimeType = predictions[0].mimeType || "audio/wav";
       }
     } else {
-      // Standard Gemini generateContent response
       const parts = data?.candidates?.[0]?.content?.parts;
       if (Array.isArray(parts)) {
         for (const part of parts) {
@@ -222,11 +306,24 @@ serve(async (req) => {
 
     const tokensUsed = data?.usageMetadata?.totalTokenCount || 0;
 
+    if (responseMode === "vocal" && mimeType.toLowerCase().includes("audio/l16")) {
+      return new Response(
+        JSON.stringify({
+          audioContent: pcmBase64ToWavBase64(audioData),
+          mimeType: "audio/wav",
+          tokensUsed,
+          generationMode: responseMode,
+        }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     return new Response(
       JSON.stringify({
         audioContent: audioData,
         mimeType,
         tokensUsed,
+        generationMode: responseMode,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
