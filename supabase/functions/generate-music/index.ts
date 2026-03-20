@@ -138,9 +138,16 @@ serve(async (req) => {
       console.log(`Music gen using AI Studio model: ${musicModel}`);
 
       requestBody = {
-        contents: [{ parts: [{ text: prompt.trim() }] }],
+        contents: [{ role: "user", parts: [{ text: prompt.trim() }] }],
         generationConfig: {
           responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: {
+                voiceName: "Kore",
+              },
+            },
+          },
         },
       };
 
