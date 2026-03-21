@@ -12,7 +12,8 @@ interface PosterCanvasProps {
 }
 
 const PREVIEW_MAX = 500;
-const RESIZE_HANDLE = 8;
+const RESIZE_HANDLE_MOUSE = 8;
+const RESIZE_HANDLE_TOUCH = 30;
 
 function getPreviewDimensions(w: number, h: number) {
   const ratio = w / h;
