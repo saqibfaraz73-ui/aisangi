@@ -276,8 +276,9 @@ export default function PosterCanvas({
   };
 
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
+    const isTouch = "touches" in e;
     const { mx, my } = getCanvasCoords(e);
-    const hit = findElementAt(mx, my);
+    const hit = findElementAt(mx, my, isTouch);
     if (hit) {
       onSelectElement(hit.el.id);
       dragRef.current = {
