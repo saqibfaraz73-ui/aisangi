@@ -173,13 +173,20 @@ export default function PosterCanvas({
         ctx.globalAlpha = 1;
       }
 
-      // Selection indicator
+      // Selection indicator with resize handles
       if (selectedElement === el.id && el.editable) {
         ctx.strokeStyle = "#00BFFF";
         ctx.lineWidth = 2;
         ctx.setLineDash([4, 4]);
         ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
         ctx.setLineDash([]);
+        // Draw resize handle at bottom-right corner
+        const handleSize = 12;
+        ctx.fillStyle = "#00BFFF";
+        ctx.fillRect(x + w - handleSize / 2, y + h - handleSize / 2, handleSize, handleSize);
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + w - handleSize / 2, y + h - handleSize / 2, handleSize, handleSize);
       }
     });
   }, [template, size, elements, selectedElement, uploadedPhotos, fontsLoaded]);
