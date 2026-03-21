@@ -4,7 +4,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Upload, Type, Palette } from "lucide-react";
+import { Upload, Type, Palette, Move } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
 
 interface ElementEditorProps {
   element: TemplateElement;
@@ -31,6 +32,35 @@ export default function ElementEditor({ element, onUpdate, onUploadPhoto }: Elem
           <Upload className="h-4 w-4 mr-2" />
           Upload Photo
         </Button>
+
+        {/* Position Controls */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+            <Move className="h-3 w-3" /> Position & Size
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-[10px] text-muted-foreground">X (%)</Label>
+              <Slider min={0} max={90} step={1} value={[element.x]} onValueChange={([v]) => onUpdate(element.id, { x: v })} />
+              <span className="text-[10px] text-muted-foreground">{element.x}%</span>
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Y (%)</Label>
+              <Slider min={0} max={90} step={1} value={[element.y]} onValueChange={([v]) => onUpdate(element.id, { y: v })} />
+              <span className="text-[10px] text-muted-foreground">{element.y}%</span>
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Width (%)</Label>
+              <Slider min={5} max={100} step={1} value={[element.width]} onValueChange={([v]) => onUpdate(element.id, { width: v })} />
+              <span className="text-[10px] text-muted-foreground">{element.width}%</span>
+            </div>
+            <div>
+              <Label className="text-[10px] text-muted-foreground">Height (%)</Label>
+              <Slider min={5} max={100} step={1} value={[element.height]} onValueChange={([v]) => onUpdate(element.id, { height: v })} />
+              <span className="text-[10px] text-muted-foreground">{element.height}%</span>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
@@ -136,6 +166,35 @@ export default function ElementEditor({ element, onUpdate, onUploadPhoto }: Elem
             <SelectItem value="bold">Bold</SelectItem>
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Position Controls */}
+      <div className="space-y-2">
+        <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+          <Move className="h-3 w-3" /> Position & Size
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <Label className="text-[10px] text-muted-foreground">X (%)</Label>
+            <Slider min={0} max={90} step={1} value={[element.x]} onValueChange={([v]) => onUpdate(element.id, { x: v })} />
+            <span className="text-[10px] text-muted-foreground">{element.x}%</span>
+          </div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground">Y (%)</Label>
+            <Slider min={0} max={90} step={1} value={[element.y]} onValueChange={([v]) => onUpdate(element.id, { y: v })} />
+            <span className="text-[10px] text-muted-foreground">{element.y}%</span>
+          </div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground">Width (%)</Label>
+            <Slider min={5} max={100} step={1} value={[element.width]} onValueChange={([v]) => onUpdate(element.id, { width: v })} />
+            <span className="text-[10px] text-muted-foreground">{element.width}%</span>
+          </div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground">Height (%)</Label>
+            <Slider min={5} max={100} step={1} value={[element.height]} onValueChange={([v]) => onUpdate(element.id, { height: v })} />
+            <span className="text-[10px] text-muted-foreground">{element.height}%</span>
+          </div>
+        </div>
       </div>
     </div>
   );

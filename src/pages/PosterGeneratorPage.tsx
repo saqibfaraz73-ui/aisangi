@@ -9,11 +9,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Image as ImageIcon, Palette } from "lucide-react";
+import { Download, Image as ImageIcon, Palette, Plus, Type, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 const SIZE_CATEGORIES = [...new Set(POSTER_SIZES.map((s) => s.category))];
 const TEMPLATE_CATEGORIES = [...new Set(POSTER_TEMPLATES.map((t) => t.category))];
+
+let nextElId = 100;
 
 export default function PosterGeneratorPage() {
   const [selectedTemplate, setSelectedTemplate] = useState(POSTER_TEMPLATES[0]);
@@ -41,6 +43,60 @@ export default function PosterGeneratorPage() {
     setElements((prev) => prev.map((el) => (el.id === id ? { ...el, ...updates } : el)));
   }, []);
 
+  const addTextElement = () => {
+    const id = `custom-text-${nextElId++}`;
+    const newEl: TemplateElement = {
+      id,
+      type: "text",
+      x: 10,
+      y: 50,
+      width: 80,
+      height: 15,
+      text: "Your Text Here",
+      fontFamily: "Inter",
+      fontSize: 3,
+      fontWeight: "normal",
+      color: "#FFFFFF",
+      textAlign: "center",
+      direction: "ltr",
+      editable: true,
+      lineHeight: 1.4,
+    };
+    setElements((prev) => [...prev, newEl]);
+    setSelectedElement(id);
+    toast.success("Text element added!");
+  };
+
+  const addImageElement = () => {
+    const id = `custom-photo-${nextElId++}`;
+    const newEl: TemplateElement = {
+      id,
+      type: "image",
+      x: 20,
+      y: 20,
+      width: 30,
+      height: 30,
+      editable: true,
+      isPhoto: true,
+      borderRadius: 0,
+      bgColor: "rgba(255,255,255,0.1)",
+    };
+    setElements((prev) => [...prev, newEl]);
+    setSelectedElement(id);
+    toast.success("Photo slot added!");
+  };
+
+  const deleteElement = (id: string) => {
+    setElements((prev) => prev.filter((el) => el.id !== id));
+    if (selectedElement === id) setSelectedElement(null);
+    setUploadedPhotos((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
+    toast.success("Element removed");
+  };
+
   const handleUploadPhoto = (elementId: string) => {
     setPendingPhotoId(elementId);
     fileInputRef.current?.click();
@@ -59,7 +115,6 @@ export default function PosterGeneratorPage() {
   };
 
   const exportPoster = async (format: "png" | "jpg") => {
-    // Create a full-resolution canvas
     const canvas = document.createElement("canvas");
     canvas.width = selectedSize.width;
     canvas.height = selectedSize.height;
@@ -67,7 +122,6 @@ export default function PosterGeneratorPage() {
     const pw = selectedSize.width;
     const ph = selectedSize.height;
 
-    // Background
     const tmpl = { ...selectedTemplate, bgColor };
     if (tmpl.bgGradient) {
       const colorMatches = tmpl.bgGradient.match(/#[0-9a-fA-F]{6}/g);
@@ -83,7 +137,6 @@ export default function PosterGeneratorPage() {
     }
     ctx.fillRect(0, 0, pw, ph);
 
-    // Load all photos first
     const photoImages: Record<string, HTMLImageElement> = {};
     await Promise.all(
       Object.entries(uploadedPhotos).map(([id, url]) =>
@@ -97,7 +150,6 @@ export default function PosterGeneratorPage() {
       )
     );
 
-    // Draw elements
     for (const el of elements) {
       const x = (el.x / 100) * pw;
       const y = (el.y / 100) * ph;
@@ -176,11 +228,11 @@ export default function PosterGeneratorPage() {
     : POSTER_SIZES.filter((s) => s.category === sizeCategory);
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background overflow-x-hidden">
       <AppHeader />
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-      <main className="max-w-7xl mx-auto p-3 sm:p-4">
+      <main className="max-w-7xl mx-auto p-3 sm:p-4 overflow-x-hidden">
         <div className="text-center mb-4 sm:mb-6">
           <h2 className="text-lg sm:text-2xl font-display font-bold text-foreground flex items-center justify-center gap-2">
             <ImageIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
@@ -191,19 +243,21 @@ export default function PosterGeneratorPage() {
           </p>
         </div>
 
-        {/* Canvas Preview - shown first on mobile */}
-        <div className="flex flex-col items-center gap-3 mb-4 lg:hidden">
+        {/* Canvas Preview - mobile */}
+        <div className="flex flex-col items-center gap-3 mb-4 lg:hidden overflow-hidden">
           <div className="text-xs text-muted-foreground">
             {selectedSize.label} — {selectedSize.width} × {selectedSize.height} px
           </div>
-          <PosterCanvas
-            template={{ ...selectedTemplate, bgColor }}
-            size={selectedSize}
-            elements={elements}
-            selectedElement={selectedElement}
-            onSelectElement={setSelectedElement}
-            uploadedPhotos={uploadedPhotos}
-          />
+          <div className="w-full flex justify-center overflow-hidden">
+            <PosterCanvas
+              template={{ ...selectedTemplate, bgColor }}
+              size={selectedSize}
+              elements={elements}
+              selectedElement={selectedElement}
+              onSelectElement={setSelectedElement}
+              uploadedPhotos={uploadedPhotos}
+            />
+          </div>
           <div className="flex gap-2">
             <Button size="sm" onClick={() => exportPoster("png")} className="gap-1.5 text-xs">
               <Download className="h-3.5 w-3.5" /> PNG
@@ -215,11 +269,11 @@ export default function PosterGeneratorPage() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Left Panel - Templates & Size */}
-          <div className="space-y-3 sm:space-y-4">
+          {/* Left Panel */}
+          <div className="space-y-3 sm:space-y-4 min-w-0">
             {/* Template Selection */}
             <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
-              <h3 className="font-semibold text-foreground mb-2 sm:mb-3 text-sm sm:text-base">📋 Templates / ٹیمپلیٹس</h3>
+              <h3 className="font-semibold text-foreground mb-2 sm:mb-3 text-sm sm:text-base">📋 Templates</h3>
               <Tabs value={templateCategory} onValueChange={setTemplateCategory}>
                 <TabsList className="w-full flex-wrap h-auto gap-1">
                   {TEMPLATE_CATEGORIES.map((cat) => (
@@ -255,7 +309,7 @@ export default function PosterGeneratorPage() {
 
             {/* Size Selection */}
             <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
-              <h3 className="font-semibold text-foreground mb-2 sm:mb-3 text-sm sm:text-base">📐 Size / سائز</h3>
+              <h3 className="font-semibold text-foreground mb-2 sm:mb-3 text-sm sm:text-base">📐 Size</h3>
               <div className="flex flex-wrap gap-1 mb-2 sm:mb-3">
                 {[...SIZE_CATEGORIES, "Custom"].map((cat) => (
                   <Button
@@ -310,7 +364,7 @@ export default function PosterGeneratorPage() {
             {/* Background Color */}
             <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
               <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2 text-sm sm:text-base">
-                <Palette className="h-4 w-4" /> Background Color
+                <Palette className="h-4 w-4" /> Background
               </h3>
               <div className="flex gap-2">
                 <input
@@ -325,7 +379,7 @@ export default function PosterGeneratorPage() {
           </div>
 
           {/* Center - Canvas Preview (desktop only) */}
-          <div className="hidden lg:flex flex-col items-center gap-4">
+          <div className="hidden lg:flex flex-col items-center gap-4 min-w-0 overflow-hidden">
             <div className="text-xs text-muted-foreground">
               {selectedSize.label} — {selectedSize.width} × {selectedSize.height} px
             </div>
@@ -348,17 +402,36 @@ export default function PosterGeneratorPage() {
           </div>
 
           {/* Right Panel - Element Editor */}
-          <div className="space-y-3">
-            <h3 className="font-semibold text-foreground text-sm sm:text-base">✏️ Edit Elements / عناصر ایڈٹ کریں</h3>
+          <div className="space-y-3 min-w-0">
+            <h3 className="font-semibold text-foreground text-sm sm:text-base">✏️ Edit Elements</h3>
+
+            {/* Add Custom Elements */}
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={addTextElement} className="flex-1 gap-1.5 text-xs">
+                <Plus className="h-3.5 w-3.5" /><Type className="h-3.5 w-3.5" /> Add Text
+              </Button>
+              <Button size="sm" variant="outline" onClick={addImageElement} className="flex-1 gap-1.5 text-xs">
+                <Plus className="h-3.5 w-3.5" /><ImageIcon className="h-3.5 w-3.5" /> Add Image
+              </Button>
+            </div>
+
             <p className="text-[10px] sm:text-xs text-muted-foreground">
-              Click on any text or photo slot in the poster to edit it below.
+              Click on poster or select below to edit. Use sliders to position.
             </p>
+            
             {currentElement ? (
-              <ElementEditor
-                element={currentElement}
-                onUpdate={updateElement}
-                onUploadPhoto={handleUploadPhoto}
-              />
+              <div className="space-y-2">
+                <ElementEditor
+                  element={currentElement}
+                  onUpdate={updateElement}
+                  onUploadPhoto={handleUploadPhoto}
+                />
+                {currentElement.id.startsWith("custom-") && (
+                  <Button size="sm" variant="destructive" onClick={() => deleteElement(currentElement.id)} className="w-full gap-1.5 text-xs">
+                    <Trash2 className="h-3.5 w-3.5" /> Remove Element
+                  </Button>
+                )}
+              </div>
             ) : (
               <div className="text-xs sm:text-sm text-muted-foreground bg-card border border-border rounded-lg p-3 sm:p-4">
                 👆 Click on a text or photo area in the poster to start editing
@@ -367,19 +440,28 @@ export default function PosterGeneratorPage() {
 
             {/* All editable elements list */}
             <div className="space-y-1">
-              <h4 className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">All Editable Elements</h4>
+              <h4 className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">All Elements</h4>
               {elements.filter((e) => e.editable).map((el) => (
-                <button
-                  key={el.id}
-                  onClick={() => setSelectedElement(el.id)}
-                  className={`w-full text-left px-3 py-1.5 sm:py-2 rounded text-xs transition-colors ${
-                    selectedElement === el.id
-                      ? "bg-primary/10 border border-primary text-foreground"
-                      : "hover:bg-muted text-muted-foreground border border-transparent"
-                  }`}
-                >
-                  {el.type === "image" ? "📷 Photo" : "📝"} {el.text?.slice(0, 30) || el.id}
-                </button>
+                <div key={el.id} className="flex items-center gap-1">
+                  <button
+                    onClick={() => setSelectedElement(el.id)}
+                    className={`flex-1 text-left px-3 py-1.5 sm:py-2 rounded text-xs transition-colors truncate ${
+                      selectedElement === el.id
+                        ? "bg-primary/10 border border-primary text-foreground"
+                        : "hover:bg-muted text-muted-foreground border border-transparent"
+                    }`}
+                  >
+                    {el.type === "image" ? "📷 Photo" : "📝"} {el.text?.slice(0, 25) || el.id}
+                  </button>
+                  {el.id.startsWith("custom-") && (
+                    <button
+                      onClick={() => deleteElement(el.id)}
+                      className="p-1 text-muted-foreground hover:text-destructive transition-colors"
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           </div>
