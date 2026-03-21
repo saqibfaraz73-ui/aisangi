@@ -64,26 +64,81 @@ function promptRequestsVocals(prompt: string, negativePrompt?: string) {
   if (negativePrompt && VOCAL_BLOCK_PATTERN.test(negativePrompt)) {
     return false;
   }
-
   return VOCAL_TRIGGER_PATTERN.test(prompt);
 }
 
-function extractVocalText(prompt: string) {
-  const quoted = prompt.match(/["“']([^"”']+)["”']/)?.[1]?.trim();
-  if (quoted) return quoted;
+function buildVocalPerformanceText(prompt: string) {
+  // Extract the core vocal content
+  let vocalCore = prompt.trim();
 
-  const trailingPhrase = prompt.match(/\b(?:sing|sings|singing|say|says|saying|lyrics?)\b[:\s-]*(.+)$/i)?.[1]?.trim();
-  if (trailingPhrase) {
-    return trailingPhrase
-      .replace(/^(like|with|about|of)\s+/i, "")
-      .replace(/[.,!?]+$/g, "")
-      .trim();
+  // Try to find quoted text
+  const quotedMatch = prompt.match(/["'"]([^"'"]+)["'"]/);
+  if (quotedMatch) vocalCore = quotedMatch[1].trim();
+  else {
+    const trailingPhrase = prompt.match(/\b(?:sing|sings|singing|say|says|saying|lyrics?)\b[:\s-]*(.+)$/i)?.[1]?.trim();
+    if (trailingPhrase) {
+      vocalCore = trailingPhrase.replace(/^(like|with|about|of)\s+/i, "").replace(/[.,!?]+$/g, "").trim();
+    } else {
+      const repeatedSound = prompt.match(/\b(?:meow|miaow|woof|bark|la|na)(?:\s+(?:meow|miaow|woof|bark|la|na))+\b/i)?.[0]?.trim();
+      if (repeatedSound) vocalCore = repeatedSound;
+    }
   }
 
-  const repeatedSound = prompt.match(/\b(?:meow|miaow|woof|bark|la|na)(?:\s+(?:meow|miaow|woof|bark|la|na))+\b/i)?.[0]?.trim();
-  if (repeatedSound) return repeatedSound;
+  // Detect mood
+  const moods: string[] = [];
+  if (/sad|melanchol|sorrow|cry|lonely|heartbreak/i.test(prompt)) moods.push("sad, slow, emotional");
+  if (/happy|joy|cheerful|upbeat|fun/i.test(prompt)) moods.push("happy, cheerful");
+  if (/calm|gentle|soft|peaceful|lullaby/i.test(prompt)) moods.push("gentle, soft");
+  const moodText = moods.length > 0 ? moods.join(", ") : "expressive";
 
-  return prompt.trim();
+  const isAnimalSound = /\b(meow|miaow|woof|bark|purr|chirp)\b/i.test(vocalCore);
+
+  if (isAnimalSound) {
+    const w = vocalCore.split(/\s+/)[0];
+    return [
+      `Perform this as a long, ${moodText} musical song. Sing very slowly with long pauses between sounds, stretching each sound:`,
+      "",
+      `${w}... ${w}... ${w}...`,
+      "",
+      `${w}, ${w}, ${w}...`,
+      "",
+      `${w}... ${w}... ${w}, ${w}...`,
+      "",
+      `${w}... ${w}... ${w}...`,
+      "",
+      `${w}, ${w}, ${w}...`,
+      "",
+      `${w}... ${w}... ${w}, ${w}...`,
+      "",
+      `${w}... ${w}... ${w}...`,
+      "",
+      `${w}, ${w}... ${w}...`,
+      "",
+      `${w}... ${w}, ${w}, ${w}...`,
+      "",
+      `${w}...`,
+    ].join("\n");
+  }
+
+  if (vocalCore.split(/\s+/).length < 15) {
+    return [
+      `Sing the following as a ${moodText} song with rhythm and melody. Repeat slowly like verses and chorus:`,
+      "",
+      `Verse 1: ${vocalCore}`,
+      "",
+      `Chorus: ${vocalCore}`,
+      "",
+      `Verse 2: ${vocalCore}`,
+      "",
+      `Chorus: ${vocalCore}`,
+      "",
+      `Bridge: ${vocalCore}`,
+      "",
+      `Final Chorus: ${vocalCore}`,
+    ].join("\n");
+  }
+
+  return `Sing the following in a ${moodText} musical style, like performing a song:\n\n${vocalCore}`;
 }
 
 function pcmBase64ToWavBase64(audioData: string) {
@@ -181,7 +236,7 @@ serve(async (req) => {
     let responseMode: "instrumental" | "vocal" = wantsVocals ? "vocal" : "instrumental";
 
     if (responseMode === "vocal") {
-      const vocalText = extractVocalText(prompt.trim());
+      const vocalText = buildVocalPerformanceText(prompt.trim());
       const targetModel = voiceModel || DEFAULT_TTS_MODEL;
 
       if (useVertexAI) {
@@ -192,7 +247,7 @@ serve(async (req) => {
         url = buildGeminiAudioUrl(apiKey, targetModel);
       }
 
-      console.log(`Music gen routed to vocal model: ${targetModel}; text="${vocalText}"`);
+      console.log(`Music gen routed to vocal model: ${targetModel}; text="${vocalText.substring(0, 200)}..."`);
 
       requestBody = {
         contents: [{ role: "user", parts: [{ text: vocalText }] }],
