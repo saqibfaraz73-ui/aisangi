@@ -20,6 +20,11 @@ const URDU_FONTS = [
 ];
 
 export default function ElementEditor({ element, onUpdate, onUploadPhoto }: ElementEditorProps) {
+  const maxX = Math.max(0, 100 - element.width);
+  const maxY = Math.max(0, 100 - element.height);
+  const maxWidth = Math.max(5, 100 - element.x);
+  const maxHeight = Math.max(5, 100 - element.y);
+
   if (element.type === "image" && element.isPhoto) {
     return (
       <div className="space-y-3 p-3 bg-card rounded-lg border border-border">
@@ -41,22 +46,22 @@ export default function ElementEditor({ element, onUpdate, onUploadPhoto }: Elem
           <div className="grid grid-cols-2 gap-2">
             <div>
               <Label className="text-[10px] text-muted-foreground">X (%)</Label>
-              <Slider min={0} max={90} step={1} value={[element.x]} onValueChange={([v]) => onUpdate(element.id, { x: v })} />
+              <Slider min={0} max={maxX} step={1} value={[Math.min(element.x, maxX)]} onValueChange={([v]) => onUpdate(element.id, { x: v })} />
               <span className="text-[10px] text-muted-foreground">{element.x}%</span>
             </div>
             <div>
               <Label className="text-[10px] text-muted-foreground">Y (%)</Label>
-              <Slider min={0} max={90} step={1} value={[element.y]} onValueChange={([v]) => onUpdate(element.id, { y: v })} />
+              <Slider min={0} max={maxY} step={1} value={[Math.min(element.y, maxY)]} onValueChange={([v]) => onUpdate(element.id, { y: v })} />
               <span className="text-[10px] text-muted-foreground">{element.y}%</span>
             </div>
             <div>
               <Label className="text-[10px] text-muted-foreground">Width (%)</Label>
-              <Slider min={5} max={100} step={1} value={[element.width]} onValueChange={([v]) => onUpdate(element.id, { width: v })} />
+              <Slider min={5} max={maxWidth} step={1} value={[Math.min(element.width, maxWidth)]} onValueChange={([v]) => onUpdate(element.id, { width: v })} />
               <span className="text-[10px] text-muted-foreground">{element.width}%</span>
             </div>
             <div>
               <Label className="text-[10px] text-muted-foreground">Height (%)</Label>
-              <Slider min={5} max={100} step={1} value={[element.height]} onValueChange={([v]) => onUpdate(element.id, { height: v })} />
+              <Slider min={5} max={maxHeight} step={1} value={[Math.min(element.height, maxHeight)]} onValueChange={([v]) => onUpdate(element.id, { height: v })} />
               <span className="text-[10px] text-muted-foreground">{element.height}%</span>
             </div>
           </div>
@@ -176,22 +181,22 @@ export default function ElementEditor({ element, onUpdate, onUploadPhoto }: Elem
         <div className="grid grid-cols-2 gap-2">
           <div>
             <Label className="text-[10px] text-muted-foreground">X (%)</Label>
-            <Slider min={0} max={90} step={1} value={[element.x]} onValueChange={([v]) => onUpdate(element.id, { x: v })} />
+            <Slider min={0} max={maxX} step={1} value={[Math.min(element.x, maxX)]} onValueChange={([v]) => onUpdate(element.id, { x: v })} />
             <span className="text-[10px] text-muted-foreground">{element.x}%</span>
           </div>
           <div>
             <Label className="text-[10px] text-muted-foreground">Y (%)</Label>
-            <Slider min={0} max={90} step={1} value={[element.y]} onValueChange={([v]) => onUpdate(element.id, { y: v })} />
+            <Slider min={0} max={maxY} step={1} value={[Math.min(element.y, maxY)]} onValueChange={([v]) => onUpdate(element.id, { y: v })} />
             <span className="text-[10px] text-muted-foreground">{element.y}%</span>
           </div>
           <div>
             <Label className="text-[10px] text-muted-foreground">Width (%)</Label>
-            <Slider min={5} max={100} step={1} value={[element.width]} onValueChange={([v]) => onUpdate(element.id, { width: v })} />
+            <Slider min={5} max={maxWidth} step={1} value={[Math.min(element.width, maxWidth)]} onValueChange={([v]) => onUpdate(element.id, { width: v })} />
             <span className="text-[10px] text-muted-foreground">{element.width}%</span>
           </div>
           <div>
             <Label className="text-[10px] text-muted-foreground">Height (%)</Label>
-            <Slider min={5} max={100} step={1} value={[element.height]} onValueChange={([v]) => onUpdate(element.id, { height: v })} />
+            <Slider min={5} max={maxHeight} step={1} value={[Math.min(element.height, maxHeight)]} onValueChange={([v]) => onUpdate(element.id, { height: v })} />
             <span className="text-[10px] text-muted-foreground">{element.height}%</span>
           </div>
         </div>
