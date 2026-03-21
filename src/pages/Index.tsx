@@ -14,22 +14,29 @@ import AppHeader from "@/components/AppHeader";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 
 const GENERAL_PROMPTS = [
-  "A cyberpunk city at night with neon lights reflecting on wet streets",
-  "A golden retriever puppy sitting in a field of sunflowers at sunset",
-  "An astronaut floating in space with Earth in the background, photorealistic",
-  "A cozy cabin in a snowy mountain forest with warm light from windows",
+  // General
+  { category: "🎨 General", prompts: [
+    "A cyberpunk city at night with neon lights reflecting on wet streets",
+    "A golden retriever puppy sitting in a field of sunflowers at sunset",
+    "An astronaut floating in space with Earth in the background, photorealistic",
+    "A cozy cabin in a snowy mountain forest with warm light from windows",
+  ]},
   // Eid Mubarak - English
-  "Eid Mubarak greeting card with golden crescent moon and lanterns, elegant calligraphy, festive bokeh lights",
-  "Beautiful Eid ul Fitr celebration scene with mosque silhouette at sunset, flying lanterns, warm golden tones",
-  "Eid Mubarak floral design with roses, crescent moon, and stars on a royal blue background",
-  "Happy Eid celebration with family gathering around a festive table, warm lighting, joyful atmosphere",
-  "Elegant Eid Mubarak card with 3D golden text, hanging lanterns, and sparkling stars on dark background",
+  { category: "🌙 Eid Mubarak (English)", prompts: [
+    "Eid Mubarak greeting card with golden crescent moon and lanterns, elegant calligraphy, festive bokeh lights",
+    "Beautiful Eid ul Fitr celebration scene with mosque silhouette at sunset, flying lanterns, warm golden tones",
+    "Eid Mubarak floral design with roses, crescent moon, and stars on a royal blue background",
+    "Happy Eid celebration with family gathering around a festive table, warm lighting, joyful atmosphere",
+    "Elegant Eid Mubarak card with 3D golden text, hanging lanterns, and sparkling stars on dark background",
+  ]},
   // Eid Mubarak - Urdu
-  "عید مبارک beautiful greeting card with golden crescent moon, lanterns, and Urdu calligraphy on dark green background",
-  "عید الفطر مبارک elegant design with mosque, stars, and Nastaliq calligraphy, royal purple and gold theme",
-  "آپکو اور آپکی فیملی کو عید مبارک festive card with floral border, crescent moon, warm golden lighting",
-  "عید مبارک ہو Urdu calligraphy on a beautiful background with hanging lanterns and bokeh lights",
-  "چاند مبارک beautiful moon sighting celebration card with Urdu text, night sky, crescent moon and stars",
+  { category: "🌙 عید مبارک (Urdu)", prompts: [
+    "عید مبارک beautiful greeting card with golden crescent moon, lanterns, and Urdu calligraphy on dark green background",
+    "عید الفطر مبارک elegant design with mosque, stars, and Nastaliq calligraphy, royal purple and gold theme",
+    "آپکو اور آپکی فیملی کو عید مبارک festive card with floral border, crescent moon, warm golden lighting",
+    "عید مبارک ہو Urdu calligraphy on a beautiful background with hanging lanterns and bokeh lights",
+    "چاند مبارک beautiful moon sighting celebration card with Urdu text, night sky, crescent moon and stars",
+  ]},
 ];
 
 const CHARACTER_PROMPTS = [
