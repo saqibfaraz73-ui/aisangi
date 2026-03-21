@@ -7,10 +7,12 @@ interface PosterCanvasProps {
   elements: TemplateElement[];
   selectedElement: string | null;
   onSelectElement: (id: string | null) => void;
+  onUpdateElement?: (id: string, updates: Partial<TemplateElement>) => void;
   uploadedPhotos: Record<string, string>;
 }
 
 const PREVIEW_MAX = 500;
+const RESIZE_HANDLE = 8;
 
 function getPreviewDimensions(w: number, h: number) {
   const ratio = w / h;
@@ -18,12 +20,15 @@ function getPreviewDimensions(w: number, h: number) {
   return { pw: PREVIEW_MAX * ratio, ph: PREVIEW_MAX };
 }
 
+type DragMode = "move" | "resize-br" | "resize-r" | "resize-b" | null;
+
 export default function PosterCanvas({
   template,
   size,
   elements,
   selectedElement,
   onSelectElement,
+  onUpdateElement,
   uploadedPhotos,
 }: PosterCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -203,15 +208,33 @@ export default function PosterCanvas({
     });
   }, [draw, uploadedPhotos, elements, size]);
 
-  const handleClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  const dragRef = useRef<{
+    mode: DragMode;
+    elId: string;
+    startMx: number;
+    startMy: number;
+    startX: number;
+    startY: number;
+    startW: number;
+    startH: number;
+    moved: boolean;
+  } | null>(null);
+
+  const getCanvasCoords = (e: React.MouseEvent | React.TouchEvent) => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return { mx: 0, my: 0 };
     const rect = canvas.getBoundingClientRect();
     const { pw, ph } = getPreviewDimensions(size.width, size.height);
-    const mx = ((e.clientX - rect.left) / rect.width) * pw;
-    const my = ((e.clientY - rect.top) / rect.height) * ph;
+    const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
+    const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
+    return {
+      mx: ((clientX - rect.left) / rect.width) * pw,
+      my: ((clientY - rect.top) / rect.height) * ph,
+    };
+  };
 
-    // Find topmost editable element at click position
+  const findElementAt = (mx: number, my: number) => {
+    const { pw, ph } = getPreviewDimensions(size.width, size.height);
     for (let i = elements.length - 1; i >= 0; i--) {
       const el = elements[i];
       if (!el.editable) continue;
@@ -220,18 +243,96 @@ export default function PosterCanvas({
       const ew = (el.width / 100) * pw;
       const eh = (el.height / 100) * ph;
       if (mx >= ex && mx <= ex + ew && my >= ey && my <= ey + eh) {
-        onSelectElement(el.id);
-        return;
+        const nearR = mx >= ex + ew - RESIZE_HANDLE;
+        const nearB = my >= ey + eh - RESIZE_HANDLE;
+        let mode: DragMode = "move";
+        if (nearR && nearB) mode = "resize-br";
+        else if (nearR) mode = "resize-r";
+        else if (nearB) mode = "resize-b";
+        return { el, mode };
       }
     }
-    onSelectElement(null);
+    return null;
+  };
+
+  const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
+    const { mx, my } = getCanvasCoords(e);
+    const hit = findElementAt(mx, my);
+    if (hit) {
+      onSelectElement(hit.el.id);
+      dragRef.current = {
+        mode: hit.mode,
+        elId: hit.el.id,
+        startMx: mx,
+        startMy: my,
+        startX: hit.el.x,
+        startY: hit.el.y,
+        startW: hit.el.width,
+        startH: hit.el.height,
+        moved: false,
+      };
+      e.preventDefault();
+    } else {
+      onSelectElement(null);
+    }
+  };
+
+  const handlePointerMove = (e: React.MouseEvent | React.TouchEvent) => {
+    const drag = dragRef.current;
+    if (!drag || !onUpdateElement) return;
+    e.preventDefault();
+    drag.moved = true;
+    const { mx, my } = getCanvasCoords(e);
+    const { pw, ph } = getPreviewDimensions(size.width, size.height);
+    const dx = ((mx - drag.startMx) / pw) * 100;
+    const dy = ((my - drag.startMy) / ph) * 100;
+
+    if (drag.mode === "move") {
+      onUpdateElement(drag.elId, {
+        x: Math.max(0, Math.min(95, drag.startX + dx)),
+        y: Math.max(0, Math.min(95, drag.startY + dy)),
+      });
+    } else if (drag.mode === "resize-br") {
+      onUpdateElement(drag.elId, {
+        width: Math.max(5, Math.min(100, drag.startW + dx)),
+        height: Math.max(5, Math.min(100, drag.startH + dy)),
+      });
+    } else if (drag.mode === "resize-r") {
+      onUpdateElement(drag.elId, { width: Math.max(5, Math.min(100, drag.startW + dx)) });
+    } else if (drag.mode === "resize-b") {
+      onUpdateElement(drag.elId, { height: Math.max(5, Math.min(100, drag.startH + dy)) });
+    }
+  };
+
+  const handlePointerUp = () => { dragRef.current = null; };
+
+  const handleMouseMoveForCursor = (e: React.MouseEvent) => {
+    if (dragRef.current) { handlePointerMove(e); return; }
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const { mx, my } = getCanvasCoords(e);
+    const hit = findElementAt(mx, my);
+    if (hit) {
+      if (hit.mode === "resize-br") canvas.style.cursor = "nwse-resize";
+      else if (hit.mode === "resize-r") canvas.style.cursor = "ew-resize";
+      else if (hit.mode === "resize-b") canvas.style.cursor = "ns-resize";
+      else canvas.style.cursor = "grab";
+    } else {
+      canvas.style.cursor = "default";
+    }
   };
 
   return (
     <canvas
       ref={canvasRef}
-      onClick={handleClick}
-      className="border border-border rounded-lg cursor-pointer mx-auto block max-w-full"
+      onMouseDown={handlePointerDown}
+      onMouseMove={handleMouseMoveForCursor}
+      onMouseUp={handlePointerUp}
+      onMouseLeave={handlePointerUp}
+      onTouchStart={handlePointerDown}
+      onTouchMove={handlePointerMove}
+      onTouchEnd={handlePointerUp}
+      className="border border-border rounded-lg mx-auto block max-w-full touch-none"
       style={{ maxWidth: "100%", height: "auto" }}
     />
   );
