@@ -44,7 +44,7 @@ const AppHeader = () => {
               isActive
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted",
-              isMobile && "text-sm px-4 py-2.5 w-full text-left"
+              isNarrow && "text-sm px-4 py-2.5 w-full text-left"
             )
           }
         >
