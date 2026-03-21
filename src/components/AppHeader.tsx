@@ -76,7 +76,7 @@ const AppHeader = () => {
           onClick={() => { signOut(); setOpen(false); }}
           className={cn(
             "text-xs text-muted-foreground hover:text-foreground",
-            isMobile ? "text-sm justify-start w-full mt-2" : "ml-2"
+            isNarrow ? "text-sm justify-start w-full mt-2" : "ml-2"
           )}
         >
           <LogOut className="h-3.5 w-3.5 mr-1" />
