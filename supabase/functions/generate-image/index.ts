@@ -115,7 +115,12 @@ function buildGeminiParts(
     return parts;
   }
 
-  parts.push({ text: `Generate a high-quality image: ${fullPrompt}` });
+  // Detect Urdu/Arabic script and add rendering instructions
+  const hasRTLScript = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(prompt);
+  const textRenderingHint = hasRTLScript
+    ? `\n\nCRITICAL TEXT RENDERING INSTRUCTIONS: The prompt contains Urdu/Arabic text. You MUST render this text EXACTLY as provided, character by character, in proper right-to-left (RTL) Nastaliq/Naskh calligraphy style. Do NOT transliterate, rearrange, or approximate the text. Each letter must be correctly connected using proper Urdu ligatures. The text must be clearly readable and beautifully rendered.`
+    : "";
+  parts.push({ text: `Generate a high-quality image: ${fullPrompt}${textRenderingHint}` });
   return parts;
 }
 
