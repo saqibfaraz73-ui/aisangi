@@ -7,10 +7,12 @@ interface PosterCanvasProps {
   elements: TemplateElement[];
   selectedElement: string | null;
   onSelectElement: (id: string | null) => void;
+  onUpdateElement?: (id: string, updates: Partial<TemplateElement>) => void;
   uploadedPhotos: Record<string, string>;
 }
 
 const PREVIEW_MAX = 500;
+const RESIZE_HANDLE = 8;
 
 function getPreviewDimensions(w: number, h: number) {
   const ratio = w / h;
@@ -18,12 +20,15 @@ function getPreviewDimensions(w: number, h: number) {
   return { pw: PREVIEW_MAX * ratio, ph: PREVIEW_MAX };
 }
 
+type DragMode = "move" | "resize-br" | "resize-r" | "resize-b" | null;
+
 export default function PosterCanvas({
   template,
   size,
   elements,
   selectedElement,
   onSelectElement,
+  onUpdateElement,
   uploadedPhotos,
 }: PosterCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
