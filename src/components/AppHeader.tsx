@@ -20,8 +20,15 @@ const NAV_ITEMS = [
 
 const AppHeader = () => {
   const { user, isAdmin, signOut } = useAuth();
-  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(true);
+
+  useEffect(() => {
+    const check = () => setIsNarrow(window.innerWidth < 1100);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const navLinks = (
     <>
