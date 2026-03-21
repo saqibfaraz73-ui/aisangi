@@ -390,6 +390,7 @@ export default function PosterGeneratorPage() {
               elements={elements}
               selectedElement={selectedElement}
               onSelectElement={setSelectedElement}
+              onUpdateElement={updateElement}
               uploadedPhotos={uploadedPhotos}
             />
             <div className="flex gap-2">
