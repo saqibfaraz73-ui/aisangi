@@ -32,6 +32,7 @@ export default function PosterCanvas({
   uploadedPhotos,
 }: PosterCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const imageCacheRef = useRef<Record<string, HTMLImageElement>>({});
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
@@ -49,6 +50,8 @@ export default function PosterCanvas({
     canvas.height = ph * 2;
     canvas.style.width = `${pw}px`;
     canvas.style.height = `${ph}px`;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
     ctx.scale(2, 2);
 
     // Background
@@ -96,8 +99,32 @@ export default function PosterCanvas({
         ctx.globalAlpha = 1;
       } else if (el.type === "image") {
         const photoUrl = uploadedPhotos[el.id];
-        if (photoUrl) {
-          // Photo will be drawn by image load effect
+        const photo = photoUrl ? imageCacheRef.current[el.id] : undefined;
+        if (photoUrl && photo) {
+          ctx.save();
+          ctx.globalAlpha = el.opacity ?? 1;
+
+          if (el.borderRadius === 50) {
+            ctx.beginPath();
+            ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
+            ctx.clip();
+          } else if (el.borderRadius) {
+            clipRoundRect(ctx, x, y, w, h, el.borderRadius);
+          }
+
+          const imgRatio = photo.width / photo.height;
+          const boxRatio = w / h;
+          let sx = 0, sy = 0, sw = photo.width, sh = photo.height;
+          if (imgRatio > boxRatio) {
+            sw = photo.height * boxRatio;
+            sx = (photo.width - sw) / 2;
+          } else {
+            sh = photo.width / boxRatio;
+            sy = (photo.height - sh) / 2;
+          }
+
+          ctx.drawImage(photo, sx, sy, sw, sh, x, y, w, h);
+          ctx.restore();
         } else {
           // Placeholder
           ctx.fillStyle = el.bgColor || "rgba(255,255,255,0.1)";
@@ -156,57 +183,46 @@ export default function PosterCanvas({
     });
   }, [template, size, elements, selectedElement, uploadedPhotos, fontsLoaded]);
 
-  // Draw photos
   useEffect(() => {
     draw();
+  }, [draw]);
 
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    const { pw, ph } = getPreviewDimensions(size.width, size.height);
+  useEffect(() => {
+    let cancelled = false;
+    const activeIds = new Set(Object.keys(uploadedPhotos));
 
-    Object.entries(uploadedPhotos).forEach(([elId, url]) => {
-      const el = elements.find((e) => e.id === elId);
-      if (!el) return;
-      const img = new Image();
-      img.crossOrigin = "anonymous";
-      img.onload = () => {
-        draw(); // Redraw base
-        const c2 = canvasRef.current?.getContext("2d");
-        if (!c2) return;
-        c2.save();
-        c2.scale(2, 2);
-        const x = (el.x / 100) * pw;
-        const y = (el.y / 100) * ph;
-        const w = (el.width / 100) * pw;
-        const h = (el.height / 100) * ph;
-
-        if (el.borderRadius === 50) {
-          c2.beginPath();
-          c2.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
-          c2.clip();
-        } else if (el.borderRadius) {
-          clipRoundRect(c2, x, y, w, h, el.borderRadius);
-        }
-
-        // Cover fit
-        const imgRatio = img.width / img.height;
-        const boxRatio = w / h;
-        let sx = 0, sy = 0, sw = img.width, sh = img.height;
-        if (imgRatio > boxRatio) {
-          sw = img.height * boxRatio;
-          sx = (img.width - sw) / 2;
-        } else {
-          sh = img.width / boxRatio;
-          sy = (img.height - sh) / 2;
-        }
-        c2.drawImage(img, sx, sy, sw, sh, x, y, w, h);
-        c2.restore();
-      };
-      img.src = url;
+    Object.keys(imageCacheRef.current).forEach((id) => {
+      if (!activeIds.has(id)) delete imageCacheRef.current[id];
     });
-  }, [draw, uploadedPhotos, elements, size]);
+
+    Promise.all(
+      Object.entries(uploadedPhotos).map(
+        ([elId, url]) =>
+          new Promise<void>((resolve) => {
+            const cached = imageCacheRef.current[elId];
+            if (cached?.src === url) {
+              resolve();
+              return;
+            }
+
+            const img = new Image();
+            img.crossOrigin = "anonymous";
+            img.onload = () => {
+              if (!cancelled) imageCacheRef.current[elId] = img;
+              resolve();
+            };
+            img.onerror = () => resolve();
+            img.src = url;
+          })
+      )
+    ).then(() => {
+      if (!cancelled) draw();
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [uploadedPhotos, draw]);
 
   const dragRef = useRef<{
     mode: DragMode;
@@ -288,19 +304,21 @@ export default function PosterCanvas({
     const dy = ((my - drag.startMy) / ph) * 100;
 
     if (drag.mode === "move") {
+      const maxX = Math.max(0, 100 - drag.startW);
+      const maxY = Math.max(0, 100 - drag.startH);
       onUpdateElement(drag.elId, {
-        x: Math.max(0, Math.min(95, drag.startX + dx)),
-        y: Math.max(0, Math.min(95, drag.startY + dy)),
+        x: Math.max(0, Math.min(maxX, drag.startX + dx)),
+        y: Math.max(0, Math.min(maxY, drag.startY + dy)),
       });
     } else if (drag.mode === "resize-br") {
       onUpdateElement(drag.elId, {
-        width: Math.max(5, Math.min(100, drag.startW + dx)),
-        height: Math.max(5, Math.min(100, drag.startH + dy)),
+        width: Math.max(5, Math.min(100 - drag.startX, drag.startW + dx)),
+        height: Math.max(5, Math.min(100 - drag.startY, drag.startH + dy)),
       });
     } else if (drag.mode === "resize-r") {
-      onUpdateElement(drag.elId, { width: Math.max(5, Math.min(100, drag.startW + dx)) });
+      onUpdateElement(drag.elId, { width: Math.max(5, Math.min(100 - drag.startX, drag.startW + dx)) });
     } else if (drag.mode === "resize-b") {
-      onUpdateElement(drag.elId, { height: Math.max(5, Math.min(100, drag.startH + dy)) });
+      onUpdateElement(drag.elId, { height: Math.max(5, Math.min(100 - drag.startY, drag.startH + dy)) });
     }
   };
 
