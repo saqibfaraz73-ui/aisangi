@@ -250,8 +250,9 @@ export default function PosterCanvas({
     };
   };
 
-  const findElementAt = (mx: number, my: number) => {
+  const findElementAt = (mx: number, my: number, isTouch = false) => {
     const { pw, ph } = getPreviewDimensions(size.width, size.height);
+    const handle = isTouch ? RESIZE_HANDLE_TOUCH : RESIZE_HANDLE_MOUSE;
     for (let i = elements.length - 1; i >= 0; i--) {
       const el = elements[i];
       if (!el.editable) continue;
@@ -259,9 +260,11 @@ export default function PosterCanvas({
       const ey = (el.y / 100) * ph;
       const ew = (el.width / 100) * pw;
       const eh = (el.height / 100) * ph;
-      if (mx >= ex && mx <= ex + ew && my >= ey && my <= ey + eh) {
-        const nearR = mx >= ex + ew - RESIZE_HANDLE;
-        const nearB = my >= ey + eh - RESIZE_HANDLE;
+      // For touch, expand hit area slightly outside the element for easier resize
+      const touchPad = isTouch ? 10 : 0;
+      if (mx >= ex - touchPad && mx <= ex + ew + touchPad && my >= ey - touchPad && my <= ey + eh + touchPad) {
+        const nearR = mx >= ex + ew - handle;
+        const nearB = my >= ey + eh - handle;
         let mode: DragMode = "move";
         if (nearR && nearB) mode = "resize-br";
         else if (nearR) mode = "resize-r";
