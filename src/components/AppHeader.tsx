@@ -15,6 +15,7 @@ const NAV_ITEMS = [
   { to: "/script-generator", label: "Script AI" },
   { to: "/voice-generator", label: "Voice AI" },
   { to: "/music-generator", label: "Music AI" },
+  { to: "/poster-generator", label: "Poster" },
 ];
 
 const AppHeader = () => {
