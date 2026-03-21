@@ -231,8 +231,8 @@ export default function PosterCanvas({
     <canvas
       ref={canvasRef}
       onClick={handleClick}
-      className="border border-border rounded-lg cursor-pointer mx-auto block"
-      style={{ maxWidth: "100%" }}
+      className="border border-border rounded-lg cursor-pointer mx-auto block max-w-full"
+      style={{ maxWidth: "100%", height: "auto" }}
     />
   );
 }
