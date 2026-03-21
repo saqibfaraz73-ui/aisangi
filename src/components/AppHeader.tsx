@@ -98,7 +98,7 @@ const AppHeader = () => {
           </h1>
         </NavLink>
 
-        {isMobile ? (
+        {isNarrow ? (
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="sm">
