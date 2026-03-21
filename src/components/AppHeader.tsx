@@ -4,8 +4,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
-import { useIsMobile } from "@/hooks/use-mobile";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const NAV_ITEMS = [
   { to: "/", label: "Text to Image" },
@@ -20,8 +19,15 @@ const NAV_ITEMS = [
 
 const AppHeader = () => {
   const { user, isAdmin, signOut } = useAuth();
-  const isMobile = useIsMobile();
   const [open, setOpen] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(true);
+
+  useEffect(() => {
+    const check = () => setIsNarrow(window.innerWidth < 1100);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
 
   const navLinks = (
     <>
@@ -37,7 +43,7 @@ const AppHeader = () => {
               isActive
                 ? "bg-primary text-primary-foreground"
                 : "text-muted-foreground hover:bg-muted",
-              isMobile && "text-sm px-4 py-2.5 w-full text-left"
+              isNarrow && "text-sm px-4 py-2.5 w-full text-left"
             )
           }
         >
@@ -54,7 +60,7 @@ const AppHeader = () => {
               isActive
                 ? "bg-accent text-accent-foreground"
                 : "text-muted-foreground hover:bg-muted",
-              isMobile && "text-sm px-4 py-2.5 w-full"
+              isNarrow && "text-sm px-4 py-2.5 w-full"
             )
           }
         >
@@ -69,7 +75,7 @@ const AppHeader = () => {
           onClick={() => { signOut(); setOpen(false); }}
           className={cn(
             "text-xs text-muted-foreground hover:text-foreground",
-            isMobile ? "text-sm justify-start w-full mt-2" : "ml-2"
+            isNarrow ? "text-sm justify-start w-full mt-2" : "ml-2"
           )}
         >
           <LogOut className="h-3.5 w-3.5 mr-1" />
@@ -81,8 +87,8 @@ const AppHeader = () => {
 
   return (
     <header className="border-b border-border px-4 py-3">
-      <div className="max-w-5xl mx-auto flex items-center justify-between">
-        <NavLink to="/" className="flex items-center gap-2.5">
+      <div className="max-w-5xl mx-auto flex items-center justify-between overflow-hidden">
+        <NavLink to="/" className="flex items-center gap-2.5 shrink-0">
           <div className="h-9 w-9 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
             <Wand2 className="h-4.5 w-4.5 text-primary-foreground" />
           </div>
@@ -91,7 +97,7 @@ const AppHeader = () => {
           </h1>
         </NavLink>
 
-        {isMobile ? (
+        {isNarrow ? (
           <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -106,7 +112,7 @@ const AppHeader = () => {
             </SheetContent>
           </Sheet>
         ) : (
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {navLinks}
           </nav>
         )}
