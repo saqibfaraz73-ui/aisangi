@@ -37,6 +37,39 @@ const GENERAL_PROMPTS = [
     "عید مبارک ہو Urdu calligraphy on a beautiful background with hanging lanterns and bokeh lights",
     "چاند مبارک beautiful moon sighting celebration card with Urdu text, night sky, crescent moon and stars",
   ]},
+  // Cinematic
+  { category: "🎬 Cinematic", prompts: [
+    "A lone warrior standing on a rooftop at golden hour, cinematic lighting, dramatic sky, film grain, 35mm lens",
+    "Walking through fog in a dimly lit alley, neon signs reflecting on wet ground, moody cinematic scene",
+    "Close-up portrait with dramatic side lighting, shallow depth of field, cinematic color grading",
+  ]},
+  // Wedding
+  { category: "💒 Wedding", prompts: [
+    "Elegant wedding ceremony in a beautiful garden with soft bokeh lights, romantic sunset",
+    "A floral wedding arch with rose petals falling, dreamy soft lighting, fairy tale scene",
+    "Bride holding a bouquet of white roses in a grand palace ballroom, chandelier lighting",
+    "Beach wedding at golden hour with waves in background, flower-lined aisle",
+  ]},
+  // Party & Celebration
+  { category: "🎉 Party & Celebration", prompts: [
+    "Rooftop party with city skyline at night, neon lights, vibrant energy, confetti falling",
+    "Glamorous masquerade ball with ornate masks, dramatic chandelier lighting, elegant venue",
+    "New Year's Eve party with fireworks in the background, champagne toast, glittering decorations",
+    "Colorful Holi festival scene with vibrant powder colors, joyful celebration",
+  ]},
+  // Travel
+  { category: "✈️ Travel", prompts: [
+    "Standing in front of the Eiffel Tower at sunrise, warm golden light, travel photography",
+    "Ancient ruins in Greece with blue sky and white buildings in background",
+    "Colorful streets of Tokyo with cherry blossoms falling, vibrant scene",
+    "Edge of Grand Canyon at sunset, dramatic landscape, adventure photography",
+  ]},
+  // Professional
+  { category: "💼 Professional", prompts: [
+    "Professional headshot in a modern office, clean background, confident pose, studio lighting",
+    "Keynote speech on stage with spotlights, large audience, professional event",
+    "Sleek modern desk with a city skyline view through floor-to-ceiling windows",
+  ]},
 ];
 
 const CHARACTER_PROMPTS = [
