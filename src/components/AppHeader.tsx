@@ -81,8 +81,8 @@ const AppHeader = () => {
 
   return (
     <header className="border-b border-border px-4 py-3">
-      <div className="max-w-5xl mx-auto flex items-center justify-between">
-        <NavLink to="/" className="flex items-center gap-2.5">
+      <div className="max-w-5xl mx-auto flex items-center justify-between overflow-hidden">
+        <NavLink to="/" className="flex items-center gap-2.5 shrink-0">
           <div className="h-9 w-9 rounded-xl gradient-primary flex items-center justify-center shadow-glow">
             <Wand2 className="h-4.5 w-4.5 text-primary-foreground" />
           </div>
@@ -106,7 +106,7 @@ const AppHeader = () => {
             </SheetContent>
           </Sheet>
         ) : (
-          <nav className="flex items-center gap-1">
+          <nav className="flex items-center gap-1 overflow-x-auto scrollbar-hide">
             {navLinks}
           </nav>
         )}
