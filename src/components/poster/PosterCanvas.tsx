@@ -12,7 +12,8 @@ interface PosterCanvasProps {
 }
 
 const PREVIEW_MAX = 500;
-const RESIZE_HANDLE = 8;
+const RESIZE_HANDLE_MOUSE = 8;
+const RESIZE_HANDLE_TOUCH = 30;
 
 function getPreviewDimensions(w: number, h: number) {
   const ratio = w / h;
@@ -172,13 +173,20 @@ export default function PosterCanvas({
         ctx.globalAlpha = 1;
       }
 
-      // Selection indicator
+      // Selection indicator with resize handles
       if (selectedElement === el.id && el.editable) {
         ctx.strokeStyle = "#00BFFF";
         ctx.lineWidth = 2;
         ctx.setLineDash([4, 4]);
         ctx.strokeRect(x - 2, y - 2, w + 4, h + 4);
         ctx.setLineDash([]);
+        // Draw resize handle at bottom-right corner
+        const handleSize = 12;
+        ctx.fillStyle = "#00BFFF";
+        ctx.fillRect(x + w - handleSize / 2, y + h - handleSize / 2, handleSize, handleSize);
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 1;
+        ctx.strokeRect(x + w - handleSize / 2, y + h - handleSize / 2, handleSize, handleSize);
       }
     });
   }, [template, size, elements, selectedElement, uploadedPhotos, fontsLoaded]);
@@ -249,8 +257,9 @@ export default function PosterCanvas({
     };
   };
 
-  const findElementAt = (mx: number, my: number) => {
+  const findElementAt = (mx: number, my: number, isTouch = false) => {
     const { pw, ph } = getPreviewDimensions(size.width, size.height);
+    const handle = isTouch ? RESIZE_HANDLE_TOUCH : RESIZE_HANDLE_MOUSE;
     for (let i = elements.length - 1; i >= 0; i--) {
       const el = elements[i];
       if (!el.editable) continue;
@@ -258,9 +267,11 @@ export default function PosterCanvas({
       const ey = (el.y / 100) * ph;
       const ew = (el.width / 100) * pw;
       const eh = (el.height / 100) * ph;
-      if (mx >= ex && mx <= ex + ew && my >= ey && my <= ey + eh) {
-        const nearR = mx >= ex + ew - RESIZE_HANDLE;
-        const nearB = my >= ey + eh - RESIZE_HANDLE;
+      // For touch, expand hit area slightly outside the element for easier resize
+      const touchPad = isTouch ? 10 : 0;
+      if (mx >= ex - touchPad && mx <= ex + ew + touchPad && my >= ey - touchPad && my <= ey + eh + touchPad) {
+        const nearR = mx >= ex + ew - handle;
+        const nearB = my >= ey + eh - handle;
         let mode: DragMode = "move";
         if (nearR && nearB) mode = "resize-br";
         else if (nearR) mode = "resize-r";
@@ -272,8 +283,9 @@ export default function PosterCanvas({
   };
 
   const handlePointerDown = (e: React.MouseEvent | React.TouchEvent) => {
+    const isTouch = "touches" in e;
     const { mx, my } = getCanvasCoords(e);
-    const hit = findElementAt(mx, my);
+    const hit = findElementAt(mx, my, isTouch);
     if (hit) {
       onSelectElement(hit.el.id);
       dragRef.current = {
