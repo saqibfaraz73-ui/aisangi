@@ -115,12 +115,34 @@ function buildGeminiParts(
     return parts;
   }
 
-  // Detect Urdu/Arabic script and add rendering instructions
-  const hasRTLScript = /[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(prompt);
-  const textRenderingHint = hasRTLScript
-    ? `\n\nCRITICAL TEXT RENDERING INSTRUCTIONS: The prompt contains Urdu/Arabic text. You MUST render this text EXACTLY as provided, character by character, in proper right-to-left (RTL) Nastaliq/Naskh calligraphy style. Do NOT transliterate, rearrange, or approximate the text. Each letter must be correctly connected using proper Urdu ligatures. The text must be clearly readable and beautifully rendered.`
-    : "";
-  parts.push({ text: `Generate a high-quality image: ${fullPrompt}${textRenderingHint}` });
+  // Detect Urdu/Arabic script and extract the text
+  const rtlMatches = prompt.match(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF\s]+/g);
+  const hasRTLScript = rtlMatches && rtlMatches.length > 0;
+  
+  if (hasRTLScript) {
+    const urduText = rtlMatches.map(m => m.trim()).filter(Boolean).join(" ");
+    // Separate the Urdu text from English description
+    const englishPart = prompt.replace(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+/g, "").trim();
+    
+    const textRenderingHint = `
+ABSOLUTE REQUIREMENT - URDU TEXT RENDERING:
+The following EXACT Urdu text MUST appear in the image. Copy it character-by-character:
+「${urduText}」
+
+RULES:
+1. Write ONLY the Urdu text shown above - do NOT write any other Arabic/Urdu/Persian text
+2. The text must be in beautiful golden Nastaliq calligraphy style
+3. Text direction is RIGHT-TO-LEFT
+4. Every letter must use correct Urdu ligatures and connections
+5. If you cannot render the exact text, write it as decorative calligraphy but keep EVERY character identical
+6. Do NOT substitute, transliterate, or use similar-looking characters from other languages
+
+Scene description: ${englishPart}`;
+    
+    parts.push({ text: `Generate a high-quality festive image with the following specifications:${textRenderingHint}${variationHint}${watermarkInstruction}` });
+  } else {
+    parts.push({ text: `Generate a high-quality image: ${fullPrompt}` });
+  }
   return parts;
 }
 
