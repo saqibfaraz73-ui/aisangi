@@ -5,7 +5,6 @@ import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
-import { useState, useEffect } from "react";
 
 const NAV_ITEMS = [
   { to: "/", label: "Text to Image" },
