@@ -73,6 +73,22 @@ const GENERAL_PROMPTS = [
 ];
 
 const CHARACTER_PROMPTS = [
+  // Eid Mubarak - English
+  { category: "🌙 Eid Mubarak (English)", prompts: [
+    "Wearing elegant Eid attire, standing in front of a beautifully decorated mosque at sunset with golden lanterns, text 'Eid Mubarak' in elegant calligraphy",
+    "Celebrating Eid with family at a festive dinner table, warm lighting, joyful atmosphere, text 'Eid Mubarak' overlay",
+    "Holding a crescent moon lantern in a garden at twilight, festive Eid decorations, text 'Happy Eid' in gold",
+    "Posing in traditional clothing with Eid gifts and sweets, royal blue and gold theme, text 'Eid Mubarak'",
+    "Standing under hanging lanterns and fairy lights, Eid celebration, elegant festive scene, text 'Blessed Eid'",
+  ]},
+  // Eid Mubarak - Urdu
+  { category: "🌙 عید مبارک (Urdu)", prompts: [
+    "Wearing elegant Eid attire with golden crescent moon and lanterns background, text 'عید مبارک' in beautiful Nastaliq calligraphy",
+    "Standing in front of mosque at sunset with festive decorations, text 'عید الفطر مبارک' in golden Urdu calligraphy",
+    "Celebrating with family, festive Eid scene, text 'آپکو اور آپکی فیملی کو عید مبارک' in Nastaliq calligraphy",
+    "Posing with hanging lanterns and bokeh lights, text 'عید مبارک ہو' in beautiful golden Urdu text",
+    "Elegant Eid celebration scene with floral border, text 'چاند مبارک' in Nastaliq calligraphy, night sky with crescent moon",
+  ]},
   // Cinematic
   { category: "🎬 Cinematic", prompts: [
     "Standing on a rooftop at golden hour, cinematic lighting, dramatic sky, film grain, 35mm lens",

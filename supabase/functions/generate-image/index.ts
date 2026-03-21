@@ -115,31 +115,50 @@ function buildGeminiParts(
     return parts;
   }
 
-  // Detect Urdu/Arabic script and extract the text
+  // Detect Urdu/Arabic script in the prompt
   const rtlMatches = prompt.match(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF\s]+/g);
   const hasRTLScript = rtlMatches && rtlMatches.length > 0;
+
+  // Also detect if prompt asks for greeting text like 'Eid Mubarak', 'Happy Eid', etc.
+  const eidTextMatch = prompt.match(/(?:text\s+['"]([^'"]+)['"]|text\s+'([^']+)')/i);
+  const hasExplicitTextRequest = /\btext\b/i.test(prompt);
   
-  if (hasRTLScript) {
-    const urduText = rtlMatches.map(m => m.trim()).filter(Boolean).join(" ");
-    // Separate the Urdu text from English description
+  if (hasRTLScript || hasExplicitTextRequest) {
+    const urduText = hasRTLScript ? rtlMatches!.map(m => m.trim()).filter(Boolean).join(" ") : "";
     const englishPart = prompt.replace(/[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]+/g, "").trim();
     
-    const textRenderingHint = `
-ABSOLUTE REQUIREMENT - URDU TEXT RENDERING:
-The following EXACT Urdu text MUST appear in the image. Copy it character-by-character:
-「${urduText}」
-
-RULES:
-1. Write ONLY the Urdu text shown above - do NOT write any other Arabic/Urdu/Persian text
-2. The text must be in beautiful golden Nastaliq calligraphy style
-3. Text direction is RIGHT-TO-LEFT
-4. Every letter must use correct Urdu ligatures and connections
-5. If you cannot render the exact text, write it as decorative calligraphy but keep EVERY character identical
-6. Do NOT substitute, transliterate, or use similar-looking characters from other languages
-
-Scene description: ${englishPart}`;
+    // Extract any quoted text that should appear on the image
+    const quotedTexts: string[] = [];
+    const quoteMatches = prompt.matchAll(/['"]([^'"]+)['"]/g);
+    for (const m of quoteMatches) quotedTexts.push(m[1]);
     
-    parts.push({ text: `Generate a high-quality festive image with the following specifications:${textRenderingHint}${variationHint}${watermarkInstruction}` });
+    let textInstruction = "";
+    
+    if (urduText) {
+      textInstruction += `
+CRITICAL TEXT REQUIREMENT - The following EXACT Urdu/Arabic text MUST be prominently displayed as the main heading/title text in the image:
+「${urduText}」
+- Render in beautiful golden Nastaliq calligraphy, large and clearly readable
+- RIGHT-TO-LEFT direction with correct ligatures
+- Place it as the PRIMARY text element, centered or prominently positioned
+- Do NOT substitute with similar-looking characters from other scripts`;
+    }
+    
+    if (quotedTexts.length > 0) {
+      textInstruction += `\nADDITIONAL TEXT TO INCLUDE: ${quotedTexts.map(t => `"${t}"`).join(", ")}
+- Render each text clearly and legibly in the image`;
+    }
+    
+    if (!urduText && !quotedTexts.length && hasExplicitTextRequest) {
+      textInstruction += `\nThe prompt requests text in the image - make sure any mentioned text is clearly rendered and legible.`;
+    }
+
+    parts.push({ text: `Generate a high-quality greeting card / festive image:
+${textInstruction}
+
+Scene/design description: ${englishPart}${variationHint}${watermarkInstruction}
+
+IMPORTANT: The text MUST be the focal point of the image. Make it large, golden, and clearly readable. The scene/design is the background for the text.` });
   } else {
     parts.push({ text: `Generate a high-quality image: ${fullPrompt}` });
   }
