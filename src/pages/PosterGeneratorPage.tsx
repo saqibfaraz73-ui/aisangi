@@ -349,8 +349,8 @@ export default function PosterGeneratorPage() {
 
           {/* Right Panel - Element Editor */}
           <div className="space-y-3">
-            <h3 className="font-semibold text-foreground">✏️ Edit Elements / عناصر ایڈٹ کریں</h3>
-            <p className="text-xs text-muted-foreground">
+            <h3 className="font-semibold text-foreground text-sm sm:text-base">✏️ Edit Elements / عناصر ایڈٹ کریں</h3>
+            <p className="text-[10px] sm:text-xs text-muted-foreground">
               Click on any text or photo slot in the poster to edit it below.
             </p>
             {currentElement ? (
@@ -360,19 +360,19 @@ export default function PosterGeneratorPage() {
                 onUploadPhoto={handleUploadPhoto}
               />
             ) : (
-              <div className="text-sm text-muted-foreground bg-card border border-border rounded-lg p-4">
+              <div className="text-xs sm:text-sm text-muted-foreground bg-card border border-border rounded-lg p-3 sm:p-4">
                 👆 Click on a text or photo area in the poster to start editing
               </div>
             )}
 
             {/* All editable elements list */}
             <div className="space-y-1">
-              <h4 className="text-xs font-medium text-muted-foreground uppercase tracking-wide">All Editable Elements</h4>
+              <h4 className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">All Editable Elements</h4>
               {elements.filter((e) => e.editable).map((el) => (
                 <button
                   key={el.id}
                   onClick={() => setSelectedElement(el.id)}
-                  className={`w-full text-left px-3 py-2 rounded text-xs transition-colors ${
+                  className={`w-full text-left px-3 py-1.5 sm:py-2 rounded text-xs transition-colors ${
                     selectedElement === el.id
                       ? "bg-primary/10 border border-primary text-foreground"
                       : "hover:bg-muted text-muted-foreground border border-transparent"
