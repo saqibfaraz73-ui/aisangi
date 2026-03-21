@@ -180,31 +180,54 @@ export default function PosterGeneratorPage() {
       <AppHeader />
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
 
-      <main className="max-w-7xl mx-auto p-4">
-        <div className="text-center mb-6">
-          <h2 className="text-2xl font-display font-bold text-foreground flex items-center justify-center gap-2">
-            <ImageIcon className="h-6 w-6 text-primary" />
+      <main className="max-w-7xl mx-auto p-3 sm:p-4">
+        <div className="text-center mb-4 sm:mb-6">
+          <h2 className="text-lg sm:text-2xl font-display font-bold text-foreground flex items-center justify-center gap-2">
+            <ImageIcon className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
             پوسٹر جنریٹر / Poster Generator
           </h2>
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             اردو فونٹس کے ساتھ ریڈی میڈ ٹیمپلیٹس — سیاسی، کاروباری، تقریبات
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Canvas Preview - shown first on mobile */}
+        <div className="flex flex-col items-center gap-3 mb-4 lg:hidden">
+          <div className="text-xs text-muted-foreground">
+            {selectedSize.label} — {selectedSize.width} × {selectedSize.height} px
+          </div>
+          <PosterCanvas
+            template={{ ...selectedTemplate, bgColor }}
+            size={selectedSize}
+            elements={elements}
+            selectedElement={selectedElement}
+            onSelectElement={setSelectedElement}
+            uploadedPhotos={uploadedPhotos}
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={() => exportPoster("png")} className="gap-1.5 text-xs">
+              <Download className="h-3.5 w-3.5" /> PNG
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => exportPoster("jpg")} className="gap-1.5 text-xs">
+              <Download className="h-3.5 w-3.5" /> JPG
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Left Panel - Templates & Size */}
-          <div className="space-y-4">
+          <div className="space-y-3 sm:space-y-4">
             {/* Template Selection */}
-            <div className="bg-card border border-border rounded-lg p-4">
-              <h3 className="font-semibold text-foreground mb-3">📋 Templates / ٹیمپلیٹس</h3>
+            <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+              <h3 className="font-semibold text-foreground mb-2 sm:mb-3 text-sm sm:text-base">📋 Templates / ٹیمپلیٹس</h3>
               <Tabs value={templateCategory} onValueChange={setTemplateCategory}>
                 <TabsList className="w-full flex-wrap h-auto gap-1">
                   {TEMPLATE_CATEGORIES.map((cat) => (
-                    <TabsTrigger key={cat} value={cat} className="text-xs">{cat}</TabsTrigger>
+                    <TabsTrigger key={cat} value={cat} className="text-[10px] sm:text-xs px-2 sm:px-3">{cat}</TabsTrigger>
                   ))}
                 </TabsList>
                 {TEMPLATE_CATEGORIES.map((cat) => (
-                  <TabsContent key={cat} value={cat} className="mt-3">
+                  <TabsContent key={cat} value={cat} className="mt-2 sm:mt-3">
                     <div className="grid grid-cols-2 gap-2">
                       {filteredTemplates.map((t) => (
                         <button
@@ -217,11 +240,11 @@ export default function PosterGeneratorPage() {
                           }`}
                         >
                           <div
-                            className="h-16 rounded mb-1"
+                            className="h-12 sm:h-16 rounded mb-1"
                             style={{ background: t.bgGradient || t.bgColor }}
                           />
-                          <p className="text-xs text-foreground truncate">{t.nameUrdu || t.name}</p>
-                          <p className="text-[10px] text-muted-foreground truncate">{t.name}</p>
+                          <p className="text-[10px] sm:text-xs text-foreground truncate">{t.nameUrdu || t.name}</p>
+                          <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{t.name}</p>
                         </button>
                       ))}
                     </div>
@@ -231,15 +254,15 @@ export default function PosterGeneratorPage() {
             </div>
 
             {/* Size Selection */}
-            <div className="bg-card border border-border rounded-lg p-4">
-              <h3 className="font-semibold text-foreground mb-3">📐 Size / سائز</h3>
-              <div className="flex flex-wrap gap-1 mb-3">
+            <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+              <h3 className="font-semibold text-foreground mb-2 sm:mb-3 text-sm sm:text-base">📐 Size / سائز</h3>
+              <div className="flex flex-wrap gap-1 mb-2 sm:mb-3">
                 {[...SIZE_CATEGORIES, "Custom"].map((cat) => (
                   <Button
                     key={cat}
                     variant={sizeCategory === cat ? "default" : "outline"}
                     size="sm"
-                    className="text-xs"
+                    className="text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3"
                     onClick={() => setSizeCategory(cat)}
                   >
                     {cat}
@@ -266,12 +289,12 @@ export default function PosterGeneratorPage() {
                   </Button>
                 </div>
               ) : (
-                <div className="space-y-1">
+                <div className="space-y-1 max-h-40 overflow-y-auto">
                   {filteredSizes.map((s) => (
                     <button
                       key={s.label}
                       onClick={() => setSelectedSize(s)}
-                      className={`w-full text-left px-3 py-2 rounded text-xs transition-colors ${
+                      className={`w-full text-left px-3 py-1.5 sm:py-2 rounded text-xs transition-colors ${
                         selectedSize.label === s.label
                           ? "bg-primary text-primary-foreground"
                           : "hover:bg-muted text-foreground"
@@ -285,8 +308,8 @@ export default function PosterGeneratorPage() {
             </div>
 
             {/* Background Color */}
-            <div className="bg-card border border-border rounded-lg p-4">
-              <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2">
+            <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+              <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2 text-sm sm:text-base">
                 <Palette className="h-4 w-4" /> Background Color
               </h3>
               <div className="flex gap-2">
@@ -301,8 +324,8 @@ export default function PosterGeneratorPage() {
             </div>
           </div>
 
-          {/* Center - Canvas Preview */}
-          <div className="flex flex-col items-center gap-4">
+          {/* Center - Canvas Preview (desktop only) */}
+          <div className="hidden lg:flex flex-col items-center gap-4">
             <div className="text-xs text-muted-foreground">
               {selectedSize.label} — {selectedSize.width} × {selectedSize.height} px
             </div>
