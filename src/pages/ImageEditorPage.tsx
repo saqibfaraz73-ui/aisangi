@@ -75,6 +75,19 @@ const getColorDistance = (
   b2: number,
 ) => Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
 
+const getPixelDistance = (data: Uint8ClampedArray, a: number, b: number) => {
+  const ai = a * 4;
+  const bi = b * 4;
+  return getColorDistance(
+    data[ai],
+    data[ai + 1],
+    data[ai + 2],
+    data[bi],
+    data[bi + 1],
+    data[bi + 2],
+  );
+};
+
 const getEdgeProtectionMultiplier = (x: number, y: number, w: number, h: number) => {
   const cx = w / 2;
   const cy = h / 2;
@@ -85,10 +98,35 @@ const getEdgeProtectionMultiplier = (x: number, y: number, w: number, h: number)
 };
 
 const getSafeTolerance = (value: number) => {
-  if (value <= 15) return value * 0.9;
-  if (value <= 25) return 13 + (value - 15) * 0.5;
-  return 18 + (value - 25) * 0.28;
+  if (value <= 10) return value * 0.75;
+  if (value <= 20) return 7.5 + (value - 10) * 0.38;
+  if (value <= 35) return 11.3 + (value - 20) * 0.18;
+  return 14 + (value - 35) * 0.12;
 };
+
+const getNeighborContinuityThreshold = (safeTolerance: number) => Math.max(8, safeTolerance * 0.55);
+
+const getLocalEdgeStrength = (data: Uint8ClampedArray, pixelIndex: number, w: number, h: number) => {
+  const x = pixelIndex % w;
+  const y = Math.floor(pixelIndex / w);
+  const neighbors: number[] = [];
+
+  if (x > 0) neighbors.push(pixelIndex - 1);
+  if (x < w - 1) neighbors.push(pixelIndex + 1);
+  if (y > 0) neighbors.push(pixelIndex - w);
+  if (y < h - 1) neighbors.push(pixelIndex + w);
+
+  if (neighbors.length === 0) return 0;
+
+  let total = 0;
+  for (const neighbor of neighbors) {
+    total += getPixelDistance(data, pixelIndex, neighbor);
+  }
+
+  return total / neighbors.length;
+};
+
+const getEdgeBarrierThreshold = (safeTolerance: number) => Math.max(10, safeTolerance * 0.95);
 
 const buildEdgePalette = (data: Uint8ClampedArray, w: number, h: number) => {
   const clusters: Array<{ r: number; g: number; b: number; count: number }> = [];
@@ -277,9 +315,12 @@ const ImageEditorPage = () => {
         const imageData = ctx.getImageData(0, 0, img.width, img.height);
         const data = imageData.data;
         const w = img.width, h = img.height;
+        const sourceData = new Uint8ClampedArray(data);
 
-        const palette = buildEdgePalette(data, w, h);
+        const palette = buildEdgePalette(sourceData, w, h);
         const safeTolerance = getSafeTolerance(tolerance);
+        const continuityThreshold = getNeighborContinuityThreshold(safeTolerance);
+        const edgeBarrierThreshold = getEdgeBarrierThreshold(safeTolerance);
 
         // Flood-fill from edges
         const visited = new Uint8Array(w * h);
@@ -288,9 +329,11 @@ const ImageEditorPage = () => {
         const seedPixel = (x: number, y: number) => {
           const idx = y * w + x;
           if (visited[idx]) return;
-          const diff = getClosestPaletteDistance(data, idx, palette);
-          const threshold = safeTolerance * getEdgeProtectionMultiplier(x, y, w, h);
-          if (diff < threshold) {
+          const diff = getClosestPaletteDistance(sourceData, idx, palette);
+          const threshold = safeTolerance * getEdgeProtectionMultiplier(x, y, w, h) * 0.82;
+          const edgeStrength = getLocalEdgeStrength(sourceData, idx, w, h);
+
+          if (diff < threshold && edgeStrength < edgeBarrierThreshold) {
             visited[idx] = 1;
             queue.push(idx);
           }
@@ -308,9 +351,16 @@ const ImageEditorPage = () => {
             if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
               const nIdx = ny * w + nx;
               if (!visited[nIdx]) {
-                const diff = getClosestPaletteDistance(data, nIdx, palette);
+                const diff = getClosestPaletteDistance(sourceData, nIdx, palette);
+                const continuity = getPixelDistance(sourceData, idx, nIdx);
+                const edgeStrength = getLocalEdgeStrength(sourceData, nIdx, w, h);
                 const threshold = safeTolerance * getEdgeProtectionMultiplier(nx, ny, w, h);
-                if (diff < threshold) {
+
+                if (
+                  diff < threshold &&
+                  continuity < continuityThreshold &&
+                  edgeStrength < edgeBarrierThreshold
+                ) {
                   visited[nIdx] = 1;
                   queue.push(nIdx);
                 }
