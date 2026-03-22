@@ -122,6 +122,7 @@ const ImageEditorPage = () => {
       setImageLoaded(true);
       setBgRemoved(false);
       processedCanvasRef.current = null;
+      transparentCanvasRef.current = null;
     };
     img.src = url;
   };
