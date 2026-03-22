@@ -9,7 +9,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
 import { useWatermark } from "@/hooks/use-watermark";
 import CharacterUpload from "@/components/CharacterUpload";
-import SizePresetSelector, { SelectedSize, resizeImageToSize } from "@/components/SizePresetSelector";
 
 import ImageResults from "@/components/ImageResults";
 import AppHeader from "@/components/AppHeader";
@@ -168,7 +167,6 @@ const Index = () => {
   const generationInFlightRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
   const [characterImages, setCharacterImages] = usePersistedState<string[]>("sangi_characters", []);
-  const [outputSize, setOutputSize] = useState<SelectedSize | null>(null);
   
   const { toast } = useToast();
   const { checkLimit, trackUsage, getRemainingUses } = useUsageLimit("text_to_image");
@@ -214,9 +212,6 @@ const Index = () => {
           prompt: prompt.trim(),
           characterImageUrls: characterImages.length > 0 ? characterImages : undefined,
           sceneCount: actualCount,
-          outputSize: outputSize
-            ? { w: outputSize.w, h: outputSize.h, label: outputSize.label }
-            : undefined,
         },
       });
 
@@ -234,22 +229,7 @@ const Index = () => {
         await trackUsage(tokensPerImage);
       }
 
-      // Auto-resize if a size preset was selected
-      if (outputSize) {
-        const resized = await Promise.all(
-          generatedImages.map(async (img: ImageResult) => ({
-            ...img,
-            imageUrl: await resizeImageToSize(
-              img.imageUrl, outputSize.w, outputSize.h,
-              watermarkEnabled ? "SANGIAi" : undefined,
-              watermarkColor
-            ),
-          }))
-        );
-        setImages(resized);
-      } else {
-        setImages(generatedImages);
-      }
+      setImages(generatedImages);
     } catch (err) {
       const description = await extractFunctionErrorMessage(err);
       toast({
@@ -297,8 +277,7 @@ const Index = () => {
           </p>
         </motion.div>
 
-        <div className="grid lg:grid-cols-2 gap-8">
-          {/* Left: Input */}
+        <div className="space-y-6">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -333,9 +312,10 @@ const Index = () => {
                     ? "Your AI character will be placed in the scene you describe."
                     : "Be descriptive — include style, lighting, colors, and mood."}
               </p>
+              <p className="text-xs text-muted-foreground">
+                Generate first, then use <span className="font-medium text-foreground">Resize</span> under the result for Facebook cover, passport, or custom sizes.
+              </p>
             </div>
-
-            <SizePresetSelector value={outputSize} onChange={setOutputSize} />
 
 
             <div className="flex gap-3">
@@ -375,6 +355,15 @@ const Index = () => {
                 </Button>
               )}
             </div>
+
+            {(images.length > 0 || isGenerating) && (
+              <ImageResults
+                images={images}
+                isGenerating={isGenerating}
+                prompt={prompt}
+                sceneCount={1}
+              />
+            )}
 
             <div className="space-y-3">
               <p className="text-xs font-display font-semibold text-muted-foreground uppercase tracking-wider">
@@ -420,20 +409,6 @@ const Index = () => {
                 </div>
               )}
             </div>
-          </motion.div>
-
-          {/* Right: Results */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.2 }}
-          >
-            <ImageResults
-              images={images}
-              isGenerating={isGenerating}
-              prompt={prompt}
-              sceneCount={1}
-            />
           </motion.div>
         </div>
       </main>
