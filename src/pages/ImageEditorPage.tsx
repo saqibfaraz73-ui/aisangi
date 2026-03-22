@@ -103,6 +103,13 @@ const ImageEditorPage = () => {
   const [passportPreset, setPassportPreset] = useState<number | null>(null);
   const [passportBg, setPassportBg] = useState("#FFFFFF");
 
+  // Zoom & Pan
+  const [zoom, setZoom] = useState(1);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const lastTouchRef = useRef<{ dist: number; cx: number; cy: number } | null>(null);
+  const lastSingleTouchRef = useRef<{ x: number; y: number } | null>(null);
+
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
