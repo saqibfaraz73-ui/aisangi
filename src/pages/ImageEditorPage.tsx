@@ -6,7 +6,6 @@ import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
-import { removeBackground as removeBg } from "@imgly/background-removal";
 
 const PLATFORM_SIZES = [
   { label: "Facebook Post", w: 1200, h: 630, icon: "📘" },
