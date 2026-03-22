@@ -7,6 +7,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import AppHeader from "@/components/AppHeader";
 import { useNavigate } from "react-router-dom";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 
 const SAMPLE_TOPICS = [
   "Wedding",
@@ -27,12 +28,24 @@ const SAMPLE_TOPICS = [
 ];
 
 const PromptGeneratorPage = () => {
-  const [topic, setTopic] = useState("");
-  const [prompts, setPrompts] = useState<string[]>([]);
+  const [topic, setTopic] = usePersistedState("sangi_promptgen_topic", "");
+  const [prompts, setPrompts] = usePersistedState<string[]>("sangi_promptgen_prompts", []);
   const [isGenerating, setIsGenerating] = useState(false);
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Check if user has character images uploaded in text-to-image
+  const hasCharacter = (() => {
+    try {
+      const stored = localStorage.getItem("sangi_characters");
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        return Array.isArray(parsed) && parsed.length > 0;
+      }
+    } catch {}
+    return false;
+  })();
 
   const handleGenerate = async (overrideTopic?: string) => {
     const t = (overrideTopic || topic).trim();
@@ -44,7 +57,7 @@ const PromptGeneratorPage = () => {
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke("generate-prompts", {
-        body: { topic: t, count: 5 },
+        body: { topic: t, count: 5, hasCharacter },
       });
 
       if (error) throw error;
@@ -71,7 +84,6 @@ const PromptGeneratorPage = () => {
   };
 
   const handleUsePrompt = (prompt: string) => {
-    // Store prompt and navigate to text-to-image
     sessionStorage.setItem("sangi_use_prompt", prompt);
     navigate("/");
   };
@@ -94,7 +106,10 @@ const PromptGeneratorPage = () => {
             AI Prompt Generator
           </h2>
           <p className="text-muted-foreground text-sm max-w-lg mx-auto">
-            Enter any topic and get ready-to-use image prompts. Use them directly in Text to Image.
+            Enter any topic and get ready-to-use image prompts.
+            {hasCharacter && (
+              <span className="text-primary font-semibold"> Character detected — prompts will include your uploaded face.</span>
+            )}
           </p>
         </motion.div>
 
