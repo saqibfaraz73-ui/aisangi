@@ -155,10 +155,17 @@ export function resizeImageToSize(
       const drawW = img.width * scale;
       const drawH = img.height * scale;
       const offsetX = (targetW - drawW) / 2;
-      // Top-biased vertical offset: keep the top 20% visible (where faces/heads are)
-      // Instead of centering vertically, shift upward so heads aren't cropped
+      const targetAspect = targetW / targetH;
       const overflowY = drawH - targetH;
-      const offsetY = overflowY > 0 ? -(overflowY * 0.15) : (targetH - drawH) / 2;
+      // Wide banner sizes like Facebook Cover need stronger top protection so heads stay visible.
+      // For very wide outputs, align from the top instead of center-cropping.
+      const offsetY = overflowY > 0
+        ? targetAspect >= 2.2
+          ? 0
+          : targetAspect >= 1.7
+            ? -(overflowY * 0.05)
+            : -(overflowY * 0.15)
+        : (targetH - drawH) / 2;
 
       ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
 

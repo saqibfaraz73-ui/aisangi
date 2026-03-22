@@ -214,6 +214,9 @@ const Index = () => {
           prompt: prompt.trim(),
           characterImageUrls: characterImages.length > 0 ? characterImages : undefined,
           sceneCount: actualCount,
+          outputSize: outputSize
+            ? { w: outputSize.w, h: outputSize.h, label: outputSize.label }
+            : undefined,
         },
       });
 
