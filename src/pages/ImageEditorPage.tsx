@@ -107,8 +107,19 @@ const ImageEditorPage = () => {
       sy = (srcH - sh) / 2;
     }
 
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, activeW, activeH);
+    // Draw checkerboard for transparency if background was removed
+    if (bgRemoved) {
+      const size = 10;
+      for (let y = 0; y < activeH; y += size) {
+        for (let x = 0; x < activeW; x += size) {
+          ctx.fillStyle = (Math.floor(x / size) + Math.floor(y / size)) % 2 === 0 ? "#e0e0e0" : "#ffffff";
+          ctx.fillRect(x, y, size, size);
+        }
+      }
+    } else {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, activeW, activeH);
+    }
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, activeW, activeH);
   }, [activeW, activeH, bgRemoved]);
 
