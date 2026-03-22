@@ -210,6 +210,7 @@ const ImageEditorPage = () => {
           ctx.drawImage(resultImage, 0, 0);
 
           URL.revokeObjectURL(objectUrl);
+          transparentCanvasRef.current = tempCanvas;
           processedCanvasRef.current = tempCanvas;
           setBgRemoved(true);
           setRenderKey((k) => k + 1);
