@@ -432,14 +432,32 @@ const ImageEditorPage = () => {
         ) : (
           <>
             {/* Preview */}
-            <div className="flex w-full justify-center overflow-hidden rounded-lg bg-muted/50 p-2">
+            <div className="flex w-full justify-center overflow-hidden rounded-lg bg-muted/50 p-2 touch-none">
               <canvas
                 ref={canvasRef}
                 style={{ width: previewW, height: previewH }}
-                className="max-w-full rounded border border-border"
+                className="max-w-full rounded border border-border touch-none"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
               />
             </div>
             <p className="text-xs text-center text-muted-foreground">{activeW} × {activeH} px</p>
+
+            {/* Zoom/Pan Controls */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="text-xs h-8 w-8 p-0">
+                <ZoomIn className="h-3.5 w-3.5" />
+              </Button>
+              <span className="text-xs text-muted-foreground min-w-[3rem] text-center">{Math.round(zoom * 100)}%</span>
+              <Button size="sm" variant="outline" onClick={() => setZoom(z => Math.max(0.2, z - 0.1))} className="text-xs h-8 w-8 p-0">
+                <ZoomOut className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={resetZoomPan} className="text-xs h-8">
+                <Move className="h-3 w-3 mr-1" /> Reset Position
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Use pinch to zoom and drag to position the subject</p>
 
             {/* Actions bar */}
             <div className="flex flex-wrap gap-2">
