@@ -129,7 +129,6 @@ const ImageEditorPage = () => {
   useEffect(() => {
     if (imageLoaded) drawCanvas();
   }, [imageLoaded, drawCanvas, renderKey]);
-  }, [imageLoaded, drawCanvas]);
 
   const selectPreset = (idx: number) => {
     setSelectedPreset(idx);
