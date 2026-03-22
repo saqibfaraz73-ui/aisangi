@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Upload, Download, Crop, Eraser, Camera, Palette, ImageIcon, X, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
+import { Upload, Download, Crop, Eraser, Camera, Palette, ImageIcon, X, RotateCcw, ZoomIn, ZoomOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
+import { removeBackground as removeBg } from "@imgly/background-removal";
 
 const PLATFORM_SIZES = [
   { label: "Facebook Post", w: 1200, h: 630, icon: "📘" },
@@ -53,10 +54,10 @@ const ImageEditorPage = () => {
   const [activeH, setActiveH] = useState(0);
 
   // Background removal
-  const [tolerance, setTolerance] = useState(30);
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [customBgColor, setCustomBgColor] = useState("#FFFFFF");
   const [bgRemoved, setBgRemoved] = useState(false);
+  const [removing, setRemoving] = useState(false);
 
   // Passport
   const [passportPreset, setPassportPreset] = useState<number | null>(null);
@@ -147,86 +148,49 @@ const ImageEditorPage = () => {
     setCustomH(String(h));
   };
 
-  // Background removal using color-based approach
-  const removeBackground = () => {
+  // AI-powered background removal using @imgly/background-removal
+  const removeBackground = async () => {
     const img = originalImgRef.current;
-    if (!img) return;
+    if (!img || removing) return;
 
-    const tempCanvas = document.createElement("canvas");
-    tempCanvas.width = img.width;
-    tempCanvas.height = img.height;
-    const ctx = tempCanvas.getContext("2d")!;
-    ctx.drawImage(img, 0, 0);
+    setRemoving(true);
+    toast({ title: "Removing background...", description: "AI model loading (first time may take ~30s)" });
 
-    const imageData = ctx.getImageData(0, 0, img.width, img.height);
-    const data = imageData.data;
+    try {
+      // Convert image to blob
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = img.width;
+      tempCanvas.height = img.height;
+      const tCtx = tempCanvas.getContext("2d")!;
+      tCtx.drawImage(img, 0, 0);
+      const blob = await new Promise<Blob>((resolve) =>
+        tempCanvas.toBlob((b) => resolve(b!), "image/png")
+      );
 
-    // Sample multiple points along all 4 edges for better bg detection
-    const edgeSamples: [number, number][] = [];
-    const step = 10;
-    for (let x = 0; x < img.width; x += step) {
-      edgeSamples.push([x, 0], [x, img.height - 1]);
+      // Run AI background removal
+      const resultBlob = await removeBg(blob, {
+        output: { format: "image/png" },
+      });
+
+      // Load result into canvas
+      const resultImg = new Image();
+      resultImg.onload = () => {
+        const resCanvas = document.createElement("canvas");
+        resCanvas.width = resultImg.width;
+        resCanvas.height = resultImg.height;
+        const rCtx = resCanvas.getContext("2d")!;
+        rCtx.drawImage(resultImg, 0, 0);
+        processedCanvasRef.current = resCanvas;
+        setBgRemoved(true);
+        setRemoving(false);
+        toast({ title: "Background removed successfully!" });
+      };
+      resultImg.src = URL.createObjectURL(resultBlob);
+    } catch (err) {
+      console.error("Background removal failed:", err);
+      setRemoving(false);
+      toast({ title: "Background removal failed", description: "Please try again", variant: "destructive" });
     }
-    for (let y = 0; y < img.height; y += step) {
-      edgeSamples.push([0, y], [img.width - 1, y]);
-    }
-
-    let rSum = 0, gSum = 0, bSum = 0, count = 0;
-    for (const [x, y] of edgeSamples) {
-      const i = (y * img.width + x) * 4;
-      if (i >= 0 && i < data.length) {
-        rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2];
-        count++;
-      }
-    }
-    const bgR = rSum / count, bgG = gSum / count, bgB = bSum / count;
-
-    // Use flood-fill from edges for smarter removal
-    const visited = new Uint8Array(img.width * img.height);
-    const queue: number[] = [];
-
-    // Seed from all edge pixels that match bg color
-    const addIfMatch = (x: number, y: number) => {
-      const idx = y * img.width + x;
-      if (visited[idx]) return;
-      const i = idx * 4;
-      const diff = Math.sqrt((data[i] - bgR) ** 2 + (data[i + 1] - bgG) ** 2 + (data[i + 2] - bgB) ** 2);
-      if (diff < tolerance) {
-        visited[idx] = 1;
-        queue.push(idx);
-      }
-    };
-
-    for (let x = 0; x < img.width; x++) { addIfMatch(x, 0); addIfMatch(x, img.height - 1); }
-    for (let y = 0; y < img.height; y++) { addIfMatch(0, y); addIfMatch(img.width - 1, y); }
-
-    // BFS flood fill
-    while (queue.length > 0) {
-      const idx = queue.pop()!;
-      const x = idx % img.width;
-      const y = Math.floor(idx / img.width);
-      data[idx * 4 + 3] = 0; // Make transparent
-
-      const neighbors = [[x-1,y],[x+1,y],[x,y-1],[x,y+1]];
-      for (const [nx, ny] of neighbors) {
-        if (nx >= 0 && nx < img.width && ny >= 0 && ny < img.height) {
-          const nIdx = ny * img.width + nx;
-          if (!visited[nIdx]) {
-            visited[nIdx] = 1;
-            const ni = nIdx * 4;
-            const diff = Math.sqrt((data[ni] - bgR) ** 2 + (data[ni + 1] - bgG) ** 2 + (data[ni + 2] - bgB) ** 2);
-            if (diff < tolerance) {
-              queue.push(nIdx);
-            }
-          }
-        }
-      }
-    }
-
-    ctx.putImageData(imageData, 0, 0);
-    processedCanvasRef.current = tempCanvas;
-    setBgRemoved(true);
-    toast({ title: "Background removed successfully" });
   };
 
   const applyColorBackground = (color: string) => {
@@ -435,16 +399,14 @@ const ImageEditorPage = () => {
               {/* Background Tab */}
               <TabsContent value="background" className="space-y-3">
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-foreground">Remove Background</p>
-                  <p className="text-xs text-muted-foreground">Auto-detects corners. Adjust tolerance for better results.</p>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground w-16">Tolerance</span>
-                    <Slider value={[tolerance]} onValueChange={v => setTolerance(v[0])}
-                      min={5} max={100} step={1} className="flex-1" />
-                    <span className="text-xs text-muted-foreground w-8">{tolerance}</span>
-                  </div>
-                  <Button size="sm" onClick={removeBackground} className="text-xs">
-                    <Eraser className="h-3 w-3 mr-1" /> Remove Background
+                  <p className="text-xs font-medium text-foreground">AI Background Removal</p>
+                  <p className="text-xs text-muted-foreground">Uses AI to accurately separate subject from background — like remove.bg, runs in your browser.</p>
+                  <Button size="sm" onClick={removeBackground} disabled={removing} className="text-xs">
+                    {removing ? (
+                      <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Processing...</>
+                    ) : (
+                      <><Eraser className="h-3 w-3 mr-1" /> Remove Background</>
+                    )}
                   </Button>
                 </div>
 
