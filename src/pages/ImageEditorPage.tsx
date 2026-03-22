@@ -162,12 +162,67 @@ const ImageEditorPage = () => {
         : getThemeColor("--card", "0 0% 100%");
       ctx.fillRect(0, 0, activeW, activeH);
     }
-    ctx.drawImage(img, 0, 0, srcW, srcH, dx, dy, dw, dh);
-  }, [activeW, activeH, bgRemoved, passportBg, passportPreset, renderKey]);
+
+    // Apply zoom and pan transform to the subject
+    const zoomedW = dw * zoom;
+    const zoomedH = dh * zoom;
+    const zoomedX = dx + (dw - zoomedW) / 2 + panX;
+    const zoomedY = dy + (dh - zoomedH) / 2 + panY;
+    ctx.drawImage(img, 0, 0, srcW, srcH, zoomedX, zoomedY, zoomedW, zoomedH);
+  }, [activeW, activeH, bgRemoved, passportBg, passportPreset, renderKey, zoom, panX, panY]);
 
   useEffect(() => {
     if (imageLoaded) drawCanvas();
-  }, [imageLoaded, drawCanvas, renderKey]);
+  }, [imageLoaded, drawCanvas, renderKey, zoom, panX, panY]);
+
+  // Touch gesture handlers
+  const getTouchDist = (t1: Touch, t2: Touch) =>
+    Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+  const handleTouchStart = (e: ReactTouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const d = getTouchDist(e.touches[0], e.touches[1]);
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      lastTouchRef.current = { dist: d, cx, cy };
+      lastSingleTouchRef.current = null;
+    } else if (e.touches.length === 1) {
+      lastSingleTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      lastTouchRef.current = null;
+    }
+  };
+
+  const handleTouchMove = (e: ReactTouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length === 2 && lastTouchRef.current) {
+      e.preventDefault();
+      const d = getTouchDist(e.touches[0], e.touches[1]);
+      const scaleDelta = d / lastTouchRef.current.dist;
+      setZoom(z => Math.max(0.2, Math.min(5, z * scaleDelta)));
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      setPanX(px => px + (cx - lastTouchRef.current!.cx));
+      setPanY(py => py + (cy - lastTouchRef.current!.cy));
+      lastTouchRef.current = { dist: d, cx, cy };
+    } else if (e.touches.length === 1 && lastSingleTouchRef.current) {
+      const dx = e.touches[0].clientX - lastSingleTouchRef.current.x;
+      const dy = e.touches[0].clientY - lastSingleTouchRef.current.y;
+      setPanX(px => px + dx);
+      setPanY(py => py + dy);
+      lastSingleTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+
+  const handleTouchEnd = () => {
+    lastTouchRef.current = null;
+    lastSingleTouchRef.current = null;
+  };
+
+  const resetZoomPan = () => {
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
+  };
 
   const selectPreset = (idx: number) => {
     setSelectedPreset(idx);
