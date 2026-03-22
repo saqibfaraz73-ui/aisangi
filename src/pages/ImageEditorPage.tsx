@@ -124,10 +124,11 @@ const ImageEditorPage = () => {
       ctx.fillRect(0, 0, activeW, activeH);
     }
     ctx.drawImage(img, 0, 0, srcW, srcH, dx, dy, dw, dh);
-  }, [activeW, activeH, bgRemoved]);
+  }, [activeW, activeH, bgRemoved, renderKey]);
 
   useEffect(() => {
     if (imageLoaded) drawCanvas();
+  }, [imageLoaded, drawCanvas, renderKey]);
   }, [imageLoaded, drawCanvas]);
 
   const selectPreset = (idx: number) => {
