@@ -54,10 +54,10 @@ const ImageEditorPage = () => {
   const [activeH, setActiveH] = useState(0);
 
   // Background removal
-  const [tolerance, setTolerance] = useState(30);
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [customBgColor, setCustomBgColor] = useState("#FFFFFF");
   const [bgRemoved, setBgRemoved] = useState(false);
+  const [removing, setRemoving] = useState(false);
 
   // Passport
   const [passportPreset, setPassportPreset] = useState<number | null>(null);
