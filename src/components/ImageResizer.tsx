@@ -11,6 +11,8 @@ const PLATFORM_SIZES = [
   { label: "TikTok", w: 1080, h: 1920, icon: "🎵" },
   { label: "YouTube Thumb", w: 1280, h: 720, icon: "▶️" },
   { label: "YouTube Banner", w: 2560, h: 1440, icon: "▶️" },
+  { label: "YouTube Video", w: 1920, h: 1080, icon: "▶️" },
+  { label: "YouTube Shorts", w: 1080, h: 1920, icon: "▶️" },
   { label: "Twitter Post", w: 1200, h: 675, icon: "🐦" },
   { label: "WhatsApp DP", w: 500, h: 500, icon: "💬" },
   { label: "LinkedIn", w: 1200, h: 627, icon: "💼" },
@@ -104,15 +106,15 @@ const ImageResizer = ({ imageUrl, onClose }: ImageResizerProps) => {
     a.click();
   };
 
-  // Preview dimensions (fit in container)
-  const maxPreviewW = 400;
-  const maxPreviewH = 350;
+  // Preview dimensions (fit in container, responsive)
+  const maxPreviewW = typeof window !== "undefined" && window.innerWidth < 480 ? Math.min(window.innerWidth - 60, 300) : 400;
+  const maxPreviewH = typeof window !== "undefined" && window.innerWidth < 480 ? 250 : 350;
   const scale = Math.min(maxPreviewW / (activeW || 1), maxPreviewH / (activeH || 1), 1);
   const previewW = Math.round((activeW || 100) * scale);
   const previewH = Math.round((activeH || 100) * scale);
 
   return (
-    <div className="space-y-3 p-3 rounded-xl border border-border bg-card">
+    <div className="space-y-3 p-3 rounded-xl border border-border bg-card overflow-hidden max-w-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Crop className="h-4 w-4 text-primary" />
