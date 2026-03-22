@@ -150,49 +150,83 @@ const ImageEditorPage = () => {
     setCustomH(String(h));
   };
 
-  // AI-powered background removal using @imgly/background-removal
-  const removeBackground = async () => {
+  // Background removal using flood-fill from edges
+  const removeBackground = () => {
     const img = originalImgRef.current;
     if (!img || removing) return;
 
     setRemoving(true);
-    toast({ title: "Removing background...", description: "AI model loading (first time may take ~30s)" });
 
-    try {
-      // Convert image to blob
-      const tempCanvas = document.createElement("canvas");
-      tempCanvas.width = img.width;
-      tempCanvas.height = img.height;
-      const tCtx = tempCanvas.getContext("2d")!;
-      tCtx.drawImage(img, 0, 0);
-      const blob = await new Promise<Blob>((resolve) =>
-        tempCanvas.toBlob((b) => resolve(b!), "image/png")
-      );
+    // Use setTimeout to allow UI to update
+    setTimeout(() => {
+      try {
+        const tempCanvas = document.createElement("canvas");
+        tempCanvas.width = img.width;
+        tempCanvas.height = img.height;
+        const ctx = tempCanvas.getContext("2d")!;
+        ctx.drawImage(img, 0, 0);
 
-      // Run AI background removal
-      const resultBlob = await removeBg(blob, {
-        output: { format: "image/png" },
-      });
+        const imageData = ctx.getImageData(0, 0, img.width, img.height);
+        const data = imageData.data;
+        const w = img.width, h = img.height;
 
-      // Load result into canvas
-      const resultImg = new Image();
-      resultImg.onload = () => {
-        const resCanvas = document.createElement("canvas");
-        resCanvas.width = resultImg.width;
-        resCanvas.height = resultImg.height;
-        const rCtx = resCanvas.getContext("2d")!;
-        rCtx.drawImage(resultImg, 0, 0);
-        processedCanvasRef.current = resCanvas;
+        // Sample edges to detect background color
+        const edgeSamples: [number, number][] = [];
+        for (let x = 0; x < w; x += 5) { edgeSamples.push([x, 0], [x, h - 1]); }
+        for (let y = 0; y < h; y += 5) { edgeSamples.push([0, y], [w - 1, y]); }
+
+        let rSum = 0, gSum = 0, bSum = 0, count = 0;
+        for (const [x, y] of edgeSamples) {
+          const i = (y * w + x) * 4;
+          rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2]; count++;
+        }
+        const bgR = rSum / count, bgG = gSum / count, bgB = bSum / count;
+
+        // Flood-fill from edges
+        const visited = new Uint8Array(w * h);
+        const queue: number[] = [];
+
+        const seedPixel = (x: number, y: number) => {
+          const idx = y * w + x;
+          if (visited[idx]) return;
+          const i = idx * 4;
+          const diff = Math.sqrt((data[i] - bgR) ** 2 + (data[i + 1] - bgG) ** 2 + (data[i + 2] - bgB) ** 2);
+          if (diff < tolerance) { visited[idx] = 1; queue.push(idx); }
+        };
+
+        for (let x = 0; x < w; x++) { seedPixel(x, 0); seedPixel(x, h - 1); }
+        for (let y = 0; y < h; y++) { seedPixel(0, y); seedPixel(w - 1, y); }
+
+        while (queue.length > 0) {
+          const idx = queue.pop()!;
+          const px = idx % w, py = Math.floor(idx / w);
+          data[idx * 4 + 3] = 0;
+
+          for (const [nx, ny] of [[px-1,py],[px+1,py],[px,py-1],[px,py+1]]) {
+            if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
+              const nIdx = ny * w + nx;
+              if (!visited[nIdx]) {
+                visited[nIdx] = 1;
+                const ni = nIdx * 4;
+                const diff = Math.sqrt((data[ni] - bgR) ** 2 + (data[ni + 1] - bgG) ** 2 + (data[ni + 2] - bgB) ** 2);
+                if (diff < tolerance) queue.push(nIdx);
+              }
+            }
+          }
+        }
+
+        ctx.putImageData(imageData, 0, 0);
+        processedCanvasRef.current = tempCanvas;
         setBgRemoved(true);
         setRemoving(false);
-        toast({ title: "Background removed successfully!" });
-      };
-      resultImg.src = URL.createObjectURL(resultBlob);
-    } catch (err) {
-      console.error("Background removal failed:", err);
-      setRemoving(false);
-      toast({ title: "Background removal failed", description: "Please try again", variant: "destructive" });
-    }
+        setRenderKey(k => k + 1);
+        toast({ title: "Background removed!" });
+      } catch (err) {
+        console.error("BG removal error:", err);
+        setRemoving(false);
+        toast({ title: "Failed", variant: "destructive" });
+      }
+    }, 50);
   };
 
   const applyColorBackground = (color: string) => {
