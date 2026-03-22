@@ -11,6 +11,8 @@ const PLATFORM_SIZES = [
   { label: "TikTok", w: 1080, h: 1920, icon: "🎵" },
   { label: "YouTube Thumb", w: 1280, h: 720, icon: "▶️" },
   { label: "YouTube Banner", w: 2560, h: 1440, icon: "▶️" },
+  { label: "YouTube Video", w: 1920, h: 1080, icon: "▶️" },
+  { label: "YouTube Shorts", w: 1080, h: 1920, icon: "▶️" },
   { label: "Twitter Post", w: 1200, h: 675, icon: "🐦" },
   { label: "WhatsApp DP", w: 500, h: 500, icon: "💬" },
   { label: "LinkedIn", w: 1200, h: 627, icon: "💼" },
