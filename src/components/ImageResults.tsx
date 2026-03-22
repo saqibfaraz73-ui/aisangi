@@ -39,11 +39,10 @@ const handleDownload = (imageUrl: string, format: "png" | "jpg", index: number) 
   img.src = imageUrl;
 };
 
-const [resizingIdx, setResizingIdx] = useState<number | null>(null);
+const ImageResults = ({ images, isGenerating, prompt, sceneCount }: ImageResultsProps) => {
+  const [resizingIdx, setResizingIdx] = useState<number | null>(null);
 
   const gridClass = images.length > 1 || sceneCount > 1
-    ? "grid grid-cols-2 gap-3"
-    : "";
     ? "grid grid-cols-2 gap-3"
     : "";
 
