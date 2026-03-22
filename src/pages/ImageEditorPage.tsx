@@ -1,6 +1,6 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, type TouchEvent as ReactTouchEvent } from "react";
 import { removeBackground } from "@imgly/background-removal";
-import { Upload, Download, Crop, Eraser, Camera, Palette, ImageIcon, X, RotateCcw, ZoomIn, ZoomOut, Loader2 } from "lucide-react";
+import { Upload, Download, Crop, Eraser, Camera, Palette, ImageIcon, X, RotateCcw, ZoomIn, ZoomOut, Loader2, Move } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
@@ -103,6 +103,13 @@ const ImageEditorPage = () => {
   const [passportPreset, setPassportPreset] = useState<number | null>(null);
   const [passportBg, setPassportBg] = useState("#FFFFFF");
 
+  // Zoom & Pan
+  const [zoom, setZoom] = useState(1);
+  const [panX, setPanX] = useState(0);
+  const [panY, setPanY] = useState(0);
+  const lastTouchRef = useRef<{ dist: number; cx: number; cy: number } | null>(null);
+  const lastSingleTouchRef = useRef<{ x: number; y: number } | null>(null);
+
   const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -123,6 +130,9 @@ const ImageEditorPage = () => {
       setBgRemoved(false);
       processedCanvasRef.current = null;
       transparentCanvasRef.current = null;
+      setZoom(1);
+      setPanX(0);
+      setPanY(0);
     };
     img.src = url;
   };
@@ -155,12 +165,67 @@ const ImageEditorPage = () => {
         : getThemeColor("--card", "0 0% 100%");
       ctx.fillRect(0, 0, activeW, activeH);
     }
-    ctx.drawImage(img, 0, 0, srcW, srcH, dx, dy, dw, dh);
-  }, [activeW, activeH, bgRemoved, passportBg, passportPreset, renderKey]);
+
+    // Apply zoom and pan transform to the subject
+    const zoomedW = dw * zoom;
+    const zoomedH = dh * zoom;
+    const zoomedX = dx + (dw - zoomedW) / 2 + panX;
+    const zoomedY = dy + (dh - zoomedH) / 2 + panY;
+    ctx.drawImage(img, 0, 0, srcW, srcH, zoomedX, zoomedY, zoomedW, zoomedH);
+  }, [activeW, activeH, bgRemoved, passportBg, passportPreset, renderKey, zoom, panX, panY]);
 
   useEffect(() => {
     if (imageLoaded) drawCanvas();
-  }, [imageLoaded, drawCanvas, renderKey]);
+  }, [imageLoaded, drawCanvas, renderKey, zoom, panX, panY]);
+
+  // Touch gesture handlers
+  const getTouchDist = (t1: React.Touch, t2: React.Touch) =>
+    Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+
+  const handleTouchStart = (e: ReactTouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const d = getTouchDist(e.touches[0], e.touches[1]);
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      lastTouchRef.current = { dist: d, cx, cy };
+      lastSingleTouchRef.current = null;
+    } else if (e.touches.length === 1) {
+      lastSingleTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      lastTouchRef.current = null;
+    }
+  };
+
+  const handleTouchMove = (e: ReactTouchEvent<HTMLCanvasElement>) => {
+    if (e.touches.length === 2 && lastTouchRef.current) {
+      e.preventDefault();
+      const d = getTouchDist(e.touches[0], e.touches[1]);
+      const scaleDelta = d / lastTouchRef.current.dist;
+      setZoom(z => Math.max(0.2, Math.min(5, z * scaleDelta)));
+      const cx = (e.touches[0].clientX + e.touches[1].clientX) / 2;
+      const cy = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+      setPanX(px => px + (cx - lastTouchRef.current!.cx));
+      setPanY(py => py + (cy - lastTouchRef.current!.cy));
+      lastTouchRef.current = { dist: d, cx, cy };
+    } else if (e.touches.length === 1 && lastSingleTouchRef.current) {
+      const dx = e.touches[0].clientX - lastSingleTouchRef.current.x;
+      const dy = e.touches[0].clientY - lastSingleTouchRef.current.y;
+      setPanX(px => px + dx);
+      setPanY(py => py + dy);
+      lastSingleTouchRef.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    }
+  };
+
+  const handleTouchEnd = () => {
+    lastTouchRef.current = null;
+    lastSingleTouchRef.current = null;
+  };
+
+  const resetZoomPan = () => {
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
+  };
 
   const selectPreset = (idx: number) => {
     setSelectedPreset(idx);
@@ -325,6 +390,9 @@ const ImageEditorPage = () => {
     transparentCanvasRef.current = null;
     setBgRemoved(false);
     setPassportPreset(null);
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
     if (originalImgRef.current) {
       setActiveW(originalImgRef.current.width);
       setActiveH(originalImgRef.current.height);
@@ -370,14 +438,32 @@ const ImageEditorPage = () => {
         ) : (
           <>
             {/* Preview */}
-            <div className="flex w-full justify-center overflow-hidden rounded-lg bg-muted/50 p-2">
+            <div className="flex w-full justify-center overflow-hidden rounded-lg bg-muted/50 p-2 touch-none">
               <canvas
                 ref={canvasRef}
                 style={{ width: previewW, height: previewH }}
-                className="max-w-full rounded border border-border"
+                className="max-w-full rounded border border-border touch-none"
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
               />
             </div>
             <p className="text-xs text-center text-muted-foreground">{activeW} × {activeH} px</p>
+
+            {/* Zoom/Pan Controls */}
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" onClick={() => setZoom(z => Math.min(5, z + 0.1))} className="text-xs h-8 w-8 p-0">
+                <ZoomIn className="h-3.5 w-3.5" />
+              </Button>
+              <span className="text-xs text-muted-foreground min-w-[3rem] text-center">{Math.round(zoom * 100)}%</span>
+              <Button size="sm" variant="outline" onClick={() => setZoom(z => Math.max(0.2, z - 0.1))} className="text-xs h-8 w-8 p-0">
+                <ZoomOut className="h-3.5 w-3.5" />
+              </Button>
+              <Button size="sm" variant="outline" onClick={resetZoomPan} className="text-xs h-8">
+                <Move className="h-3 w-3 mr-1" /> Reset Position
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">Use pinch to zoom and drag to position the subject</p>
 
             {/* Actions bar */}
             <div className="flex flex-wrap gap-2">
