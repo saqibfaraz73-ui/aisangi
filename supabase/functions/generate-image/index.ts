@@ -106,8 +106,10 @@ function buildGeminiParts(
   const parts: any[] = [];
 
   if (allCharacterUrls.length > 0) {
+    parts.push({ text: CHARACTER_PRESERVATION_PROMPT });
+    
     allCharacterUrls.forEach((url, index) => {
-      parts.push({ text: `[Reference photo of Person ${index + 1} - PRESERVE THIS EXACT FACE]` });
+      parts.push({ text: `\n[REFERENCE PHOTO ${index + 1} — THIS IS THE FACE YOU MUST REPLICATE EXACTLY]:` });
       if (url.startsWith("data:")) {
         const [meta, b64] = url.split(",");
         const mime = meta.match(/data:(.*?);/)?.[1] || "image/png";
@@ -118,7 +120,7 @@ function buildGeminiParts(
     });
 
     parts.push({
-      text: `${CHARACTER_PRESERVATION_PROMPT}\n\nNow generate an image placing this EXACT person (with identical face from reference above) in the following scene: ${prompt}${variationHint}${watermarkInstruction}`,
+      text: `\nNow place this EXACT person (with the IDENTICAL face from the reference photos above — zero modifications) into the following scene:\n${prompt}${variationHint}${watermarkInstruction}\n\nREMINDER: The face in the output MUST be a perfect match to the reference. Do not create a "similar looking" person — it must be the SAME person.`,
     });
     return parts;
   }
