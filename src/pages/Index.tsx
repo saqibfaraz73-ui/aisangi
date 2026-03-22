@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
 import CharacterUpload from "@/components/CharacterUpload";
+import SizePresetSelector, { SelectedSize, resizeImageToSize } from "@/components/SizePresetSelector";
 
 import ImageResults from "@/components/ImageResults";
 import AppHeader from "@/components/AppHeader";
@@ -166,6 +167,7 @@ const Index = () => {
   const generationInFlightRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
   const [characterImages, setCharacterImages] = usePersistedState<string[]>("sangi_characters", []);
+  const [outputSize, setOutputSize] = useState<SelectedSize | null>(null);
   
   const { toast } = useToast();
   const { checkLimit, trackUsage, getRemainingUses } = useUsageLimit("text_to_image");
@@ -227,7 +229,18 @@ const Index = () => {
         await trackUsage(tokensPerImage);
       }
 
-      setImages(generatedImages);
+      // Auto-resize if a size preset was selected
+      if (outputSize) {
+        const resized = await Promise.all(
+          generatedImages.map(async (img: ImageResult) => ({
+            ...img,
+            imageUrl: await resizeImageToSize(img.imageUrl, outputSize.w, outputSize.h),
+          }))
+        );
+        setImages(resized);
+      } else {
+        setImages(generatedImages);
+      }
     } catch (err) {
       const description = await extractFunctionErrorMessage(err);
       toast({
@@ -313,7 +326,8 @@ const Index = () => {
               </p>
             </div>
 
-            
+            <SizePresetSelector value={outputSize} onChange={setOutputSize} />
+
 
             <div className="flex gap-3">
               <Button
