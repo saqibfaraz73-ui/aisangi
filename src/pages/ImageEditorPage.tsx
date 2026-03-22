@@ -67,12 +67,6 @@ const getThemeColor = (token: string, fallback: string) => {
   return value ? `hsl(${value})` : `hsl(${fallback})`;
 };
 
-const getSafeTolerance = (value: number) => {
-  if (value <= 20) return 0;
-  if (value <= 35) return (value - 20) / 45;
-  return Math.min(0.5, 0.33 + (value - 35) / 100);
-};
-
 const loadImageElement = (url: string) => new Promise<HTMLImageElement>((resolve, reject) => {
   const img = new Image();
   img.crossOrigin = "anonymous";
@@ -98,7 +92,6 @@ const ImageEditorPage = () => {
   const [activeH, setActiveH] = useState(0);
 
   // Background removal
-  const [tolerance, setTolerance] = useState(30);
   const [bgColor, setBgColor] = useState("#FFFFFF");
   const [customBgColor, setCustomBgColor] = useState("#FFFFFF");
   const [bgRemoved, setBgRemoved] = useState(false);
@@ -213,15 +206,6 @@ const ImageEditorPage = () => {
           const ctx = tempCanvas.getContext("2d")!;
           ctx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
           ctx.drawImage(resultImage, 0, 0);
-
-          if (getSafeTolerance(tolerance) > 0) {
-            const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
-            const alphaBoost = Math.round(getSafeTolerance(tolerance) * 255);
-            for (let i = 3; i < imageData.data.length; i += 4) {
-              imageData.data[i] = Math.max(0, Math.min(255, imageData.data[i] + alphaBoost - 64));
-            }
-            ctx.putImageData(imageData, 0, 0);
-          }
 
           URL.revokeObjectURL(objectUrl);
           processedCanvasRef.current = tempCanvas;
@@ -441,13 +425,7 @@ const ImageEditorPage = () => {
               <TabsContent value="background" className="space-y-3">
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-foreground">Remove Background</p>
-                  <p className="text-xs text-muted-foreground">Uses on-device subject detection. Keep tolerance low for portraits to protect the face.</p>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs text-muted-foreground w-16">Tolerance</span>
-                    <Slider value={[tolerance]} onValueChange={v => setTolerance(v[0])}
-                      min={5} max={80} step={1} className="flex-1" />
-                    <span className="text-xs text-muted-foreground w-8">{tolerance}</span>
-                  </div>
+                  <p className="text-xs text-muted-foreground">Uses on-device AI to detect and remove the background automatically.</p>
                     <Button size="sm" onClick={removeBackgroundFromImage} disabled={removing} className="text-xs">
                     {removing ? (
                       <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Processing...</>
