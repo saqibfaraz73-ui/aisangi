@@ -60,7 +60,9 @@ const ImageResizer = ({ imageUrl, onClose }: ImageResizerProps) => {
     const dw = img.width * scale;
     const dh = img.height * scale;
     const dx = (activeW - dw) / 2;
-    const dy = (activeH - dh) / 2;
+    // Top-biased vertical offset: keep heads/faces visible
+    const overflowY = dh - activeH;
+    const dy = overflowY > 0 ? -(overflowY * 0.15) : (activeH - dh) / 2;
 
     ctx.drawImage(img, 0, 0, img.width, img.height, dx, dy, dw, dh);
   }, [activeW, activeH]);
