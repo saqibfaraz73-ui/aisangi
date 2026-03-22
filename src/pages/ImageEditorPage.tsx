@@ -36,6 +36,113 @@ const BG_COLORS = [
   "#000000", "#FFA500", "#800080", "#FFD700", "#87CEEB",
 ];
 
+const clampSize = (value: string, fallback: number) => {
+  const parsed = parseInt(value, 10);
+  return Math.max(50, Math.min(4096, Number.isNaN(parsed) ? fallback : parsed));
+};
+
+const getContainRect = (srcW: number, srcH: number, dstW: number, dstH: number) => {
+  const srcRatio = srcW / srcH;
+  const dstRatio = dstW / dstH;
+  let dw = dstW;
+  let dh = dstH;
+  let dx = 0;
+  let dy = 0;
+
+  if (srcRatio > dstRatio) {
+    dh = dstW / srcRatio;
+    dy = (dstH - dh) / 2;
+  } else {
+    dw = dstH * srcRatio;
+    dx = (dstW - dw) / 2;
+  }
+
+  return { dx, dy, dw, dh };
+};
+
+const getThemeColor = (token: string, fallback: string) => {
+  if (typeof window === "undefined") return `hsl(${fallback})`;
+  const value = getComputedStyle(document.documentElement).getPropertyValue(token).trim();
+  return value ? `hsl(${value})` : `hsl(${fallback})`;
+};
+
+const getColorDistance = (
+  r1: number,
+  g1: number,
+  b1: number,
+  r2: number,
+  g2: number,
+  b2: number,
+) => Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
+
+const getEdgeProtectionMultiplier = (x: number, y: number, w: number, h: number) => {
+  const cx = w / 2;
+  const cy = h / 2;
+  const nx = Math.abs(x - cx) / Math.max(cx, 1);
+  const ny = Math.abs(y - cy) / Math.max(cy, 1);
+  const edgeFactor = Math.min(1, Math.sqrt(nx * nx + ny * ny));
+  return 0.55 + edgeFactor * 0.45;
+};
+
+const buildEdgePalette = (data: Uint8ClampedArray, w: number, h: number) => {
+  const clusters: Array<{ r: number; g: number; b: number; count: number }> = [];
+  const step = Math.max(1, Math.floor(Math.min(w, h) / 90));
+
+  const addSample = (x: number, y: number) => {
+    const i = (y * w + x) * 4;
+    const r = data[i];
+    const g = data[i + 1];
+    const b = data[i + 2];
+
+    let matched = false;
+    for (const cluster of clusters) {
+      if (getColorDistance(r, g, b, cluster.r, cluster.g, cluster.b) < 26) {
+        const nextCount = cluster.count + 1;
+        cluster.r = (cluster.r * cluster.count + r) / nextCount;
+        cluster.g = (cluster.g * cluster.count + g) / nextCount;
+        cluster.b = (cluster.b * cluster.count + b) / nextCount;
+        cluster.count = nextCount;
+        matched = true;
+        break;
+      }
+    }
+
+    if (!matched) {
+      clusters.push({ r, g, b, count: 1 });
+    }
+  };
+
+  for (let x = 0; x < w; x += step) {
+    addSample(x, 0);
+    addSample(x, h - 1);
+  }
+
+  for (let y = 0; y < h; y += step) {
+    addSample(0, y);
+    addSample(w - 1, y);
+  }
+
+  return clusters
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 8);
+};
+
+const getClosestPaletteDistance = (
+  data: Uint8ClampedArray,
+  pixelIndex: number,
+  palette: Array<{ r: number; g: number; b: number; count: number }>,
+) => {
+  const i = pixelIndex * 4;
+  let minDistance = Number.POSITIVE_INFINITY;
+
+  for (const color of palette) {
+    const distance = getColorDistance(data[i], data[i + 1], data[i + 2], color.r, color.g, color.b);
+    if (distance < minDistance) minDistance = distance;
+  }
+
+  return minDistance;
+};
+
 const ImageEditorPage = () => {
   const { toast } = useToast();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -98,17 +205,7 @@ const ImageEditorPage = () => {
 
     const srcW = img instanceof HTMLCanvasElement ? img.width : img.width;
     const srcH = img instanceof HTMLCanvasElement ? img.height : img.height;
-    // Contain-fit: show entire image without cropping
-    const srcRatio = srcW / srcH;
-    const dstRatio = activeW / activeH;
-    let dw = activeW, dh = activeH, dx = 0, dy = 0;
-    if (srcRatio > dstRatio) {
-      dh = activeW / srcRatio;
-      dy = (activeH - dh) / 2;
-    } else {
-      dw = activeH * srcRatio;
-      dx = (activeW - dw) / 2;
-    }
+    const { dx, dy, dw, dh } = getContainRect(srcW, srcH, activeW, activeH);
 
     // Draw checkerboard for transparency if background was removed
     if (bgRemoved) {
@@ -120,11 +217,13 @@ const ImageEditorPage = () => {
         }
       }
     } else {
-      ctx.fillStyle = "#000";
+      ctx.fillStyle = passportPreset !== null
+        ? passportBg
+        : getThemeColor("--card", "0 0% 100%");
       ctx.fillRect(0, 0, activeW, activeH);
     }
     ctx.drawImage(img, 0, 0, srcW, srcH, dx, dy, dw, dh);
-  }, [activeW, activeH, bgRemoved, renderKey]);
+  }, [activeW, activeH, bgRemoved, passportBg, passportPreset, renderKey]);
 
   useEffect(() => {
     if (imageLoaded) drawCanvas();
@@ -140,9 +239,10 @@ const ImageEditorPage = () => {
   };
 
   const applyCustom = () => {
-    const w = Math.max(50, Math.min(4096, parseInt(customW) || 512));
-    const h = Math.max(50, Math.min(4096, parseInt(customH) || 512));
+    const w = clampSize(customW, 512);
+    const h = clampSize(customH, 512);
     setSelectedPreset(null);
+    setPassportPreset(null);
     setActiveW(w);
     setActiveH(h);
     setCustomW(String(w));
@@ -169,17 +269,8 @@ const ImageEditorPage = () => {
         const data = imageData.data;
         const w = img.width, h = img.height;
 
-        // Sample edges to detect background color
-        const edgeSamples: [number, number][] = [];
-        for (let x = 0; x < w; x += 5) { edgeSamples.push([x, 0], [x, h - 1]); }
-        for (let y = 0; y < h; y += 5) { edgeSamples.push([0, y], [w - 1, y]); }
-
-        let rSum = 0, gSum = 0, bSum = 0, count = 0;
-        for (const [x, y] of edgeSamples) {
-          const i = (y * w + x) * 4;
-          rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2]; count++;
-        }
-        const bgR = rSum / count, bgG = gSum / count, bgB = bSum / count;
+        const palette = buildEdgePalette(data, w, h);
+        const softenedTolerance = tolerance <= 40 ? tolerance : 40 + (tolerance - 40) * 0.35;
 
         // Flood-fill from edges
         const visited = new Uint8Array(w * h);
@@ -188,9 +279,12 @@ const ImageEditorPage = () => {
         const seedPixel = (x: number, y: number) => {
           const idx = y * w + x;
           if (visited[idx]) return;
-          const i = idx * 4;
-          const diff = Math.sqrt((data[i] - bgR) ** 2 + (data[i + 1] - bgG) ** 2 + (data[i + 2] - bgB) ** 2);
-          if (diff < tolerance) { visited[idx] = 1; queue.push(idx); }
+          const diff = getClosestPaletteDistance(data, idx, palette);
+          const threshold = softenedTolerance * getEdgeProtectionMultiplier(x, y, w, h);
+          if (diff < threshold) {
+            visited[idx] = 1;
+            queue.push(idx);
+          }
         };
 
         for (let x = 0; x < w; x++) { seedPixel(x, 0); seedPixel(x, h - 1); }
@@ -205,10 +299,12 @@ const ImageEditorPage = () => {
             if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
               const nIdx = ny * w + nx;
               if (!visited[nIdx]) {
-                visited[nIdx] = 1;
-                const ni = nIdx * 4;
-                const diff = Math.sqrt((data[ni] - bgR) ** 2 + (data[ni + 1] - bgG) ** 2 + (data[ni + 2] - bgB) ** 2);
-                if (diff < tolerance) queue.push(nIdx);
+                const diff = getClosestPaletteDistance(data, nIdx, palette);
+                const threshold = softenedTolerance * getEdgeProtectionMultiplier(nx, ny, w, h);
+                if (diff < threshold) {
+                  visited[nIdx] = 1;
+                  queue.push(nIdx);
+                }
               }
             }
           }
@@ -287,11 +383,12 @@ const ImageEditorPage = () => {
     setCustomW(String(p.w));
     setCustomH(String(p.h));
     setSelectedPreset(null);
+    setRenderKey(k => k + 1);
   };
 
   const applyPassportBg = (color: string) => {
     setPassportBg(color);
-    const img = originalImgRef.current;
+    const img = processedCanvasRef.current || originalImgRef.current;
     if (!img || passportPreset === null) return;
     const p = PASSPORT_SIZES[passportPreset];
 
@@ -303,18 +400,10 @@ const ImageEditorPage = () => {
     ctx.fillStyle = color;
     ctx.fillRect(0, 0, p.w, p.h);
 
-    // Contain-fit: show full image without cropping
-    const srcRatio = img.width / img.height;
-    const dstRatio = p.w / p.h;
-    let dw = p.w, dh = p.h, dx = 0, dy = 0;
-    if (srcRatio > dstRatio) {
-      dh = p.w / srcRatio;
-      dy = (p.h - dh) / 2;
-    } else {
-      dw = p.h * srcRatio;
-      dx = (p.w - dw) / 2;
-    }
-    ctx.drawImage(img, 0, 0, img.width, img.height, dx, dy, dw, dh);
+    const srcW = img instanceof HTMLCanvasElement ? img.width : img.width;
+    const srcH = img instanceof HTMLCanvasElement ? img.height : img.height;
+    const { dx, dy, dw, dh } = getContainRect(srcW, srcH, p.w, p.h);
+    ctx.drawImage(img, 0, 0, srcW, srcH, dx, dy, dw, dh);
 
     processedCanvasRef.current = tempCanvas;
     setActiveW(p.w);
@@ -330,6 +419,7 @@ const ImageEditorPage = () => {
       setActiveW(originalImgRef.current.width);
       setActiveH(originalImgRef.current.height);
     }
+    setRenderKey(k => k + 1);
   };
 
   const handleDownload = (format: "png" | "jpg") => {
@@ -353,7 +443,7 @@ const ImageEditorPage = () => {
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
-      <main className="max-w-3xl mx-auto px-3 py-6 space-y-4">
+      <main className="mx-auto w-full max-w-3xl overflow-x-hidden px-3 py-6 space-y-4">
         <h2 className="text-lg font-display font-bold text-foreground flex items-center gap-2">
           <ImageIcon className="h-5 w-5 text-primary" />
           Image Editor
@@ -370,11 +460,11 @@ const ImageEditorPage = () => {
         ) : (
           <>
             {/* Preview */}
-            <div className="flex justify-center bg-muted/50 rounded-lg p-2 overflow-hidden">
+            <div className="flex w-full justify-center overflow-hidden rounded-lg bg-muted/50 p-2">
               <canvas
                 ref={canvasRef}
                 style={{ width: previewW, height: previewH }}
-                className="rounded border border-border max-w-full"
+                className="max-w-full rounded border border-border"
               />
             </div>
             <p className="text-xs text-center text-muted-foreground">{activeW} × {activeH} px</p>
@@ -391,7 +481,7 @@ const ImageEditorPage = () => {
             </div>
 
             {/* Tabs */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full min-w-0 overflow-hidden">
               <TabsList className="w-full grid grid-cols-3 h-auto">
                 <TabsTrigger value="resize" className="text-xs py-2">
                   <Crop className="h-3 w-3 mr-1" /> Resize
@@ -422,12 +512,12 @@ const ImageEditorPage = () => {
                     </button>
                   ))}
                 </div>
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Input type="number" value={customW} onChange={e => setCustomW(e.target.value)}
-                    className="w-20 h-8 text-xs" placeholder="W" min={50} max={4096} />
+                    className="h-8 w-[5.5rem] text-xs" placeholder="W" min={50} max={4096} />
                   <span className="text-xs text-muted-foreground">×</span>
                   <Input type="number" value={customH} onChange={e => setCustomH(e.target.value)}
-                    className="w-20 h-8 text-xs" placeholder="H" min={50} max={4096} />
+                    className="h-8 w-[5.5rem] text-xs" placeholder="H" min={50} max={4096} />
                   <span className="text-xs text-muted-foreground">px</span>
                   <Button size="sm" onClick={applyCustom} className="h-8 text-xs">Apply</Button>
                 </div>
