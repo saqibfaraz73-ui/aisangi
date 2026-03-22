@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
 import CharacterUpload from "@/components/CharacterUpload";
+import SizePresetSelector, { SelectedSize, resizeImageToSize } from "@/components/SizePresetSelector";
 
 import ImageResults from "@/components/ImageResults";
 import AppHeader from "@/components/AppHeader";
