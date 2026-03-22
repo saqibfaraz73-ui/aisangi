@@ -322,6 +322,7 @@ const ImageEditorPage = () => {
 
   const resetImage = () => {
     processedCanvasRef.current = null;
+    transparentCanvasRef.current = null;
     setBgRemoved(false);
     setPassportPreset(null);
     if (originalImgRef.current) {
