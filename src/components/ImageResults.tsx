@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ImageIcon, Download, Loader2 } from "lucide-react";
+import { ImageIcon, Download, Loader2, Crop } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ImageResizer from "@/components/ImageResizer";
 
 interface ImageResult {
   imageUrl: string;
