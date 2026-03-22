@@ -118,6 +118,16 @@ function renderFrame(
     }
   }
 
+  // Clamp source rectangle to stay within image bounds
+  if (sx < 0) { sw += sx; sx = 0; }
+  if (sy < 0) { sh += sy; sy = 0; }
+  if (sx + sw > imgW) sw = imgW - sx;
+  if (sy + sh > imgH) sh = imgH - sy;
+  if (sw <= 0 || sh <= 0) { sw = imgW; sh = imgH; sx = 0; sy = 0; }
+
+  // Always fill entire canvas with black first to avoid gaps
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, W, H);
   ctx.drawImage(img, sx, sy, sw, sh, 0, 0, W, H);
   ctx.restore();
 }
