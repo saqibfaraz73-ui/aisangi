@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
-import { useWatermark } from "@/hooks/use-watermark";
 import CharacterUpload from "@/components/CharacterUpload";
 
 import ImageResults from "@/components/ImageResults";
@@ -170,7 +169,6 @@ const Index = () => {
   
   const { toast } = useToast();
   const { checkLimit, trackUsage, getRemainingUses } = useUsageLimit("text_to_image");
-  const { watermarkEnabled, watermarkColor } = useWatermark();
 
   // Pick up prompt from Prompt Generator page
   useEffect(() => {
