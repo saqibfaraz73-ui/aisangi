@@ -390,6 +390,9 @@ const ImageEditorPage = () => {
     transparentCanvasRef.current = null;
     setBgRemoved(false);
     setPassportPreset(null);
+    setZoom(1);
+    setPanX(0);
+    setPanY(0);
     if (originalImgRef.current) {
       setActiveW(originalImgRef.current.width);
       setActiveH(originalImgRef.current.height);
