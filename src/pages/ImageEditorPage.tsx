@@ -80,6 +80,7 @@ const ImageEditorPage = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const originalImgRef = useRef<HTMLImageElement | null>(null);
   const processedCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const transparentCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bgImageInputRef = useRef<HTMLInputElement>(null);
 
