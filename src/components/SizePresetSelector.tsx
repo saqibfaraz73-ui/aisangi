@@ -147,12 +147,8 @@ export function resizeImageToSize(
       canvas.height = targetH;
       const ctx = canvas.getContext("2d")!;
 
-      // White background
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, targetW, targetH);
-
-      // Contain-fit: scale entire image to fit without cropping
-      const scale = Math.min(targetW / img.width, targetH / img.height);
+      // Cover-fit: fill entire target area, crop edges if needed
+      const scale = Math.max(targetW / img.width, targetH / img.height);
       const drawW = img.width * scale;
       const drawH = img.height * scale;
       const offsetX = (targetW - drawW) / 2;
