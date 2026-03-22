@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import removeBackground from "@imgly/background-removal";
 import { Upload, Download, Crop, Eraser, Camera, Palette, ImageIcon, X, RotateCcw, ZoomIn, ZoomOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -66,129 +67,19 @@ const getThemeColor = (token: string, fallback: string) => {
   return value ? `hsl(${value})` : `hsl(${fallback})`;
 };
 
-const getColorDistance = (
-  r1: number,
-  g1: number,
-  b1: number,
-  r2: number,
-  g2: number,
-  b2: number,
-) => Math.sqrt((r1 - r2) ** 2 + (g1 - g2) ** 2 + (b1 - b2) ** 2);
-
-const getPixelDistance = (data: Uint8ClampedArray, a: number, b: number) => {
-  const ai = a * 4;
-  const bi = b * 4;
-  return getColorDistance(
-    data[ai],
-    data[ai + 1],
-    data[ai + 2],
-    data[bi],
-    data[bi + 1],
-    data[bi + 2],
-  );
-};
-
-const getEdgeProtectionMultiplier = (x: number, y: number, w: number, h: number) => {
-  const cx = w / 2;
-  const cy = h / 2;
-  const nx = Math.abs(x - cx) / Math.max(cx, 1);
-  const ny = Math.abs(y - cy) / Math.max(cy, 1);
-  const edgeFactor = Math.min(1, Math.sqrt(nx * nx + ny * ny));
-  return 0.18 + edgeFactor * 0.82;
-};
-
 const getSafeTolerance = (value: number) => {
-  if (value <= 10) return value * 0.75;
-  if (value <= 20) return 7.5 + (value - 10) * 0.38;
-  if (value <= 35) return 11.3 + (value - 20) * 0.18;
-  return 14 + (value - 35) * 0.12;
+  if (value <= 20) return 0;
+  if (value <= 35) return (value - 20) / 45;
+  return Math.min(0.5, 0.33 + (value - 35) / 100);
 };
 
-const getNeighborContinuityThreshold = (safeTolerance: number) => Math.max(8, safeTolerance * 0.55);
-
-const getLocalEdgeStrength = (data: Uint8ClampedArray, pixelIndex: number, w: number, h: number) => {
-  const x = pixelIndex % w;
-  const y = Math.floor(pixelIndex / w);
-  const neighbors: number[] = [];
-
-  if (x > 0) neighbors.push(pixelIndex - 1);
-  if (x < w - 1) neighbors.push(pixelIndex + 1);
-  if (y > 0) neighbors.push(pixelIndex - w);
-  if (y < h - 1) neighbors.push(pixelIndex + w);
-
-  if (neighbors.length === 0) return 0;
-
-  let total = 0;
-  for (const neighbor of neighbors) {
-    total += getPixelDistance(data, pixelIndex, neighbor);
-  }
-
-  return total / neighbors.length;
-};
-
-const getEdgeBarrierThreshold = (safeTolerance: number) => Math.max(10, safeTolerance * 0.95);
-
-const buildEdgePalette = (data: Uint8ClampedArray, w: number, h: number) => {
-  const clusters: Array<{ r: number; g: number; b: number; count: number }> = [];
-  const step = Math.max(1, Math.floor(Math.min(w, h) / 90));
-
-  const addSample = (x: number, y: number) => {
-    const i = (y * w + x) * 4;
-    const r = data[i];
-    const g = data[i + 1];
-    const b = data[i + 2];
-
-    let matched = false;
-    for (const cluster of clusters) {
-      if (getColorDistance(r, g, b, cluster.r, cluster.g, cluster.b) < 26) {
-        const nextCount = cluster.count + 1;
-        cluster.r = (cluster.r * cluster.count + r) / nextCount;
-        cluster.g = (cluster.g * cluster.count + g) / nextCount;
-        cluster.b = (cluster.b * cluster.count + b) / nextCount;
-        cluster.count = nextCount;
-        matched = true;
-        break;
-      }
-    }
-
-    if (!matched) {
-      clusters.push({ r, g, b, count: 1 });
-    }
-  };
-
-  for (let x = 0; x < w; x += step) {
-    addSample(x, 0);
-    addSample(x, h - 1);
-  }
-
-  for (let y = 0; y < h; y += step) {
-    addSample(0, y);
-    addSample(w - 1, y);
-  }
-
-  const sortedClusters = clusters.sort((a, b) => b.count - a.count);
-  const dominantCount = sortedClusters[0]?.count ?? 0;
-
-  return sortedClusters
-    .filter((cluster) => cluster.count >= Math.max(4, dominantCount * 0.22))
-    .slice(0, 4);
-};
-
-const getClosestPaletteDistance = (
-  data: Uint8ClampedArray,
-  pixelIndex: number,
-  palette: Array<{ r: number; g: number; b: number; count: number }>,
-) => {
-  const i = pixelIndex * 4;
-  let minDistance = Number.POSITIVE_INFINITY;
-
-  for (const color of palette) {
-    const distance = getColorDistance(data[i], data[i + 1], data[i + 2], color.r, color.g, color.b);
-    if (distance < minDistance) minDistance = distance;
-  }
-
-  return minDistance;
-};
+const loadImageElement = (url: string) => new Promise<HTMLImageElement>((resolve, reject) => {
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => resolve(img);
+  img.onerror = () => reject(new Error("Failed to load processed image"));
+  img.src = url;
+});
 
 const ImageEditorPage = () => {
   const { toast } = useToast();
@@ -296,90 +187,54 @@ const ImageEditorPage = () => {
     setCustomH(String(h));
   };
 
-  // Background removal using flood-fill from edges
-  const removeBackground = () => {
+  const removeBackgroundFromImage = () => {
     const img = originalImgRef.current;
     if (!img || removing) return;
 
     setRemoving(true);
 
-    // Use setTimeout to allow UI to update
     setTimeout(() => {
-      try {
-        const tempCanvas = document.createElement("canvas");
-        tempCanvas.width = img.width;
-        tempCanvas.height = img.height;
-        const ctx = tempCanvas.getContext("2d")!;
-        ctx.drawImage(img, 0, 0);
+      (async () => {
+        try {
+          const blob = await fetch(img.src).then((response) => response.blob());
+          const resultBlob = await removeBackground(blob, {
+            device: "cpu",
+            model: "isnet_fp16",
+            proxyToWorker: true,
+            output: { format: "image/png", quality: 1 },
+          });
 
-        const imageData = ctx.getImageData(0, 0, img.width, img.height);
-        const data = imageData.data;
-        const w = img.width, h = img.height;
-        const sourceData = new Uint8ClampedArray(data);
+          const objectUrl = URL.createObjectURL(resultBlob);
+          const resultImage = await loadImageElement(objectUrl);
 
-        const palette = buildEdgePalette(sourceData, w, h);
-        const safeTolerance = getSafeTolerance(tolerance);
-        const continuityThreshold = getNeighborContinuityThreshold(safeTolerance);
-        const edgeBarrierThreshold = getEdgeBarrierThreshold(safeTolerance);
+          const tempCanvas = document.createElement("canvas");
+          tempCanvas.width = resultImage.width;
+          tempCanvas.height = resultImage.height;
+          const ctx = tempCanvas.getContext("2d")!;
+          ctx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+          ctx.drawImage(resultImage, 0, 0);
 
-        // Flood-fill from edges
-        const visited = new Uint8Array(w * h);
-        const queue: number[] = [];
-
-        const seedPixel = (x: number, y: number) => {
-          const idx = y * w + x;
-          if (visited[idx]) return;
-          const diff = getClosestPaletteDistance(sourceData, idx, palette);
-          const threshold = safeTolerance * getEdgeProtectionMultiplier(x, y, w, h) * 0.82;
-          const edgeStrength = getLocalEdgeStrength(sourceData, idx, w, h);
-
-          if (diff < threshold && edgeStrength < edgeBarrierThreshold) {
-            visited[idx] = 1;
-            queue.push(idx);
-          }
-        };
-
-        for (let x = 0; x < w; x++) { seedPixel(x, 0); seedPixel(x, h - 1); }
-        for (let y = 0; y < h; y++) { seedPixel(0, y); seedPixel(w - 1, y); }
-
-        while (queue.length > 0) {
-          const idx = queue.pop()!;
-          const px = idx % w, py = Math.floor(idx / w);
-          data[idx * 4 + 3] = 0;
-
-          for (const [nx, ny] of [[px-1,py],[px+1,py],[px,py-1],[px,py+1]]) {
-            if (nx >= 0 && nx < w && ny >= 0 && ny < h) {
-              const nIdx = ny * w + nx;
-              if (!visited[nIdx]) {
-                const diff = getClosestPaletteDistance(sourceData, nIdx, palette);
-                const continuity = getPixelDistance(sourceData, idx, nIdx);
-                const edgeStrength = getLocalEdgeStrength(sourceData, nIdx, w, h);
-                const threshold = safeTolerance * getEdgeProtectionMultiplier(nx, ny, w, h);
-
-                if (
-                  diff < threshold &&
-                  continuity < continuityThreshold &&
-                  edgeStrength < edgeBarrierThreshold
-                ) {
-                  visited[nIdx] = 1;
-                  queue.push(nIdx);
-                }
-              }
+          if (getSafeTolerance(tolerance) > 0) {
+            const imageData = ctx.getImageData(0, 0, tempCanvas.width, tempCanvas.height);
+            const alphaBoost = Math.round(getSafeTolerance(tolerance) * 255);
+            for (let i = 3; i < imageData.data.length; i += 4) {
+              imageData.data[i] = Math.max(0, Math.min(255, imageData.data[i] + alphaBoost - 64));
             }
+            ctx.putImageData(imageData, 0, 0);
           }
-        }
 
-        ctx.putImageData(imageData, 0, 0);
-        processedCanvasRef.current = tempCanvas;
-        setBgRemoved(true);
-        setRemoving(false);
-        setRenderKey(k => k + 1);
-        toast({ title: "Background removed!" });
-      } catch (err) {
-        console.error("BG removal error:", err);
-        setRemoving(false);
-        toast({ title: "Failed", variant: "destructive" });
-      }
+          URL.revokeObjectURL(objectUrl);
+          processedCanvasRef.current = tempCanvas;
+          setBgRemoved(true);
+          setRenderKey((k) => k + 1);
+          toast({ title: "Background removed!" });
+        } catch (err) {
+          console.error("BG removal error:", err);
+          toast({ title: "Background removal failed", description: "Try again with a clear photo.", variant: "destructive" });
+        } finally {
+          setRemoving(false);
+        }
+      })();
     }, 50);
   };
 
@@ -586,14 +441,14 @@ const ImageEditorPage = () => {
               <TabsContent value="background" className="space-y-3">
                 <div className="space-y-2">
                   <p className="text-xs font-medium text-foreground">Remove Background</p>
-                  <p className="text-xs text-muted-foreground">Detects and removes background from edges. Use lower tolerance (20-40) for clean backgrounds, higher (50-80) for complex ones.</p>
+                  <p className="text-xs text-muted-foreground">Uses on-device subject detection. Keep tolerance low for portraits to protect the face.</p>
                   <div className="flex items-center gap-3">
                     <span className="text-xs text-muted-foreground w-16">Tolerance</span>
                     <Slider value={[tolerance]} onValueChange={v => setTolerance(v[0])}
                       min={5} max={80} step={1} className="flex-1" />
                     <span className="text-xs text-muted-foreground w-8">{tolerance}</span>
                   </div>
-                  <Button size="sm" onClick={removeBackground} disabled={removing} className="text-xs">
+                    <Button size="sm" onClick={removeBackgroundFromImage} disabled={removing} className="text-xs">
                     {removing ? (
                       <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Processing...</>
                     ) : (
