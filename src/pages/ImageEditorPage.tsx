@@ -226,7 +226,8 @@ const ImageEditorPage = () => {
   };
 
   const applyColorBackground = (color: string) => {
-    const src = processedCanvasRef.current || originalImgRef.current;
+    // Always use the transparent (bg-removed) version so colors can be swapped
+    const src = transparentCanvasRef.current || originalImgRef.current;
     if (!src) return;
 
     const tempCanvas = document.createElement("canvas");
