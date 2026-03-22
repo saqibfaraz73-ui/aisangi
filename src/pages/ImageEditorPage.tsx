@@ -319,7 +319,7 @@ const ImageEditorPage = () => {
     processedCanvasRef.current = tempCanvas;
     setActiveW(p.w);
     setActiveH(p.h);
-    drawCanvas();
+    setRenderKey(k => k + 1);
   };
 
   const resetImage = () => {
