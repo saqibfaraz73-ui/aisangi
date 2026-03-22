@@ -236,7 +236,11 @@ const Index = () => {
         const resized = await Promise.all(
           generatedImages.map(async (img: ImageResult) => ({
             ...img,
-            imageUrl: await resizeImageToSize(img.imageUrl, outputSize.w, outputSize.h),
+            imageUrl: await resizeImageToSize(
+              img.imageUrl, outputSize.w, outputSize.h,
+              watermarkEnabled ? "SANGIAi" : undefined,
+              watermarkColor
+            ),
           }))
         );
         setImages(resized);
