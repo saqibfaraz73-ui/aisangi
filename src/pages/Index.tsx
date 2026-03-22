@@ -326,7 +326,8 @@ const Index = () => {
               </p>
             </div>
 
-            
+            <SizePresetSelector value={outputSize} onChange={setOutputSize} />
+
 
             <div className="flex gap-3">
               <Button
