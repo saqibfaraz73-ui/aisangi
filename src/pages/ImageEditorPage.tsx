@@ -81,7 +81,13 @@ const getEdgeProtectionMultiplier = (x: number, y: number, w: number, h: number)
   const nx = Math.abs(x - cx) / Math.max(cx, 1);
   const ny = Math.abs(y - cy) / Math.max(cy, 1);
   const edgeFactor = Math.min(1, Math.sqrt(nx * nx + ny * ny));
-  return 0.55 + edgeFactor * 0.45;
+  return 0.18 + edgeFactor * 0.82;
+};
+
+const getSafeTolerance = (value: number) => {
+  if (value <= 15) return value * 0.9;
+  if (value <= 25) return 13 + (value - 15) * 0.5;
+  return 18 + (value - 25) * 0.28;
 };
 
 const buildEdgePalette = (data: Uint8ClampedArray, w: number, h: number) => {
@@ -122,9 +128,12 @@ const buildEdgePalette = (data: Uint8ClampedArray, w: number, h: number) => {
     addSample(w - 1, y);
   }
 
-  return clusters
-    .sort((a, b) => b.count - a.count)
-    .slice(0, 8);
+  const sortedClusters = clusters.sort((a, b) => b.count - a.count);
+  const dominantCount = sortedClusters[0]?.count ?? 0;
+
+  return sortedClusters
+    .filter((cluster) => cluster.count >= Math.max(4, dominantCount * 0.22))
+    .slice(0, 4);
 };
 
 const getClosestPaletteDistance = (
@@ -270,7 +279,7 @@ const ImageEditorPage = () => {
         const w = img.width, h = img.height;
 
         const palette = buildEdgePalette(data, w, h);
-        const softenedTolerance = tolerance <= 40 ? tolerance : 40 + (tolerance - 40) * 0.35;
+        const safeTolerance = getSafeTolerance(tolerance);
 
         // Flood-fill from edges
         const visited = new Uint8Array(w * h);
@@ -280,7 +289,7 @@ const ImageEditorPage = () => {
           const idx = y * w + x;
           if (visited[idx]) return;
           const diff = getClosestPaletteDistance(data, idx, palette);
-          const threshold = softenedTolerance * getEdgeProtectionMultiplier(x, y, w, h);
+          const threshold = safeTolerance * getEdgeProtectionMultiplier(x, y, w, h);
           if (diff < threshold) {
             visited[idx] = 1;
             queue.push(idx);
@@ -300,7 +309,7 @@ const ImageEditorPage = () => {
               const nIdx = ny * w + nx;
               if (!visited[nIdx]) {
                 const diff = getClosestPaletteDistance(data, nIdx, palette);
-                const threshold = softenedTolerance * getEdgeProtectionMultiplier(nx, ny, w, h);
+                const threshold = safeTolerance * getEdgeProtectionMultiplier(nx, ny, w, h);
                 if (diff < threshold) {
                   visited[nIdx] = 1;
                   queue.push(nIdx);
