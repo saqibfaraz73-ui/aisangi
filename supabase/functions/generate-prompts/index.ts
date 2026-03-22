@@ -27,7 +27,7 @@ serve(async (req) => {
     }
 
     const characterNote = hasCharacter
-      ? `\n- The user has uploaded their face/selfie as an AI character. Write prompts describing SCENES where that person appears (e.g. "Standing in front of...", "Wearing elegant attire at...", "Posing at..."). Do NOT describe the person's appearance — the AI will use the uploaded face automatically.`
+      ? `\n- CRITICAL: The user has uploaded their face/selfie as an AI character. Write prompts describing ONLY the SCENE and SETTING (e.g. "Standing in front of the Eiffel Tower at sunset", "Wearing elegant wedding attire in a garden"). NEVER describe the person's facial features, skin color, hair, age, gender, or body type — the AI will automatically use the uploaded face. Focus ONLY on: location, clothing, lighting, mood, pose, camera angle.`
       : "";
 
     const systemPrompt = `You are an expert AI image prompt engineer. Given a topic, generate exactly ${count} highly detailed, creative image generation prompts. Each prompt should be descriptive and include style, lighting, colors, mood, composition details that would produce stunning images when used with an AI image generator.
