@@ -172,6 +172,7 @@ const Index = () => {
   
   const { toast } = useToast();
   const { checkLimit, trackUsage, getRemainingUses } = useUsageLimit("text_to_image");
+  const { watermarkEnabled, watermarkColor } = useWatermark();
 
   // Pick up prompt from Prompt Generator page
   useEffect(() => {
