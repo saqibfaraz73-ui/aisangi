@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
+import { useWatermark } from "@/hooks/use-watermark";
 import CharacterUpload from "@/components/CharacterUpload";
 import SizePresetSelector, { SelectedSize, resizeImageToSize } from "@/components/SizePresetSelector";
 
