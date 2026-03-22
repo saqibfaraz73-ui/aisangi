@@ -436,8 +436,14 @@ const ImageEditorPage = () => {
               {/* Background Tab */}
               <TabsContent value="background" className="space-y-3">
                 <div className="space-y-2">
-                  <p className="text-xs font-medium text-foreground">AI Background Removal</p>
-                  <p className="text-xs text-muted-foreground">Uses AI to accurately separate subject from background — like remove.bg, runs in your browser.</p>
+                  <p className="text-xs font-medium text-foreground">Remove Background</p>
+                  <p className="text-xs text-muted-foreground">Detects and removes background from edges. Use lower tolerance (20-40) for clean backgrounds, higher (50-80) for complex ones.</p>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-muted-foreground w-16">Tolerance</span>
+                    <Slider value={[tolerance]} onValueChange={v => setTolerance(v[0])}
+                      min={5} max={80} step={1} className="flex-1" />
+                    <span className="text-xs text-muted-foreground w-8">{tolerance}</span>
+                  </div>
                   <Button size="sm" onClick={removeBackground} disabled={removing} className="text-xs">
                     {removing ? (
                       <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Processing...</>
