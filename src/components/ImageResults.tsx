@@ -108,7 +108,21 @@ const ImageResults = ({ images, isGenerating, prompt, sceneCount }: ImageResults
                     <Download className="h-3 w-3 mr-1" />
                     JPG
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setResizingIdx(resizingIdx === i ? null : i)}
+                    className="border-border text-foreground font-display text-xs h-8"
+                  >
+                    <Crop className="h-3 w-3 mr-1" />
+                    Resize
+                  </Button>
                 </div>
+                {resizingIdx === i && (
+                  <div className="p-2">
+                    <ImageResizer imageUrl={img.imageUrl} onClose={() => setResizingIdx(null)} />
+                  </div>
+                )}
               </motion.div>
             ))
           ) : (
