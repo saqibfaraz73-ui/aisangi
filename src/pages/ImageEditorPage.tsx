@@ -130,6 +130,9 @@ const ImageEditorPage = () => {
       setBgRemoved(false);
       processedCanvasRef.current = null;
       transparentCanvasRef.current = null;
+      setZoom(1);
+      setPanX(0);
+      setPanY(0);
     };
     img.src = url;
   };
