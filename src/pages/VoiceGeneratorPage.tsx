@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import { motion } from "framer-motion";
 import { Volume2, Loader2, Play, Pause, Download, Edit3, Check, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,13 +14,13 @@ import { useUsageLimit } from "@/hooks/use-usage-limit";
 import { useElevenLabsVoice } from "@/hooks/use-elevenlabs-voice";
 
 const VoiceGeneratorPage = () => {
-  const [text, setText] = useState("");
-  const [voice, setVoice] = useState("Kore");
+  const [text, setText] = usePersistedState("sangi_voice_text", "");
+  const [voice, setVoice] = usePersistedState("sangi_voice_voice", "Kore");
   const [generating, setGenerating] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = usePersistedState<string | null>("sangi_voice_audioUrl", null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioEl, setAudioEl] = useState<HTMLAudioElement | null>(null);
-  const [fileName, setFileName] = useState("My_Voice");
+  const [fileName, setFileName] = usePersistedState("sangi_voice_fileName", "My_Voice");
   const [editingName, setEditingName] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const { toast } = useToast();

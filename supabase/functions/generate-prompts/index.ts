@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { topic, count = 5 } = await req.json();
+    const { topic, count = 5, hasCharacter = false } = await req.json();
 
     if (!topic || typeof topic !== "string" || !topic.trim()) {
       return new Response(JSON.stringify({ error: "Please provide a topic" }), {
@@ -26,6 +26,10 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
+    const characterNote = hasCharacter
+      ? `\n- The user has uploaded their face/selfie as an AI character. Write prompts describing SCENES where that person appears (e.g. "Standing in front of...", "Wearing elegant attire at...", "Posing at..."). Do NOT describe the person's appearance — the AI will use the uploaded face automatically.`
+      : "";
+
     const systemPrompt = `You are an expert AI image prompt engineer. Given a topic, generate exactly ${count} highly detailed, creative image generation prompts. Each prompt should be descriptive and include style, lighting, colors, mood, composition details that would produce stunning images when used with an AI image generator.
 
 Rules:
@@ -34,7 +38,7 @@ Rules:
 - Make prompts diverse in style (photorealistic, cinematic, artistic, etc.)
 - Include specific details about lighting, colors, atmosphere
 - Make them ready to use directly in a text-to-image AI tool
-- Do NOT include any markdown formatting or code blocks`;
+- Do NOT include any markdown formatting or code blocks${characterNote}`;
 
     const response = await fetch(
       "https://ai.gateway.lovable.dev/v1/chat/completions",

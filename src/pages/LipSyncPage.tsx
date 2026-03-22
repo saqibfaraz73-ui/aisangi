@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import { motion } from "framer-motion";
 import { Upload, Mic, Video, Loader2, Download, Play, AlertCircle, Type, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,14 +12,14 @@ import { supabase } from "@/integrations/supabase/client";
 const LipSyncPage = () => {
   const { toast } = useToast();
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = usePersistedState<string | null>("sangi_lipsync_imagePreview", null);
   const [audioFile, setAudioFile] = useState<File | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
-  const [text, setText] = useState("");
-  const [inputMode, setInputMode] = useState<"audio" | "text">("audio");
+  const [text, setText] = usePersistedState("sangi_lipsync_text", "");
+  const [inputMode, setInputMode] = usePersistedState<"audio" | "text">("sangi_lipsync_inputMode", "audio");
   const [generating, setGenerating] = useState(false);
   const [polling, setPolling] = useState(false);
-  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = usePersistedState<string | null>("sangi_lipsync_videoUrl", null);
   const [statusMsg, setStatusMsg] = useState("");
   const cancelledRef = useRef(false);
   const imageInputRef = useRef<HTMLInputElement>(null);

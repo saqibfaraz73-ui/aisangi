@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import { motion } from "framer-motion";
 import { Music, Loader2, Play, Pause, Download, Edit3, Check, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -18,13 +19,13 @@ const EXAMPLE_PROMPTS = [
 ];
 
 const MusicGeneratorPage = () => {
-  const [prompt, setPrompt] = useState("");
-  const [negativePrompt, setNegativePrompt] = useState("");
+  const [prompt, setPrompt] = usePersistedState("sangi_music_prompt", "");
+  const [negativePrompt, setNegativePrompt] = usePersistedState("sangi_music_negPrompt", "");
   const [generating, setGenerating] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioUrl, setAudioUrl] = usePersistedState<string | null>("sangi_music_audioUrl", null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [audioEl, setAudioEl] = useState<HTMLAudioElement | null>(null);
-  const [fileName, setFileName] = useState("My_Music");
+  const [fileName, setFileName] = usePersistedState("sangi_music_fileName", "My_Music");
   const [editingName, setEditingName] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const { toast } = useToast();

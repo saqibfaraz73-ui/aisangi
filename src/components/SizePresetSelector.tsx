@@ -130,13 +130,16 @@ const SizePresetSelector = ({ value, onChange }: SizePresetSelectorProps) => {
 };
 
 /**
- * Resize an image URL to target dimensions using contain-fit (no cropping).
+ * Resize an image URL to target dimensions using cover-fit (fills area, may crop edges).
+ * Re-applies SANGIAi watermark after resize so it's never cropped.
  * Returns a new data URL.
  */
 export function resizeImageToSize(
   imageUrl: string,
   targetW: number,
-  targetH: number
+  targetH: number,
+  watermarkText?: string,
+  watermarkColor?: string
 ): Promise<string> {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -155,6 +158,26 @@ export function resizeImageToSize(
       const offsetY = (targetH - drawH) / 2;
 
       ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+
+      // Re-apply watermark after resize so it's always visible
+      if (watermarkText) {
+        const fontSize = Math.max(14, Math.round(Math.min(targetW, targetH) * 0.035));
+        ctx.save();
+        ctx.globalAlpha = 0.4;
+        ctx.font = `bold ${fontSize}px sans-serif`;
+        const colorMap: Record<string, string> = {
+          white: "#ffffff",
+          black: "#000000",
+          blue: "#3b82f6",
+          green: "#22c55e",
+          yellow: "#eab308",
+        };
+        ctx.fillStyle = colorMap[watermarkColor || "white"] || "#ffffff";
+        ctx.textBaseline = "top";
+        ctx.fillText(watermarkText, fontSize * 0.5, fontSize * 0.5);
+        ctx.restore();
+      }
+
       resolve(canvas.toDataURL("image/png", 1));
     };
     img.onerror = reject;
