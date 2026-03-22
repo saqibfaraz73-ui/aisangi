@@ -269,7 +269,8 @@ const ImageEditorPage = () => {
       ctx.drawImage(src, 0, 0);
 
       processedCanvasRef.current = tempCanvas;
-      drawCanvas();
+      setBgRemoved(false);
+      setRenderKey(k => k + 1);
       toast({ title: "Background image applied" });
     };
     bgImg.src = URL.createObjectURL(file);
