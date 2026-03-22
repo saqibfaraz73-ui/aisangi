@@ -9,6 +9,7 @@ import { useState, useEffect } from "react";
 const NAV_ITEMS = [
   { to: "/", label: "Text to Image" },
   { to: "/animate", label: "Image to Video" },
+  { to: "/image-editor", label: "Image Editor" },
   { to: "/lip-sync", label: "Lip-Sync" },
   { to: "/overlay", label: "Audio Overlay" },
   { to: "/script-generator", label: "Script AI" },

@@ -12,6 +12,7 @@ import VoiceGeneratorPage from "./pages/VoiceGeneratorPage.tsx";
 import LipSyncPage from "./pages/LipSyncPage.tsx";
 import MusicGeneratorPage from "./pages/MusicGeneratorPage.tsx";
 import PosterGeneratorPage from "./pages/PosterGeneratorPage.tsx";
+import ImageEditorPage from "./pages/ImageEditorPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
@@ -39,6 +40,7 @@ const AppRoutes = () => (
     <Route path="/reset-password" element={<ResetPasswordPage />} />
     <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
     <Route path="/animate" element={<ProtectedRoute><AnimatePage /></ProtectedRoute>} />
+    <Route path="/image-editor" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
     <Route path="/overlay" element={<ProtectedRoute><OverlayPage /></ProtectedRoute>} />
     <Route path="/lip-sync" element={<ProtectedRoute><LipSyncPage /></ProtectedRoute>} />
     <Route path="/script-generator" element={<ProtectedRoute><ScriptGeneratorPage /></ProtectedRoute>} />
