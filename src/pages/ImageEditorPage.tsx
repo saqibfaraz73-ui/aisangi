@@ -80,6 +80,7 @@ const ImageEditorPage = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const originalImgRef = useRef<HTMLImageElement | null>(null);
   const processedCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const transparentCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bgImageInputRef = useRef<HTMLInputElement>(null);
 
@@ -121,6 +122,7 @@ const ImageEditorPage = () => {
       setImageLoaded(true);
       setBgRemoved(false);
       processedCanvasRef.current = null;
+      transparentCanvasRef.current = null;
     };
     img.src = url;
   };
@@ -208,6 +210,7 @@ const ImageEditorPage = () => {
           ctx.drawImage(resultImage, 0, 0);
 
           URL.revokeObjectURL(objectUrl);
+          transparentCanvasRef.current = tempCanvas;
           processedCanvasRef.current = tempCanvas;
           setBgRemoved(true);
           setRenderKey((k) => k + 1);
@@ -223,7 +226,8 @@ const ImageEditorPage = () => {
   };
 
   const applyColorBackground = (color: string) => {
-    const src = processedCanvasRef.current || originalImgRef.current;
+    // Always use the transparent (bg-removed) version so colors can be swapped
+    const src = transparentCanvasRef.current || originalImgRef.current;
     if (!src) return;
 
     const tempCanvas = document.createElement("canvas");
@@ -247,10 +251,12 @@ const ImageEditorPage = () => {
   const applyImageBackground = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const src = processedCanvasRef.current || originalImgRef.current;
+    // Always use the transparent (bg-removed) version so image bg shows through
+    const src = transparentCanvasRef.current || originalImgRef.current;
     if (!src) return;
 
     const bgImg = new Image();
+    bgImg.crossOrigin = "anonymous";
     bgImg.onload = () => {
       const w = src instanceof HTMLCanvasElement ? src.width : src.width;
       const h = src instanceof HTMLCanvasElement ? src.height : src.height;
@@ -259,15 +265,20 @@ const ImageEditorPage = () => {
       tempCanvas.height = h;
       const ctx = tempCanvas.getContext("2d")!;
 
+      // Draw background image stretched to fill
       ctx.drawImage(bgImg, 0, 0, w, h);
+      // Draw the transparent subject on top
       ctx.drawImage(src, 0, 0);
 
       processedCanvasRef.current = tempCanvas;
       setBgRemoved(false);
       setRenderKey(k => k + 1);
       toast({ title: "Background image applied" });
+      URL.revokeObjectURL(bgImg.src);
     };
     bgImg.src = URL.createObjectURL(file);
+    // Reset file input so the same file can be re-selected
+    e.target.value = "";
   };
 
   // Passport photo
@@ -311,6 +322,7 @@ const ImageEditorPage = () => {
 
   const resetImage = () => {
     processedCanvasRef.current = null;
+    transparentCanvasRef.current = null;
     setBgRemoved(false);
     setPassportPreset(null);
     if (originalImgRef.current) {
