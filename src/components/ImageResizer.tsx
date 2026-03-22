@@ -114,7 +114,7 @@ const ImageResizer = ({ imageUrl, onClose }: ImageResizerProps) => {
   const previewH = Math.round((activeH || 100) * scale);
 
   return (
-    <div className="space-y-3 p-3 rounded-xl border border-border bg-card">
+    <div className="space-y-3 p-3 rounded-xl border border-border bg-card overflow-hidden max-w-full">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Crop className="h-4 w-4 text-primary" />
