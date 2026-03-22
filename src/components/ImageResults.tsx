@@ -125,7 +125,7 @@ const ImageResults = ({ images, isGenerating, prompt, sceneCount }: ImageResults
                 )}
               </motion.div>
             ))
-          ) : (
+          ) : !prompt ? null : (
             <motion.div
               key="placeholder"
               initial={{ opacity: 0 }}
