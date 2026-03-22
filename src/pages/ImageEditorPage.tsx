@@ -251,10 +251,12 @@ const ImageEditorPage = () => {
   const applyImageBackground = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const src = processedCanvasRef.current || originalImgRef.current;
+    // Always use the transparent (bg-removed) version so image bg shows through
+    const src = transparentCanvasRef.current || originalImgRef.current;
     if (!src) return;
 
     const bgImg = new Image();
+    bgImg.crossOrigin = "anonymous";
     bgImg.onload = () => {
       const w = src instanceof HTMLCanvasElement ? src.width : src.width;
       const h = src instanceof HTMLCanvasElement ? src.height : src.height;
@@ -263,15 +265,20 @@ const ImageEditorPage = () => {
       tempCanvas.height = h;
       const ctx = tempCanvas.getContext("2d")!;
 
+      // Draw background image stretched to fill
       ctx.drawImage(bgImg, 0, 0, w, h);
+      // Draw the transparent subject on top
       ctx.drawImage(src, 0, 0);
 
       processedCanvasRef.current = tempCanvas;
       setBgRemoved(false);
       setRenderKey(k => k + 1);
       toast({ title: "Background image applied" });
+      URL.revokeObjectURL(bgImg.src);
     };
     bgImg.src = URL.createObjectURL(file);
+    // Reset file input so the same file can be re-selected
+    e.target.value = "";
   };
 
   // Passport photo
