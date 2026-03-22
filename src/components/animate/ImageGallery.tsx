@@ -151,7 +151,7 @@ const ImageGallery = ({ items, onAdd, onRemove, onDurationChange, onStyleChange,
                 ) : (
                   <label className="flex items-center gap-1 p-1.5 bg-card cursor-pointer hover:bg-muted transition-colors">
                     <Volume2 className="h-3 w-3 text-muted-foreground shrink-0" />
-                    <span className="text-[10px] text-muted-foreground">+ Add voice</span>
+                    <span className="text-[10px] text-muted-foreground">+ Add audio/voice</span>
                     <input
                       type="file"
                       accept="audio/*"

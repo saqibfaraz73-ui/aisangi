@@ -287,10 +287,10 @@ const AnimatePage = () => {
                 </span>
               </div>
               <div
-                className="bg-muted flex items-center justify-center"
+                className="bg-muted flex items-center justify-center w-full overflow-hidden"
                 style={{
                   aspectRatio: platform === "tiktok" ? "9/16" : platform === "facebook" ? "1/1" : "16/9",
-                  maxHeight: "480px",
+                  maxHeight: platform === "tiktok" ? "60vh" : "480px",
                 }}
               >
                 {videoUrl ? (
