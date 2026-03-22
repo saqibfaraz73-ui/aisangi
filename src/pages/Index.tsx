@@ -229,7 +229,18 @@ const Index = () => {
         await trackUsage(tokensPerImage);
       }
 
-      setImages(generatedImages);
+      // Auto-resize if a size preset was selected
+      if (outputSize) {
+        const resized = await Promise.all(
+          generatedImages.map(async (img: ImageResult) => ({
+            ...img,
+            imageUrl: await resizeImageToSize(img.imageUrl, outputSize.w, outputSize.h),
+          }))
+        );
+        setImages(resized);
+      } else {
+        setImages(generatedImages);
+      }
     } catch (err) {
       const description = await extractFunctionErrorMessage(err);
       toast({
