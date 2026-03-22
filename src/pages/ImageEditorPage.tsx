@@ -107,8 +107,19 @@ const ImageEditorPage = () => {
       sy = (srcH - sh) / 2;
     }
 
-    ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, activeW, activeH);
+    // Draw checkerboard for transparency if background was removed
+    if (bgRemoved) {
+      const size = 10;
+      for (let y = 0; y < activeH; y += size) {
+        for (let x = 0; x < activeW; x += size) {
+          ctx.fillStyle = (Math.floor(x / size) + Math.floor(y / size)) % 2 === 0 ? "#e0e0e0" : "#ffffff";
+          ctx.fillRect(x, y, size, size);
+        }
+      }
+    } else {
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, activeW, activeH);
+    }
     ctx.drawImage(img, sx, sy, sw, sh, 0, 0, activeW, activeH);
   }, [activeW, activeH, bgRemoved]);
 
@@ -149,31 +160,72 @@ const ImageEditorPage = () => {
     const imageData = ctx.getImageData(0, 0, img.width, img.height);
     const data = imageData.data;
 
-    // Sample corners to detect background color
-    const samples = [
-      [0, 0], [img.width - 1, 0], [0, img.height - 1], [img.width - 1, img.height - 1]
-    ];
-    let rSum = 0, gSum = 0, bSum = 0;
-    for (const [x, y] of samples) {
-      const i = (y * img.width + x) * 4;
-      rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2];
+    // Sample multiple points along all 4 edges for better bg detection
+    const edgeSamples: [number, number][] = [];
+    const step = 10;
+    for (let x = 0; x < img.width; x += step) {
+      edgeSamples.push([x, 0], [x, img.height - 1]);
     }
-    const bgR = rSum / 4, bgG = gSum / 4, bgB = bSum / 4;
+    for (let y = 0; y < img.height; y += step) {
+      edgeSamples.push([0, y], [img.width - 1, y]);
+    }
 
-    for (let i = 0; i < data.length; i += 4) {
-      const diff = Math.sqrt(
-        (data[i] - bgR) ** 2 + (data[i + 1] - bgG) ** 2 + (data[i + 2] - bgB) ** 2
-      );
+    let rSum = 0, gSum = 0, bSum = 0, count = 0;
+    for (const [x, y] of edgeSamples) {
+      const i = (y * img.width + x) * 4;
+      if (i >= 0 && i < data.length) {
+        rSum += data[i]; gSum += data[i + 1]; bSum += data[i + 2];
+        count++;
+      }
+    }
+    const bgR = rSum / count, bgG = gSum / count, bgB = bSum / count;
+
+    // Use flood-fill from edges for smarter removal
+    const visited = new Uint8Array(img.width * img.height);
+    const queue: number[] = [];
+
+    // Seed from all edge pixels that match bg color
+    const addIfMatch = (x: number, y: number) => {
+      const idx = y * img.width + x;
+      if (visited[idx]) return;
+      const i = idx * 4;
+      const diff = Math.sqrt((data[i] - bgR) ** 2 + (data[i + 1] - bgG) ** 2 + (data[i + 2] - bgB) ** 2);
       if (diff < tolerance) {
-        data[i + 3] = 0; // Make transparent
+        visited[idx] = 1;
+        queue.push(idx);
+      }
+    };
+
+    for (let x = 0; x < img.width; x++) { addIfMatch(x, 0); addIfMatch(x, img.height - 1); }
+    for (let y = 0; y < img.height; y++) { addIfMatch(0, y); addIfMatch(img.width - 1, y); }
+
+    // BFS flood fill
+    while (queue.length > 0) {
+      const idx = queue.pop()!;
+      const x = idx % img.width;
+      const y = Math.floor(idx / img.width);
+      data[idx * 4 + 3] = 0; // Make transparent
+
+      const neighbors = [[x-1,y],[x+1,y],[x,y-1],[x,y+1]];
+      for (const [nx, ny] of neighbors) {
+        if (nx >= 0 && nx < img.width && ny >= 0 && ny < img.height) {
+          const nIdx = ny * img.width + nx;
+          if (!visited[nIdx]) {
+            visited[nIdx] = 1;
+            const ni = nIdx * 4;
+            const diff = Math.sqrt((data[ni] - bgR) ** 2 + (data[ni + 1] - bgG) ** 2 + (data[ni + 2] - bgB) ** 2);
+            if (diff < tolerance) {
+              queue.push(nIdx);
+            }
+          }
+        }
       }
     }
 
     ctx.putImageData(imageData, 0, 0);
     processedCanvasRef.current = tempCanvas;
     setBgRemoved(true);
-    toast({ title: "Background removed" });
-    drawCanvas();
+    toast({ title: "Background removed successfully" });
   };
 
   const applyColorBackground = (color: string) => {
