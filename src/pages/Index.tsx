@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { motion } from "framer-motion";
 import { Sparkles, Loader2, Trash2, Square } from "lucide-react";
@@ -169,6 +169,15 @@ const Index = () => {
   
   const { toast } = useToast();
   const { checkLimit, trackUsage, getRemainingUses } = useUsageLimit("text_to_image");
+
+  // Pick up prompt from Prompt Generator page
+  useEffect(() => {
+    const incoming = sessionStorage.getItem("sangi_use_prompt");
+    if (incoming) {
+      setPrompt(incoming);
+      sessionStorage.removeItem("sangi_use_prompt");
+    }
+  }, []);
 
   const handleGenerate = async () => {
     if (generationInFlightRef.current || isGenerating) return;
