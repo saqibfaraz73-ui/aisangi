@@ -1,6 +1,8 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ImageIcon, Download, Loader2 } from "lucide-react";
+import { ImageIcon, Download, Loader2, Crop } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import ImageResizer from "@/components/ImageResizer";
 
 interface ImageResult {
   imageUrl: string;
@@ -38,6 +40,8 @@ const handleDownload = (imageUrl: string, format: "png" | "jpg", index: number) 
 };
 
 const ImageResults = ({ images, isGenerating, prompt, sceneCount }: ImageResultsProps) => {
+  const [resizingIdx, setResizingIdx] = useState<number | null>(null);
+
   const gridClass = images.length > 1 || sceneCount > 1
     ? "grid grid-cols-2 gap-3"
     : "";
@@ -104,7 +108,21 @@ const ImageResults = ({ images, isGenerating, prompt, sceneCount }: ImageResults
                     <Download className="h-3 w-3 mr-1" />
                     JPG
                   </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setResizingIdx(resizingIdx === i ? null : i)}
+                    className="border-border text-foreground font-display text-xs h-8"
+                  >
+                    <Crop className="h-3 w-3 mr-1" />
+                    Resize
+                  </Button>
                 </div>
+                {resizingIdx === i && (
+                  <div className="p-2">
+                    <ImageResizer imageUrl={img.imageUrl} onClose={() => setResizingIdx(null)} />
+                  </div>
+                )}
               </motion.div>
             ))
           ) : (
