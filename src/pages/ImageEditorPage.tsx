@@ -1,11 +1,12 @@
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Upload, Download, Crop, Eraser, Camera, Palette, ImageIcon, X, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
+import { Upload, Download, Crop, Eraser, Camera, Palette, ImageIcon, X, RotateCcw, ZoomIn, ZoomOut, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import AppHeader from "@/components/AppHeader";
+import { removeBackground as removeBg } from "@imgly/background-removal";
 
 const PLATFORM_SIZES = [
   { label: "Facebook Post", w: 1200, h: 630, icon: "📘" },
