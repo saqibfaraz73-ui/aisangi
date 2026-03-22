@@ -12,6 +12,7 @@ import VoiceGeneratorPage from "./pages/VoiceGeneratorPage.tsx";
 import LipSyncPage from "./pages/LipSyncPage.tsx";
 import MusicGeneratorPage from "./pages/MusicGeneratorPage.tsx";
 import PosterGeneratorPage from "./pages/PosterGeneratorPage.tsx";
+import ImageEditorPage from "./pages/ImageEditorPage.tsx";
 import AuthPage from "./pages/AuthPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
