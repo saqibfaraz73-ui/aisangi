@@ -81,12 +81,20 @@ function extractGeminiImageResponse(data: any) {
   return { imageUrl, textContent };
 }
 
-const CHARACTER_PRESERVATION_PROMPT = `CRITICAL INSTRUCTIONS FOR FACE PRESERVATION:
-- You MUST preserve the EXACT facial features from the reference photo(s): face shape, eye shape, eye color, nose shape, lip shape, skin tone, jawline, and any distinctive features (moles, dimples, scars).
-- Do NOT idealize, beautify, age, or modify the face in any way.
-- The person in the generated image must be immediately recognizable as the SAME person from the reference.
-- Maintain the same ethnicity, skin color, and facial proportions exactly.
-- Hair color and style should match unless the prompt explicitly requests a change.`;
+const CHARACTER_PRESERVATION_PROMPT = `ABSOLUTE REQUIREMENT — FACE IDENTITY LOCK:
+You are given one or more reference photographs. The generated image MUST depict the EXACT SAME PERSON with pixel-level facial fidelity:
+- Copy the EXACT face shape, bone structure, jawline, chin, forehead proportions.
+- Copy the EXACT eye shape, eye size, eye spacing, eye color, eyelid crease.
+- Copy the EXACT nose bridge width, nostril shape, nose length and tip.
+- Copy the EXACT lip thickness, lip shape, cupid's bow, mouth width.
+- Copy the EXACT skin tone, skin texture, complexion, any moles/marks/scars/dimples.
+- Copy the EXACT eyebrow shape, thickness, and arch.
+- Maintain IDENTICAL ethnicity and racial features — zero deviation allowed.
+- Hair color and style must match the reference exactly unless the prompt explicitly changes it.
+- Do NOT beautify, smooth, age, de-age, slim, widen, or alter ANY facial feature.
+- Do NOT blend the face with AI-typical "ideal" features. Use ONLY the reference face.
+- The result must pass as a real photo of the SAME person — anyone who knows this person must instantly recognize them.
+- If in doubt about any feature, match the reference photo EXACTLY rather than guessing.`;
 
 function buildGeminiParts(
   allCharacterUrls: string[],
