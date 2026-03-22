@@ -1,4 +1,5 @@
 import { useState, useRef } from "react";
+import { usePersistedState } from "@/hooks/use-persisted-state";
 import { motion } from "framer-motion";
 import { Volume2, Loader2, Play, Pause, Download, Edit3, Check, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
