@@ -11,10 +11,7 @@ const corsHeaders = {
 };
 
 const DEFAULT_MUSIC_MODEL = "lyria-002";
-const DEFAULT_TTS_MODEL = "gemini-2.5-flash-preview-tts";
-const DEFAULT_VOICE = "Kore";
-const VOCAL_TRIGGER_PATTERN = /\b(sing|sings|singing|singer|vocal|vocals|lyric|lyrics|speak|speaks|speaking|spoken|voice|say|says|saying|meow|miaow|woof|bark)\b/i;
-const VOCAL_BLOCK_PATTERN = /\b(no vocals|instrumental only|without vocals|no singing|no lyrics|no voice|mute vocals)\b/i;
+const AUDIO_GEN_MODEL = "gemini-2.5-flash-preview-tts";
 
 function buildGeminiAudioUrl(apiKey: string, model: string) {
   return `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -31,7 +28,6 @@ async function getSettings(supabase: any) {
     return {
       apiKey: data.api_key,
       musicModel: data.music_model || DEFAULT_MUSIC_MODEL,
-      voiceModel: data.voice_model || DEFAULT_TTS_MODEL,
       useVertexAI: hasServiceAccount(),
     };
   }
@@ -40,7 +36,6 @@ async function getSettings(supabase: any) {
     return {
       apiKey: "",
       musicModel: data?.music_model || DEFAULT_MUSIC_MODEL,
-      voiceModel: data?.voice_model || DEFAULT_TTS_MODEL,
       useVertexAI: true,
     };
   }
@@ -50,95 +45,17 @@ async function getSettings(supabase: any) {
     return {
       apiKey: envApiKey,
       musicModel: data?.music_model || DEFAULT_MUSIC_MODEL,
-      voiceModel: data?.voice_model || DEFAULT_TTS_MODEL,
       useVertexAI: false,
     };
   }
 
-  throw new Error(
-    "Music generation requires a custom Gemini API key or a GCP service account. Configure in Admin → Custom AI API settings."
-  );
-}
-
-function promptRequestsVocals(prompt: string, negativePrompt?: string) {
-  if (negativePrompt && VOCAL_BLOCK_PATTERN.test(negativePrompt)) {
-    return false;
-  }
-  return VOCAL_TRIGGER_PATTERN.test(prompt);
-}
-
-function buildVocalPerformanceText(prompt: string) {
-  // Extract the core vocal content
-  let vocalCore = prompt.trim();
-
-  // Try to find quoted text
-  const quotedMatch = prompt.match(/["'"]([^"'"]+)["'"]/);
-  if (quotedMatch) vocalCore = quotedMatch[1].trim();
-  else {
-    const trailingPhrase = prompt.match(/\b(?:sing|sings|singing|say|says|saying|lyrics?)\b[:\s-]*(.+)$/i)?.[1]?.trim();
-    if (trailingPhrase) {
-      vocalCore = trailingPhrase.replace(/^(like|with|about|of)\s+/i, "").replace(/[.,!?]+$/g, "").trim();
-    } else {
-      const repeatedSound = prompt.match(/\b(?:meow|miaow|woof|bark|la|na)(?:\s+(?:meow|miaow|woof|bark|la|na))+\b/i)?.[0]?.trim();
-      if (repeatedSound) vocalCore = repeatedSound;
-    }
-  }
-
-  // Detect mood
-  const moods: string[] = [];
-  if (/sad|melanchol|sorrow|cry|lonely|heartbreak/i.test(prompt)) moods.push("sad, slow, emotional");
-  if (/happy|joy|cheerful|upbeat|fun/i.test(prompt)) moods.push("happy, cheerful");
-  if (/calm|gentle|soft|peaceful|lullaby/i.test(prompt)) moods.push("gentle, soft");
-  const moodText = moods.length > 0 ? moods.join(", ") : "expressive";
-
-  const isAnimalSound = /\b(meow|miaow|woof|bark|purr|chirp)\b/i.test(vocalCore);
-
-  if (isAnimalSound) {
-    const w = vocalCore.split(/\s+/)[0];
-    return [
-      `Perform this as a long, ${moodText} musical song. Sing very slowly with long pauses between sounds, stretching each sound:`,
-      "",
-      `${w}... ${w}... ${w}...`,
-      "",
-      `${w}, ${w}, ${w}...`,
-      "",
-      `${w}... ${w}... ${w}, ${w}...`,
-      "",
-      `${w}... ${w}... ${w}...`,
-      "",
-      `${w}, ${w}, ${w}...`,
-      "",
-      `${w}... ${w}... ${w}, ${w}...`,
-      "",
-      `${w}... ${w}... ${w}...`,
-      "",
-      `${w}, ${w}... ${w}...`,
-      "",
-      `${w}... ${w}, ${w}, ${w}...`,
-      "",
-      `${w}...`,
-    ].join("\n");
-  }
-
-  if (vocalCore.split(/\s+/).length < 15) {
-    return [
-      `Sing the following as a ${moodText} song with rhythm and melody. Repeat slowly like verses and chorus:`,
-      "",
-      `Verse 1: ${vocalCore}`,
-      "",
-      `Chorus: ${vocalCore}`,
-      "",
-      `Verse 2: ${vocalCore}`,
-      "",
-      `Chorus: ${vocalCore}`,
-      "",
-      `Bridge: ${vocalCore}`,
-      "",
-      `Final Chorus: ${vocalCore}`,
-    ].join("\n");
-  }
-
-  return `Sing the following in a ${moodText} musical style, like performing a song:\n\n${vocalCore}`;
+  // Fallback: use Lovable AI gateway
+  return {
+    apiKey: "",
+    musicModel: DEFAULT_MUSIC_MODEL,
+    useVertexAI: false,
+    useLovableAI: true,
+  };
 }
 
 function pcmBase64ToWavBase64(audioData: string) {
@@ -200,6 +117,160 @@ async function callWithRetry(
   });
 }
 
+/**
+ * Build a rich music generation prompt that instructs the model to produce
+ * actual music (instruments, melody, rhythm) rather than speech.
+ */
+function buildMusicPrompt(userPrompt: string, negativePrompt?: string): string {
+  let musicPrompt = `Generate a musical audio track based on this description. This must be MUSIC with instruments, melody, harmony, and rhythm — NOT speech or talking. Create an actual musical composition:\n\n${userPrompt}`;
+  
+  if (negativePrompt?.trim()) {
+    musicPrompt += `\n\nAvoid these elements: ${negativePrompt.trim()}`;
+  }
+  
+  return musicPrompt;
+}
+
+/**
+ * Try Vertex AI Lyria-002 for instrumental music generation.
+ */
+async function tryLyriaGeneration(
+  prompt: string,
+  negativePrompt: string | undefined,
+  musicModel: string,
+): Promise<{ audioData: string; mimeType: string; tokensUsed: number } | null> {
+  try {
+    const url = buildVertexUrl(musicModel, "predict");
+    const token = await getAccessToken();
+
+    console.log(`Music gen: trying Vertex AI Lyria model: ${musicModel}`);
+
+    const instance: any = { prompt: prompt.trim() };
+    if (negativePrompt?.trim()) {
+      instance.negative_prompt = negativePrompt.trim();
+    }
+
+    const response = await callWithRetry(url, { Authorization: `Bearer ${token}` }, {
+      instances: [instance],
+      parameters: { sample_count: 1 },
+    });
+
+    if (!response.ok) {
+      const errText = await response.text();
+      console.error(`Lyria failed (${response.status}):`, errText);
+      return null;
+    }
+
+    const data = await response.json();
+    const predictions = data?.predictions;
+    if (Array.isArray(predictions) && predictions.length > 0 && predictions[0].bytesBase64Encoded) {
+      return {
+        audioData: predictions[0].bytesBase64Encoded,
+        mimeType: predictions[0].mimeType || "audio/wav",
+        tokensUsed: data?.usageMetadata?.totalTokenCount || 0,
+      };
+    }
+    return null;
+  } catch (e) {
+    console.error("Lyria generation error:", e);
+    return null;
+  }
+}
+
+/**
+ * Generate music using Gemini audio model (AI Studio or Vertex AI).
+ * Uses responseModalities: ["AUDIO"] WITHOUT speechConfig to get music, not speech.
+ */
+async function tryGeminiAudioGeneration(
+  prompt: string,
+  negativePrompt: string | undefined,
+  apiKey: string,
+  useVertexAI: boolean,
+): Promise<{ audioData: string; mimeType: string; tokensUsed: number } | null> {
+  const model = AUDIO_GEN_MODEL;
+  const musicPrompt = buildMusicPrompt(prompt, negativePrompt);
+
+  let url: string;
+  let authHeaders: Record<string, string> = {};
+
+  if (useVertexAI) {
+    url = buildVertexUrl(model);
+    const token = await getAccessToken();
+    authHeaders = { Authorization: `Bearer ${token}` };
+  } else {
+    url = buildGeminiAudioUrl(apiKey, model);
+  }
+
+  console.log(`Music gen: trying Gemini audio model: ${model} (vertex: ${useVertexAI})`);
+
+  // Important: NO speechConfig — this tells the model to generate music/audio, not speech
+  const requestBody = {
+    contents: [{ role: "user", parts: [{ text: musicPrompt }] }],
+    generationConfig: {
+      responseModalities: ["AUDIO"],
+    },
+  };
+
+  const response = await callWithRetry(url, authHeaders, requestBody);
+
+  if (!response.ok) {
+    const errText = await response.text();
+    console.error(`Gemini audio failed (${response.status}):`, errText);
+    return null;
+  }
+
+  const data = await response.json();
+  let audioData: string | null = null;
+  let mimeType = "audio/wav";
+
+  const parts = data?.candidates?.[0]?.content?.parts;
+  if (Array.isArray(parts)) {
+    for (const part of parts) {
+      if (part.inlineData?.data) {
+        audioData = part.inlineData.data;
+        mimeType = part.inlineData.mimeType || mimeType;
+      }
+      if (part.inline_data?.data) {
+        audioData = part.inline_data.data;
+        mimeType = part.inline_data.mime_type || mimeType;
+      }
+    }
+  }
+
+  if (!audioData) return null;
+
+  const tokensUsed = data?.usageMetadata?.totalTokenCount || 0;
+
+  // Convert PCM to WAV if needed
+  if (mimeType.toLowerCase().includes("audio/l16")) {
+    return {
+      audioData: pcmBase64ToWavBase64(audioData),
+      mimeType: "audio/wav",
+      tokensUsed,
+    };
+  }
+
+  return { audioData, mimeType, tokensUsed };
+}
+
+/**
+ * Last resort: use Lovable AI gateway with an audio-capable model.
+ */
+async function tryLovableAIGeneration(
+  prompt: string,
+  negativePrompt: string | undefined,
+): Promise<{ audioData: string; mimeType: string; tokensUsed: number } | null> {
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  if (!LOVABLE_API_KEY) return null;
+
+  const musicPrompt = buildMusicPrompt(prompt, negativePrompt);
+  console.log("Music gen: trying Lovable AI gateway");
+
+  // Note: Lovable AI gateway doesn't support audio modalities directly.
+  // This path won't produce audio. Return null to give a clear error.
+  return null;
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -227,158 +298,43 @@ serve(async (req) => {
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    const { apiKey, musicModel, voiceModel, useVertexAI } = await getSettings(supabase);
-    const wantsVocals = promptRequestsVocals(prompt.trim(), negative_prompt);
+    const settings = await getSettings(supabase);
+    let result: { audioData: string; mimeType: string; tokensUsed: number } | null = null;
 
-    let url: string;
-    let authHeaders: Record<string, string> = {};
-    let requestBody: any;
-    let responseMode: "instrumental" | "vocal" = wantsVocals ? "vocal" : "instrumental";
-
-    if (responseMode === "vocal") {
-      const vocalText = buildVocalPerformanceText(prompt.trim());
-      const targetModel = voiceModel || DEFAULT_TTS_MODEL;
-
-      if (useVertexAI) {
-        url = buildVertexUrl(targetModel);
-        const token = await getAccessToken();
-        authHeaders = { Authorization: `Bearer ${token}` };
-      } else {
-        url = buildGeminiAudioUrl(apiKey, targetModel);
-      }
-
-      console.log(`Music gen routed to vocal model: ${targetModel}; text="${vocalText.substring(0, 200)}..."`);
-
-      requestBody = {
-        contents: [{ role: "user", parts: [{ text: vocalText }] }],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: {
-                voiceName: DEFAULT_VOICE,
-              },
-            },
-          },
-        },
-      };
-    } else if (useVertexAI) {
-      url = buildVertexUrl(musicModel, "predict");
-      const token = await getAccessToken();
-      authHeaders = { Authorization: `Bearer ${token}` };
-
-      console.log(`Music gen using Vertex AI instrumental model: ${musicModel}`);
-
-      const instance: any = { prompt: prompt.trim() };
-      if (negative_prompt?.trim()) {
-        instance.negative_prompt = negative_prompt.trim();
-      }
-
-      requestBody = {
-        instances: [instance],
-        parameters: {
-          sample_count: 1,
-        },
-      };
-    } else {
-      url = buildGeminiAudioUrl(apiKey, musicModel);
-
-      console.log(`Music gen using AI Studio music model: ${musicModel}`);
-
-      requestBody = {
-        contents: [{ role: "user", parts: [{ text: prompt.trim() }] }],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-        },
-      };
-
-      if (negative_prompt?.trim()) {
-        requestBody.contents[0].parts.push({ text: `Negative prompt: ${negative_prompt.trim()}` });
-      }
+    // Strategy 1: Try Vertex AI Lyria for best instrumental quality
+    if (settings.useVertexAI && settings.musicModel) {
+      result = await tryLyriaGeneration(prompt.trim(), negative_prompt, settings.musicModel);
     }
 
-    const response = await callWithRetry(url, authHeaders, requestBody);
-
-    if (!response.ok) {
-      const errText = await response.text();
-      console.error("Music generation error:", response.status, errText);
-
-      if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Rate limited. Please wait and try again." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    // Strategy 2: Try Gemini audio model (works with both Vertex AI and API key)
+    if (!result) {
+      const apiKey = settings.apiKey || getGeminiApiKeyFromEnv() || "";
+      if (settings.useVertexAI || apiKey) {
+        result = await tryGeminiAudioGeneration(
+          prompt.trim(),
+          negative_prompt,
+          apiKey,
+          settings.useVertexAI,
         );
       }
-      if (response.status === 401 || response.status === 403) {
-        return new Response(
-          JSON.stringify({ error: responseMode === "vocal" ? "Invalid voice model credentials. Check Admin settings." : "Invalid API credentials or Lyria not enabled. Check Admin settings." }),
-          { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-
-      let errorMsg = "Music generation failed. Please try again.";
-      try {
-        const parsed = JSON.parse(errText);
-        errorMsg = parsed?.error?.message || errorMsg;
-      } catch {}
-
-      return new Response(
-        JSON.stringify({ error: errorMsg }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
     }
 
-    const data = await response.json();
-
-    let audioData: string | null = null;
-    let mimeType = responseMode === "vocal" ? "audio/L16;rate=24000" : "audio/wav";
-
-    if (responseMode === "instrumental" && useVertexAI) {
-      const predictions = data?.predictions;
-      if (Array.isArray(predictions) && predictions.length > 0) {
-        audioData = predictions[0].bytesBase64Encoded;
-        mimeType = predictions[0].mimeType || "audio/wav";
-      }
-    } else {
-      const parts = data?.candidates?.[0]?.content?.parts;
-      if (Array.isArray(parts)) {
-        for (const part of parts) {
-          if (part.inlineData?.data) {
-            audioData = part.inlineData.data;
-            mimeType = part.inlineData.mimeType || mimeType;
-          }
-          if (part.inline_data?.data) {
-            audioData = part.inline_data.data;
-            mimeType = part.inline_data.mime_type || mimeType;
-          }
-        }
-      }
-    }
-
-    if (!audioData) {
-      throw new Error("No audio generated. Try a different prompt.");
-    }
-
-    const tokensUsed = data?.usageMetadata?.totalTokenCount || 0;
-
-    if (responseMode === "vocal" && mimeType.toLowerCase().includes("audio/l16")) {
+    // Strategy 3: If we have no credentials at all, give clear error
+    if (!result) {
       return new Response(
         JSON.stringify({
-          audioContent: pcmBase64ToWavBase64(audioData),
-          mimeType: "audio/wav",
-          tokensUsed,
-          generationMode: responseMode,
+          error: "Music generation requires a Gemini API key or GCP service account. Configure in Admin → Custom AI API settings.",
         }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     return new Response(
       JSON.stringify({
-        audioContent: audioData,
-        mimeType,
-        tokensUsed,
-        generationMode: responseMode,
+        audioContent: result.audioData,
+        mimeType: result.mimeType,
+        tokensUsed: result.tokensUsed,
+        generationMode: "music",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
