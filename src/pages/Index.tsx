@@ -167,6 +167,7 @@ const Index = () => {
   const generationInFlightRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
   const [characterImages, setCharacterImages] = usePersistedState<string[]>("sangi_characters", []);
+  const [outputSize, setOutputSize] = useState<SelectedSize | null>(null);
   
   const { toast } = useToast();
   const { checkLimit, trackUsage, getRemainingUses } = useUsageLimit("text_to_image");
