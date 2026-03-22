@@ -25,6 +25,12 @@ interface ApiConfig {
   useVertexAI: boolean;
 }
 
+interface RequestedOutputSize {
+  w?: number;
+  h?: number;
+  label?: string;
+}
+
 function normalizeCustomGeminiImageModel(model?: string | null) {
   const selectedModel = (model || DEFAULT_CUSTOM_GEMINI_IMAGE_MODEL).trim();
   return FALLBACK_GEMINI_IMAGE_MODELS.includes(
@@ -96,11 +102,36 @@ You are given one or more reference photographs. The generated image MUST depict
 - The result must pass as a real photo of the SAME person — anyone who knows this person must instantly recognize them.
 - If in doubt about any feature, match the reference photo EXACTLY rather than guessing.`;
 
+function buildFramingInstruction(outputSize?: RequestedOutputSize | null) {
+  const width = Number(outputSize?.w || 0);
+  const height = Number(outputSize?.h || 0);
+
+  if (width <= 0 || height <= 0) return "";
+
+  const aspectRatio = width / height;
+  const label = outputSize?.label ? ` for ${outputSize.label}` : "";
+
+  if (aspectRatio >= 2.2) {
+    return `\n\nCRITICAL COMPOSITION REQUIREMENT${label}: create a wide horizontal banner composition. Keep the FULL head, hair, forehead, and face completely visible inside the frame. Do NOT crop the top of the head. Keep the subject slightly smaller in frame, with extra empty space on the left and right sides and at least 12% headroom above the hair. Avoid close-up framing.`;
+  }
+
+  if (aspectRatio >= 1.6) {
+    return `\n\nCOMPOSITION REQUIREMENT${label}: create a landscape composition with safe framing. Keep the entire head and upper body comfortably inside the frame with visible space above the head. Avoid tight crops.`;
+  }
+
+  if (aspectRatio <= 0.8) {
+    return `\n\nCOMPOSITION REQUIREMENT${label}: create a tall portrait composition. Keep the full face and full head visible with balanced spacing above the hair.`;
+  }
+
+  return `\n\nCOMPOSITION REQUIREMENT${label}: keep the subject fully framed with visible space above the head and avoid tight face crops.`;
+}
+
 function buildGeminiParts(
   allCharacterUrls: string[],
   prompt: string,
   variationHint: string,
   watermarkInstruction: string,
+  framingInstruction: string,
   fullPrompt: string,
 ) {
   const parts: any[] = [];
@@ -120,7 +151,7 @@ function buildGeminiParts(
     });
 
     parts.push({
-      text: `\nNow place this EXACT person (with the IDENTICAL face from the reference photos above — zero modifications) into the following scene:\n${prompt}${variationHint}${watermarkInstruction}\n\nREMINDER: The face in the output MUST be a perfect match to the reference. Do not create a "similar looking" person — it must be the SAME person.`,
+      text: `\nNow place this EXACT person (with the IDENTICAL face from the reference photos above — zero modifications) into the following scene:\n${prompt}${variationHint}${framingInstruction}${watermarkInstruction}\n\nREMINDER: The face in the output MUST be a perfect match to the reference. Do not create a "similar looking" person — it must be the SAME person.`,
     });
     return parts;
   }
@@ -166,7 +197,7 @@ CRITICAL TEXT REQUIREMENT - The following EXACT Urdu/Arabic text MUST be promine
     parts.push({ text: `Generate a high-quality greeting card / festive image:
 ${textInstruction}
 
-Scene/design description: ${englishPart}${variationHint}${watermarkInstruction}
+Scene/design description: ${englishPart}${variationHint}${framingInstruction}${watermarkInstruction}
 
 IMPORTANT: The text MUST be the focal point of the image. Make it large, golden, and clearly readable. The scene/design is the background for the text.` });
   } else {
@@ -302,6 +333,7 @@ async function generateWithCustomGemini(
   allCharacterUrls: string[],
   variationHint: string,
   watermarkInstruction: string,
+  framingInstruction: string,
   useVertexAI: boolean,
 ): Promise<{ imageUrl: string; description: string }> {
   const modelsToTry = [
@@ -328,7 +360,7 @@ async function generateWithCustomGemini(
     const response = await fetchGeminiImage(url, authHeaders, {
       contents: [{
         role: "user",
-        parts: buildGeminiParts(allCharacterUrls, prompt, variationHint, watermarkInstruction, fullPrompt),
+        parts: buildGeminiParts(allCharacterUrls, prompt, variationHint, watermarkInstruction, framingInstruction, fullPrompt),
       }],
       generationConfig: {
         responseModalities: ["TEXT", "IMAGE"],
@@ -386,7 +418,7 @@ serve(async (req) => {
       );
     }
 
-    const { prompt, characterImageUrl, characterImageUrls, sceneCount = 1 } = await req.json();
+    const { prompt, characterImageUrl, characterImageUrls, sceneCount = 1, outputSize } = await req.json();
 
     if (!prompt || typeof prompt !== "string" || prompt.trim().length === 0) {
       return new Response(
@@ -443,13 +475,14 @@ serve(async (req) => {
 
     const generateOne = async (index: number) => {
       const variationHint = count > 1 ? ` (variation ${index + 1} of ${count}, unique composition)` : "";
+      const framingInstruction = buildFramingInstruction(outputSize);
       const watermarkInstruction = watermarkEnabled
         ? `\n\nAdd a subtle watermark "SANGIAi" in upper-left, ${watermarkColor} text, ~40% opacity.`
         : "";
 
       const fullPrompt = allCharacterUrls.length > 0
-        ? `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image with the EXACT person(s) from the reference photo(s) in this scene: ${prompt}${variationHint}. The face must be identical to the reference - same features, same skin tone, same structure. Do NOT change or idealize the face.${watermarkInstruction}`
-        : `${prompt}${variationHint}${watermarkInstruction}`;
+        ? `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image with the EXACT person(s) from the reference photo(s) in this scene: ${prompt}${variationHint}${framingInstruction}. The face must be identical to the reference - same features, same skin tone, same structure. Do NOT change or idealize the face.${watermarkInstruction}`
+        : `${prompt}${variationHint}${framingInstruction}${watermarkInstruction}`;
 
       if (useDalle) {
         return generateWithDalle(apiConfig.apiKey, fullPrompt);
@@ -464,6 +497,7 @@ serve(async (req) => {
           allCharacterUrls,
           variationHint,
           watermarkInstruction,
+          framingInstruction,
           apiConfig.useVertexAI,
         );
       }
@@ -477,7 +511,7 @@ serve(async (req) => {
           contentParts.push({ type: "text", text: `[Reference photo of Person ${i + 1} - PRESERVE THIS EXACT FACE]` });
           contentParts.push({ type: "image_url", image_url: { url } });
         });
-        contentParts.push({ type: "text", text: `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image placing this EXACT person (identical face from reference) in: ${prompt}${variationHint}${watermarkInstruction}` });
+        contentParts.push({ type: "text", text: `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image placing this EXACT person (identical face from reference) in: ${prompt}${variationHint}${framingInstruction}${watermarkInstruction}` });
         messages = [{ role: "user", content: contentParts }];
       } else {
         messages = [{ role: "user", content: `Generate a high-quality image: ${fullPrompt}` }];
