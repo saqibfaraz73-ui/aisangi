@@ -245,7 +245,8 @@ const ImageEditorPage = () => {
 
     processedCanvasRef.current = tempCanvas;
     setBgColor(color);
-    drawCanvas();
+    setBgRemoved(false);
+    setRenderKey(k => k + 1);
     toast({ title: "Background color applied" });
   };
 
