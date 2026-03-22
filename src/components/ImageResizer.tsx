@@ -55,21 +55,21 @@ const ImageResizer = ({ imageUrl, onClose }: ImageResizerProps) => {
     canvas.height = activeH;
     const ctx = canvas.getContext("2d")!;
 
-    // Cover-fit: crop to fill
+    // Contain-fit: show entire image without cropping
     const srcRatio = img.width / img.height;
     const dstRatio = activeW / activeH;
-    let sx = 0, sy = 0, sw = img.width, sh = img.height;
+    let dw = activeW, dh = activeH, dx = 0, dy = 0;
     if (srcRatio > dstRatio) {
-      sw = img.height * dstRatio;
-      sx = (img.width - sw) / 2;
+      dh = activeW / srcRatio;
+      dy = (activeH - dh) / 2;
     } else {
-      sh = img.width / dstRatio;
-      sy = (img.height - sh) / 2;
+      dw = activeH * srcRatio;
+      dx = (activeW - dw) / 2;
     }
 
     ctx.fillStyle = "#000";
     ctx.fillRect(0, 0, activeW, activeH);
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, activeW, activeH);
+    ctx.drawImage(img, 0, 0, img.width, img.height, dx, dy, dw, dh);
   }, [activeW, activeH]);
 
   useEffect(() => {

@@ -96,15 +96,16 @@ const ImageEditorPage = () => {
 
     const srcW = img instanceof HTMLCanvasElement ? img.width : img.width;
     const srcH = img instanceof HTMLCanvasElement ? img.height : img.height;
+    // Contain-fit: show entire image without cropping
     const srcRatio = srcW / srcH;
     const dstRatio = activeW / activeH;
-    let sx = 0, sy = 0, sw = srcW, sh = srcH;
+    let dw = activeW, dh = activeH, dx = 0, dy = 0;
     if (srcRatio > dstRatio) {
-      sw = srcH * dstRatio;
-      sx = (srcW - sw) / 2;
+      dh = activeW / srcRatio;
+      dy = (activeH - dh) / 2;
     } else {
-      sh = srcW / dstRatio;
-      sy = (srcH - sh) / 2;
+      dw = activeH * srcRatio;
+      dx = (activeW - dw) / 2;
     }
 
     // Draw checkerboard for transparency if background was removed
@@ -120,7 +121,7 @@ const ImageEditorPage = () => {
       ctx.fillStyle = "#000";
       ctx.fillRect(0, 0, activeW, activeH);
     }
-    ctx.drawImage(img, sx, sy, sw, sh, 0, 0, activeW, activeH);
+    ctx.drawImage(img, 0, 0, srcW, srcH, dx, dy, dw, dh);
   }, [activeW, activeH, bgRemoved]);
 
   useEffect(() => {
