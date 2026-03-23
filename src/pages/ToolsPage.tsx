@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   QrCode, FileDown, ArrowLeftRight, Palette, Type, FileText,
-  Droplets, LayoutGrid, PenTool, Layers, CropIcon, Scissors
+  Droplets, LayoutGrid, PenTool, Layers, CropIcon, Scissors, ScanText
 } from "lucide-react";
 
 const TOOLS = [
@@ -19,6 +19,7 @@ const TOOLS = [
   { to: "/tools/text-behind-image", label: "Text Behind Image", desc: "Place text behind photo subjects", icon: Layers },
   { to: "/tools/image-cropper", label: "Image Cropper", desc: "Free-form & aspect-ratio locked cropping", icon: CropIcon },
   { to: "/tools/video-trimmer", label: "Video Trimmer", desc: "Trim/cut videos locally in browser", icon: Scissors },
+  { to: "/tools/image-to-text", label: "Image to Text", desc: "Extract copyable text from images (OCR)", icon: ScanText },
 ];
 
 const ToolsPage = () => (
