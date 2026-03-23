@@ -10,10 +10,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import * as pdfjsLib from "pdfjs-dist";
+import pdfjsWorker from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import { PDFDocument, rgb, StandardFonts } from "pdf-lib";
 
-// Set worker - use unpkg which has all versions available
-pdfjsLib.GlobalWorkerOptions.workerSrc = `https://unpkg.com/pdfjs-dist@${pdfjsLib.version}/build/pdf.worker.min.mjs`;
+// Set worker using local bundled file
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
 interface PageInfo {
   pageNum: number;
