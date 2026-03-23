@@ -188,6 +188,48 @@ export type Database = {
         }
         Relationships: []
       }
+      page_visits: {
+        Row: {
+          browser: string
+          city: string
+          country: string
+          device_type: string
+          id: string
+          ip_address: string | null
+          os: string
+          page_path: string
+          session_id: string | null
+          user_id: string | null
+          visited_at: string
+        }
+        Insert: {
+          browser?: string
+          city?: string
+          country?: string
+          device_type?: string
+          id?: string
+          ip_address?: string | null
+          os?: string
+          page_path: string
+          session_id?: string | null
+          user_id?: string | null
+          visited_at?: string
+        }
+        Update: {
+          browser?: string
+          city?: string
+          country?: string
+          device_type?: string
+          id?: string
+          ip_address?: string | null
+          os?: string
+          page_path?: string
+          session_id?: string | null
+          user_id?: string | null
+          visited_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string

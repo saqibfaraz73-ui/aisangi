@@ -19,6 +19,7 @@ import ElevenLabsSection from "@/components/admin/ElevenLabsSection";
 import GlobalCapSection from "@/components/admin/GlobalCapSection";
 import LipSyncSection from "@/components/admin/LipSyncSection";
 import RateLimitSection from "@/components/admin/RateLimitSection";
+import TrafficStatsSection from "@/components/admin/TrafficStatsSection";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -127,6 +128,8 @@ const AdminPage = () => {
           </div>
           <p className="text-muted-foreground text-sm">Manage users, limits, and settings.</p>
         </motion.div>
+
+        <TrafficStatsSection />
 
         <ApiSettingsSection />
 
