@@ -103,7 +103,7 @@ const PdfEditorPage = () => {
       canvas.height = vp.height;
       const ctx = canvas.getContext("2d")!;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      await page.render({ canvasContext: ctx, viewport: vp }).promise;
+      await page.render({ canvasContext: ctx, viewport: vp, canvas: canvasRef.current! } as any).promise;
 
       // Draw annotations for this page
       const pageAnnotations = annotations.filter((a) => a.page === pageInfo.pageNum);
