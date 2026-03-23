@@ -76,6 +76,7 @@ const AppRoutes = () => (
     <Route path="/tools/text-behind-image" element={<ProtectedRoute><TextBehindImagePage /></ProtectedRoute>} />
     <Route path="/tools/image-cropper" element={<ProtectedRoute><ImageCropperPage /></ProtectedRoute>} />
     <Route path="/tools/video-trimmer" element={<ProtectedRoute><VideoTrimmerPage /></ProtectedRoute>} />
+    <Route path="/tools/image-to-text" element={<ProtectedRoute><ImageToTextPage /></ProtectedRoute>} />
     <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
