@@ -18,6 +18,19 @@ import AuthPage from "./pages/AuthPage.tsx";
 import AdminPage from "./pages/AdminPage.tsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
+import ToolsPage from "./pages/ToolsPage.tsx";
+import QrCodeGeneratorPage from "./pages/tools/QrCodeGeneratorPage.tsx";
+import ImageCompressorPage from "./pages/tools/ImageCompressorPage.tsx";
+import FormatConverterPage from "./pages/tools/FormatConverterPage.tsx";
+import ColorPickerPage from "./pages/tools/ColorPickerPage.tsx";
+import MemeGeneratorPage from "./pages/tools/MemeGeneratorPage.tsx";
+import ScreenshotToPdfPage from "./pages/tools/ScreenshotToPdfPage.tsx";
+import ImageWatermarkPage from "./pages/tools/ImageWatermarkPage.tsx";
+import PhotoCollagePage from "./pages/tools/PhotoCollagePage.tsx";
+import SvgEditorPage from "./pages/tools/SvgEditorPage.tsx";
+import TextBehindImagePage from "./pages/tools/TextBehindImagePage.tsx";
+import ImageCropperPage from "./pages/tools/ImageCropperPage.tsx";
+import VideoTrimmerPage from "./pages/tools/VideoTrimmerPage.tsx";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -49,6 +62,19 @@ const AppRoutes = () => (
     <Route path="/music-generator" element={<ProtectedRoute><MusicGeneratorPage /></ProtectedRoute>} />
     <Route path="/poster-generator" element={<ProtectedRoute><PosterGeneratorPage /></ProtectedRoute>} />
     <Route path="/prompt-generator" element={<ProtectedRoute><PromptGeneratorPage /></ProtectedRoute>} />
+    <Route path="/tools" element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
+    <Route path="/tools/qr-code" element={<ProtectedRoute><QrCodeGeneratorPage /></ProtectedRoute>} />
+    <Route path="/tools/image-compressor" element={<ProtectedRoute><ImageCompressorPage /></ProtectedRoute>} />
+    <Route path="/tools/format-converter" element={<ProtectedRoute><FormatConverterPage /></ProtectedRoute>} />
+    <Route path="/tools/color-picker" element={<ProtectedRoute><ColorPickerPage /></ProtectedRoute>} />
+    <Route path="/tools/meme-generator" element={<ProtectedRoute><MemeGeneratorPage /></ProtectedRoute>} />
+    <Route path="/tools/screenshot-to-pdf" element={<ProtectedRoute><ScreenshotToPdfPage /></ProtectedRoute>} />
+    <Route path="/tools/image-watermark" element={<ProtectedRoute><ImageWatermarkPage /></ProtectedRoute>} />
+    <Route path="/tools/photo-collage" element={<ProtectedRoute><PhotoCollagePage /></ProtectedRoute>} />
+    <Route path="/tools/svg-editor" element={<ProtectedRoute><SvgEditorPage /></ProtectedRoute>} />
+    <Route path="/tools/text-behind-image" element={<ProtectedRoute><TextBehindImagePage /></ProtectedRoute>} />
+    <Route path="/tools/image-cropper" element={<ProtectedRoute><ImageCropperPage /></ProtectedRoute>} />
+    <Route path="/tools/video-trimmer" element={<ProtectedRoute><VideoTrimmerPage /></ProtectedRoute>} />
     <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
     <Route path="*" element={<NotFound />} />
   </Routes>
