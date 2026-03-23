@@ -20,6 +20,7 @@ const TOOLS = [
   { to: "/tools/image-cropper", label: "Image Cropper", desc: "Free-form & aspect-ratio locked cropping", icon: CropIcon },
   { to: "/tools/video-trimmer", label: "Video Trimmer", desc: "Trim/cut videos locally in browser", icon: Scissors },
   { to: "/tools/image-to-text", label: "Image to Text", desc: "Extract copyable text from images (OCR)", icon: ScanText },
+  { to: "/tools/pdf-editor", label: "PDF Reader & Editor", desc: "View, edit, merge, annotate PDF files", icon: FileEdit },
 ];
 
 const ToolsPage = () => (
