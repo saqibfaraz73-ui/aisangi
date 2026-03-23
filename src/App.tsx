@@ -32,6 +32,7 @@ import TextBehindImagePage from "./pages/tools/TextBehindImagePage.tsx";
 import ImageCropperPage from "./pages/tools/ImageCropperPage.tsx";
 import VideoTrimmerPage from "./pages/tools/VideoTrimmerPage.tsx";
 import ImageToTextPage from "./pages/tools/ImageToTextPage.tsx";
+import PdfEditorPage from "./pages/tools/PdfEditorPage.tsx";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
