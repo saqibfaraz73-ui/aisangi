@@ -242,7 +242,7 @@ const PdfEditorPage = () => {
       });
 
       const resultBytes = await doc.save();
-      const blob = new Blob([resultBytes], { type: "application/pdf" });
+      const blob = new Blob([resultBytes.buffer as ArrayBuffer], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
