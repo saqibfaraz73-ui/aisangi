@@ -129,6 +129,8 @@ const AdminPage = () => {
           <p className="text-muted-foreground text-sm">Manage users, limits, and settings.</p>
         </motion.div>
 
+        <TrafficStatsSection />
+
         <ApiSettingsSection />
 
         <ElevenLabsSection />
