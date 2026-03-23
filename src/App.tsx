@@ -50,39 +50,42 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-const AppRoutes = () => (
-  <Routes>
-    <Route path="/auth" element={<AuthPage />} />
-    <Route path="/reset-password" element={<ResetPasswordPage />} />
-    <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-    <Route path="/animate" element={<ProtectedRoute><AnimatePage /></ProtectedRoute>} />
-    <Route path="/image-editor" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
-    <Route path="/overlay" element={<ProtectedRoute><OverlayPage /></ProtectedRoute>} />
-    <Route path="/lip-sync" element={<ProtectedRoute><LipSyncPage /></ProtectedRoute>} />
-    <Route path="/script-generator" element={<ProtectedRoute><ScriptGeneratorPage /></ProtectedRoute>} />
-    <Route path="/voice-generator" element={<ProtectedRoute><VoiceGeneratorPage /></ProtectedRoute>} />
-    <Route path="/music-generator" element={<ProtectedRoute><MusicGeneratorPage /></ProtectedRoute>} />
-    <Route path="/poster-generator" element={<ProtectedRoute><PosterGeneratorPage /></ProtectedRoute>} />
-    <Route path="/prompt-generator" element={<ProtectedRoute><PromptGeneratorPage /></ProtectedRoute>} />
-    <Route path="/tools" element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
-    <Route path="/tools/qr-code" element={<ProtectedRoute><QrCodeGeneratorPage /></ProtectedRoute>} />
-    <Route path="/tools/image-compressor" element={<ProtectedRoute><ImageCompressorPage /></ProtectedRoute>} />
-    <Route path="/tools/format-converter" element={<ProtectedRoute><FormatConverterPage /></ProtectedRoute>} />
-    <Route path="/tools/color-picker" element={<ProtectedRoute><ColorPickerPage /></ProtectedRoute>} />
-    <Route path="/tools/meme-generator" element={<ProtectedRoute><MemeGeneratorPage /></ProtectedRoute>} />
-    <Route path="/tools/screenshot-to-pdf" element={<ProtectedRoute><ScreenshotToPdfPage /></ProtectedRoute>} />
-    <Route path="/tools/image-watermark" element={<ProtectedRoute><ImageWatermarkPage /></ProtectedRoute>} />
-    <Route path="/tools/photo-collage" element={<ProtectedRoute><PhotoCollagePage /></ProtectedRoute>} />
-    <Route path="/tools/svg-editor" element={<ProtectedRoute><SvgEditorPage /></ProtectedRoute>} />
-    <Route path="/tools/text-behind-image" element={<ProtectedRoute><TextBehindImagePage /></ProtectedRoute>} />
-    <Route path="/tools/image-cropper" element={<ProtectedRoute><ImageCropperPage /></ProtectedRoute>} />
-    <Route path="/tools/video-trimmer" element={<ProtectedRoute><VideoTrimmerPage /></ProtectedRoute>} />
-    <Route path="/tools/image-to-text" element={<ProtectedRoute><ImageToTextPage /></ProtectedRoute>} />
-    <Route path="/tools/pdf-editor" element={<ProtectedRoute><PdfEditorPage /></ProtectedRoute>} />
-    <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
-    <Route path="*" element={<NotFound />} />
-  </Routes>
-);
+const AppRoutes = () => {
+  usePageTracker();
+  return (
+    <Routes>
+      <Route path="/auth" element={<AuthPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
+      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+      <Route path="/animate" element={<ProtectedRoute><AnimatePage /></ProtectedRoute>} />
+      <Route path="/image-editor" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
+      <Route path="/overlay" element={<ProtectedRoute><OverlayPage /></ProtectedRoute>} />
+      <Route path="/lip-sync" element={<ProtectedRoute><LipSyncPage /></ProtectedRoute>} />
+      <Route path="/script-generator" element={<ProtectedRoute><ScriptGeneratorPage /></ProtectedRoute>} />
+      <Route path="/voice-generator" element={<ProtectedRoute><VoiceGeneratorPage /></ProtectedRoute>} />
+      <Route path="/music-generator" element={<ProtectedRoute><MusicGeneratorPage /></ProtectedRoute>} />
+      <Route path="/poster-generator" element={<ProtectedRoute><PosterGeneratorPage /></ProtectedRoute>} />
+      <Route path="/prompt-generator" element={<ProtectedRoute><PromptGeneratorPage /></ProtectedRoute>} />
+      <Route path="/tools" element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
+      <Route path="/tools/qr-code" element={<ProtectedRoute><QrCodeGeneratorPage /></ProtectedRoute>} />
+      <Route path="/tools/image-compressor" element={<ProtectedRoute><ImageCompressorPage /></ProtectedRoute>} />
+      <Route path="/tools/format-converter" element={<ProtectedRoute><FormatConverterPage /></ProtectedRoute>} />
+      <Route path="/tools/color-picker" element={<ProtectedRoute><ColorPickerPage /></ProtectedRoute>} />
+      <Route path="/tools/meme-generator" element={<ProtectedRoute><MemeGeneratorPage /></ProtectedRoute>} />
+      <Route path="/tools/screenshot-to-pdf" element={<ProtectedRoute><ScreenshotToPdfPage /></ProtectedRoute>} />
+      <Route path="/tools/image-watermark" element={<ProtectedRoute><ImageWatermarkPage /></ProtectedRoute>} />
+      <Route path="/tools/photo-collage" element={<ProtectedRoute><PhotoCollagePage /></ProtectedRoute>} />
+      <Route path="/tools/svg-editor" element={<ProtectedRoute><SvgEditorPage /></ProtectedRoute>} />
+      <Route path="/tools/text-behind-image" element={<ProtectedRoute><TextBehindImagePage /></ProtectedRoute>} />
+      <Route path="/tools/image-cropper" element={<ProtectedRoute><ImageCropperPage /></ProtectedRoute>} />
+      <Route path="/tools/video-trimmer" element={<ProtectedRoute><VideoTrimmerPage /></ProtectedRoute>} />
+      <Route path="/tools/image-to-text" element={<ProtectedRoute><ImageToTextPage /></ProtectedRoute>} />
+      <Route path="/tools/pdf-editor" element={<ProtectedRoute><PdfEditorPage /></ProtectedRoute>} />
+      <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
