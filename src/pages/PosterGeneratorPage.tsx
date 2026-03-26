@@ -43,6 +43,7 @@ export default function PosterGeneratorPage() {
     setSelectedTemplate(t);
     setElements([...t.elements]);
     setBgColor(t.bgColor);
+    setBgImage(null);
     setSelectedElement(null);
     setUploadedPhotos({});
   };
