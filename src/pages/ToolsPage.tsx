@@ -21,6 +21,7 @@ const TOOLS = [
   { to: "/tools/video-trimmer", label: "Video Trimmer", desc: "Trim/cut videos locally in browser", icon: Scissors },
   { to: "/tools/image-to-text", label: "Image to Text", desc: "Extract copyable text from images (OCR)", icon: ScanText },
   { to: "/tools/pdf-editor", label: "PDF Reader & Editor", desc: "View, edit, merge, annotate PDF files", icon: FileEdit },
+  { to: "/poster-generator?category=Menu+Card", label: "Menu Card Maker", desc: "Create restaurant menus & deal posters", icon: UtensilsCrossed },
 ];
 
 const ToolsPage = () => (
