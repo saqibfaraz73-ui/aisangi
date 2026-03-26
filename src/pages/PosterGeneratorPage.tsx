@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Image as ImageIcon, Palette, Plus, Type, Trash2 } from "lucide-react";
+import { Download, Image as ImageIcon, Palette, Plus, Type, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 const SIZE_CATEGORIES = [...new Set(POSTER_SIZES.map((s) => s.category))];
@@ -30,17 +30,20 @@ export default function PosterGeneratorPage() {
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [uploadedPhotos, setUploadedPhotos] = useState<Record<string, string>>({});
   const [bgColor, setBgColor] = useState(initialTemplate.bgColor);
+  const [bgImage, setBgImage] = useState<string | null>(null);
   const [customW, setCustomW] = useState(1080);
   const [customH, setCustomH] = useState(1080);
   const [sizeCategory, setSizeCategory] = useState(SIZE_CATEGORIES[0]);
   const [templateCategory, setTemplateCategory] = useState(validCategory);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
   const [pendingPhotoId, setPendingPhotoId] = useState<string | null>(null);
 
   const selectTemplate = (t: typeof POSTER_TEMPLATES[0]) => {
     setSelectedTemplate(t);
     setElements([...t.elements]);
     setBgColor(t.bgColor);
+    setBgImage(null);
     setSelectedElement(null);
     setUploadedPhotos({});
   };
@@ -120,6 +123,15 @@ export default function PosterGeneratorPage() {
     e.target.value = "";
   };
 
+  const handleBgFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setBgImage(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   const exportPoster = async (format: "png" | "jpg") => {
     const canvas = document.createElement("canvas");
     canvas.width = selectedSize.width;
@@ -142,6 +154,25 @@ export default function PosterGeneratorPage() {
       ctx.fillStyle = bgColor;
     }
     ctx.fillRect(0, 0, pw, ph);
+
+    // Draw background image if set
+    if (bgImage) {
+      const bgImg = await new Promise<HTMLImageElement>((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(img);
+        img.src = bgImage;
+      });
+      if (bgImg.complete && bgImg.naturalWidth > 0) {
+        const imgRatio = bgImg.width / bgImg.height;
+        const boxRatio = pw / ph;
+        let sx = 0, sy = 0, sw = bgImg.width, sh = bgImg.height;
+        if (imgRatio > boxRatio) { sw = bgImg.height * boxRatio; sx = (bgImg.width - sw) / 2; }
+        else { sh = bgImg.width / boxRatio; sy = (bgImg.height - sh) / 2; }
+        ctx.drawImage(bgImg, sx, sy, sw, sh, 0, 0, pw, ph);
+      }
+    }
 
     const photoImages: Record<string, HTMLImageElement> = {};
     await Promise.all(
@@ -237,6 +268,7 @@ export default function PosterGeneratorPage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <AppHeader />
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      <input ref={bgFileInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgFileChange} />
 
       <main className="max-w-7xl mx-auto p-3 sm:p-4 overflow-x-hidden">
         <div className="text-center mb-4 sm:mb-6">
@@ -263,6 +295,7 @@ export default function PosterGeneratorPage() {
               onSelectElement={setSelectedElement}
               onUpdateElement={updateElement}
               uploadedPhotos={uploadedPhotos}
+              bgImage={bgImage}
             />
           </div>
           <div className="flex gap-2">
@@ -373,7 +406,7 @@ export default function PosterGeneratorPage() {
               <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2 text-sm sm:text-base">
                 <Palette className="h-4 w-4" /> Background
               </h3>
-              <div className="flex gap-2">
+              <div className="flex gap-2 mb-2">
                 <input
                   type="color"
                   value={bgColor}
@@ -382,6 +415,21 @@ export default function PosterGeneratorPage() {
                 />
                 <Input value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="h-8 text-xs" />
               </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="flex-1 gap-1.5 text-xs" onClick={() => bgFileInputRef.current?.click()}>
+                  <Upload className="h-3.5 w-3.5" /> {bgImage ? "Change BG Image" : "Upload BG Image"}
+                </Button>
+                {bgImage && (
+                  <Button size="sm" variant="ghost" className="text-xs text-destructive" onClick={() => setBgImage(null)}>
+                    Remove
+                  </Button>
+                )}
+              </div>
+              {bgImage && (
+                <div className="mt-2 rounded border border-border overflow-hidden">
+                  <img src={bgImage} alt="Background" className="w-full h-16 object-cover" />
+                </div>
+              )}
             </div>
           </div>
 
@@ -398,6 +446,7 @@ export default function PosterGeneratorPage() {
               onSelectElement={setSelectedElement}
               onUpdateElement={updateElement}
               uploadedPhotos={uploadedPhotos}
+              bgImage={bgImage}
             />
             <div className="flex gap-2">
               <Button onClick={() => exportPoster("png")} className="gap-2">

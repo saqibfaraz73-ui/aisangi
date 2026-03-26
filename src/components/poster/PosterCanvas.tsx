@@ -9,6 +9,7 @@ interface PosterCanvasProps {
   onSelectElement: (id: string | null) => void;
   onUpdateElement?: (id: string, updates: Partial<TemplateElement>) => void;
   uploadedPhotos: Record<string, string>;
+  bgImage?: string | null;
 }
 
 const PREVIEW_MAX = 500;
@@ -31,9 +32,11 @@ export default function PosterCanvas({
   onSelectElement,
   onUpdateElement,
   uploadedPhotos,
+  bgImage,
 }: PosterCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageCacheRef = useRef<Record<string, HTMLImageElement>>({});
+  const bgImageRef = useRef<HTMLImageElement | null>(null);
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
@@ -74,6 +77,17 @@ export default function PosterCanvas({
       ctx.fillStyle = template.bgColor;
     }
     ctx.fillRect(0, 0, pw, ph);
+
+    // Draw background image if available
+    const bgImg = bgImageRef.current;
+    if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
+      const imgRatio = bgImg.width / bgImg.height;
+      const boxRatio = pw / ph;
+      let sx = 0, sy = 0, sw = bgImg.width, sh = bgImg.height;
+      if (imgRatio > boxRatio) { sw = bgImg.height * boxRatio; sx = (bgImg.width - sw) / 2; }
+      else { sh = bgImg.width / boxRatio; sy = (bgImg.height - sh) / 2; }
+      ctx.drawImage(bgImg, sx, sy, sw, sh, 0, 0, pw, ph);
+    }
 
     // Draw elements
     elements.forEach((el) => {
@@ -189,11 +203,25 @@ export default function PosterCanvas({
         ctx.strokeRect(x + w - handleSize / 2, y + h - handleSize / 2, handleSize, handleSize);
       }
     });
-  }, [template, size, elements, selectedElement, uploadedPhotos, fontsLoaded]);
+  }, [template, size, elements, selectedElement, uploadedPhotos, fontsLoaded, bgImage]);
 
   useEffect(() => {
     draw();
   }, [draw]);
+
+  // Load background image
+  useEffect(() => {
+    if (!bgImage) {
+      bgImageRef.current = null;
+      draw();
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => { bgImageRef.current = img; draw(); };
+    img.onerror = () => { bgImageRef.current = null; draw(); };
+    img.src = bgImage;
+  }, [bgImage, draw]);
 
   useEffect(() => {
     let cancelled = false;
