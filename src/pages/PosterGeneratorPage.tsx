@@ -19,16 +19,21 @@ const TEMPLATE_CATEGORIES = [...new Set(POSTER_TEMPLATES.map((t) => t.category))
 let nextElId = 100;
 
 export default function PosterGeneratorPage() {
-  const [selectedTemplate, setSelectedTemplate] = useState(POSTER_TEMPLATES[0]);
-  const [elements, setElements] = useState<TemplateElement[]>(POSTER_TEMPLATES[0].elements);
+  const [searchParams] = useSearchParams();
+  const initialCategory = searchParams.get("category") || TEMPLATE_CATEGORIES[0];
+  const validCategory = TEMPLATE_CATEGORIES.includes(initialCategory) ? initialCategory : TEMPLATE_CATEGORIES[0];
+  const initialTemplate = POSTER_TEMPLATES.find(t => t.category === validCategory) || POSTER_TEMPLATES[0];
+
+  const [selectedTemplate, setSelectedTemplate] = useState(initialTemplate);
+  const [elements, setElements] = useState<TemplateElement[]>(initialTemplate.elements);
   const [selectedSize, setSelectedSize] = useState<PosterSize>(POSTER_SIZES[0]);
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [uploadedPhotos, setUploadedPhotos] = useState<Record<string, string>>({});
-  const [bgColor, setBgColor] = useState(POSTER_TEMPLATES[0].bgColor);
+  const [bgColor, setBgColor] = useState(initialTemplate.bgColor);
   const [customW, setCustomW] = useState(1080);
   const [customH, setCustomH] = useState(1080);
   const [sizeCategory, setSizeCategory] = useState(SIZE_CATEGORIES[0]);
-  const [templateCategory, setTemplateCategory] = useState(TEMPLATE_CATEGORIES[0]);
+  const [templateCategory, setTemplateCategory] = useState(validCategory);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingPhotoId, setPendingPhotoId] = useState<string | null>(null);
 
