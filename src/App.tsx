@@ -34,6 +34,7 @@ import ImageCropperPage from "./pages/tools/ImageCropperPage.tsx";
 import VideoTrimmerPage from "./pages/tools/VideoTrimmerPage.tsx";
 import ImageToTextPage from "./pages/tools/ImageToTextPage.tsx";
 import PdfEditorPage from "./pages/tools/PdfEditorPage.tsx";
+import InvitationCardPage from "./pages/InvitationCardPage.tsx";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -82,6 +83,7 @@ const AppRoutes = () => {
       <Route path="/tools/video-trimmer" element={<ProtectedRoute><VideoTrimmerPage /></ProtectedRoute>} />
       <Route path="/tools/image-to-text" element={<ProtectedRoute><ImageToTextPage /></ProtectedRoute>} />
       <Route path="/tools/pdf-editor" element={<ProtectedRoute><PdfEditorPage /></ProtectedRoute>} />
+      <Route path="/invitation-card" element={<ProtectedRoute><InvitationCardPage /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
