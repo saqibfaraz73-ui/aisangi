@@ -203,7 +203,7 @@ export default function PosterCanvas({
         ctx.strokeRect(x + w - handleSize / 2, y + h - handleSize / 2, handleSize, handleSize);
       }
     });
-  }, [template, size, elements, selectedElement, uploadedPhotos, fontsLoaded]);
+  }, [template, size, elements, selectedElement, uploadedPhotos, fontsLoaded, bgImage]);
 
   useEffect(() => {
     draw();
