@@ -295,6 +295,7 @@ export default function PosterGeneratorPage() {
               onSelectElement={setSelectedElement}
               onUpdateElement={updateElement}
               uploadedPhotos={uploadedPhotos}
+              bgImage={bgImage}
             />
           </div>
           <div className="flex gap-2">
