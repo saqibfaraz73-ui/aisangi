@@ -36,6 +36,7 @@ export default function PosterCanvas({
 }: PosterCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageCacheRef = useRef<Record<string, HTMLImageElement>>({});
+  const bgImageRef = useRef<HTMLImageElement | null>(null);
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
   useEffect(() => {
