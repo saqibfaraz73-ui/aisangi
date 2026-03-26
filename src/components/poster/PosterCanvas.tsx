@@ -9,6 +9,7 @@ interface PosterCanvasProps {
   onSelectElement: (id: string | null) => void;
   onUpdateElement?: (id: string, updates: Partial<TemplateElement>) => void;
   uploadedPhotos: Record<string, string>;
+  bgImage?: string | null;
 }
 
 const PREVIEW_MAX = 500;
