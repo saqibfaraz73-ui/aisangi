@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Download, Image as ImageIcon, Palette, Plus, Type, Trash2 } from "lucide-react";
+import { Download, Image as ImageIcon, Palette, Plus, Type, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 
 const SIZE_CATEGORIES = [...new Set(POSTER_SIZES.map((s) => s.category))];
