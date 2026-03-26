@@ -32,6 +32,7 @@ export default function PosterCanvas({
   onSelectElement,
   onUpdateElement,
   uploadedPhotos,
+  bgImage,
 }: PosterCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageCacheRef = useRef<Record<string, HTMLImageElement>>({});
