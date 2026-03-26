@@ -268,6 +268,7 @@ export default function PosterGeneratorPage() {
     <div className="min-h-screen bg-background overflow-x-hidden">
       <AppHeader />
       <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+      <input ref={bgFileInputRef} type="file" accept="image/*" className="hidden" onChange={handleBgFileChange} />
 
       <main className="max-w-7xl mx-auto p-3 sm:p-4 overflow-x-hidden">
         <div className="text-center mb-4 sm:mb-6">
