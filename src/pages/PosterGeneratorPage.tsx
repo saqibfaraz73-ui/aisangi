@@ -123,6 +123,15 @@ export default function PosterGeneratorPage() {
     e.target.value = "";
   };
 
+  const handleBgFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => setBgImage(ev.target?.result as string);
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
   const exportPoster = async (format: "png" | "jpg") => {
     const canvas = document.createElement("canvas");
     canvas.width = selectedSize.width;
