@@ -1,4 +1,5 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import PosterCanvas from "@/components/poster/PosterCanvas";
 import ElementEditor from "@/components/poster/ElementEditor";
