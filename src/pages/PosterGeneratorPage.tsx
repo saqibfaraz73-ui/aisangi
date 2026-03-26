@@ -155,6 +155,25 @@ export default function PosterGeneratorPage() {
     }
     ctx.fillRect(0, 0, pw, ph);
 
+    // Draw background image if set
+    if (bgImage) {
+      const bgImg = await new Promise<HTMLImageElement>((resolve) => {
+        const img = new Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => resolve(img);
+        img.onerror = () => resolve(img);
+        img.src = bgImage;
+      });
+      if (bgImg.complete && bgImg.naturalWidth > 0) {
+        const imgRatio = bgImg.width / bgImg.height;
+        const boxRatio = pw / ph;
+        let sx = 0, sy = 0, sw = bgImg.width, sh = bgImg.height;
+        if (imgRatio > boxRatio) { sw = bgImg.height * boxRatio; sx = (bgImg.width - sw) / 2; }
+        else { sh = bgImg.width / boxRatio; sy = (bgImg.height - sh) / 2; }
+        ctx.drawImage(bgImg, sx, sy, sw, sh, 0, 0, pw, ph);
+      }
+    }
+
     const photoImages: Record<string, HTMLImageElement> = {};
     await Promise.all(
       Object.entries(uploadedPhotos).map(([id, url]) =>
