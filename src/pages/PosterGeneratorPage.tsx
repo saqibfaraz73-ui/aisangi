@@ -431,6 +431,7 @@ export default function PosterGeneratorPage() {
               onSelectElement={setSelectedElement}
               onUpdateElement={updateElement}
               uploadedPhotos={uploadedPhotos}
+              bgImage={bgImage}
             />
             <div className="flex gap-2">
               <Button onClick={() => exportPoster("png")} className="gap-2">
