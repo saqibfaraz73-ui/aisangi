@@ -406,7 +406,7 @@ export default function PosterGeneratorPage() {
               <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2 text-sm sm:text-base">
                 <Palette className="h-4 w-4" /> Background
               </h3>
-              <div className="flex gap-2">
+              <div className="flex gap-2 mb-2">
                 <input
                   type="color"
                   value={bgColor}
@@ -415,6 +415,21 @@ export default function PosterGeneratorPage() {
                 />
                 <Input value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="h-8 text-xs" />
               </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="flex-1 gap-1.5 text-xs" onClick={() => bgFileInputRef.current?.click()}>
+                  <Upload className="h-3.5 w-3.5" /> {bgImage ? "Change BG Image" : "Upload BG Image"}
+                </Button>
+                {bgImage && (
+                  <Button size="sm" variant="ghost" className="text-xs text-destructive" onClick={() => setBgImage(null)}>
+                    Remove
+                  </Button>
+                )}
+              </div>
+              {bgImage && (
+                <div className="mt-2 rounded border border-border overflow-hidden">
+                  <img src={bgImage} alt="Background" className="w-full h-16 object-cover" />
+                </div>
+              )}
             </div>
           </div>
 
