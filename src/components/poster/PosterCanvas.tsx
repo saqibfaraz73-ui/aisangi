@@ -209,6 +209,20 @@ export default function PosterCanvas({
     draw();
   }, [draw]);
 
+  // Load background image
+  useEffect(() => {
+    if (!bgImage) {
+      bgImageRef.current = null;
+      draw();
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => { bgImageRef.current = img; draw(); };
+    img.onerror = () => { bgImageRef.current = null; draw(); };
+    img.src = bgImage;
+  }, [bgImage, draw]);
+
   useEffect(() => {
     let cancelled = false;
     const activeIds = new Set(Object.keys(uploadedPhotos));
