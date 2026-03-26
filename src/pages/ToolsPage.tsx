@@ -22,7 +22,7 @@ const TOOLS = [
   { to: "/tools/image-to-text", label: "Image to Text", desc: "Extract copyable text from images (OCR)", icon: ScanText },
   { to: "/tools/pdf-editor", label: "PDF Reader & Editor", desc: "View, edit, merge, annotate PDF files", icon: FileEdit },
   { to: "/poster-generator?category=Menu+Card", label: "Menu Card Maker", desc: "Create restaurant menus & deal posters", icon: UtensilsCrossed },
-  { to: "/poster-generator?category=Invitation+Card", label: "Invitation Card Maker", desc: "Wedding, Nikah, party & business invite cards", icon: Heart },
+  { to: "/invitation-card", label: "Invitation Card Maker", desc: "Wedding, Nikah, Walima, Mehndi, Party & Business cards", icon: Heart },
 ];
 
 const ToolsPage = () => (
