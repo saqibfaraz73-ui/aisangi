@@ -30,11 +30,13 @@ export default function PosterGeneratorPage() {
   const [selectedElement, setSelectedElement] = useState<string | null>(null);
   const [uploadedPhotos, setUploadedPhotos] = useState<Record<string, string>>({});
   const [bgColor, setBgColor] = useState(initialTemplate.bgColor);
+  const [bgImage, setBgImage] = useState<string | null>(null);
   const [customW, setCustomW] = useState(1080);
   const [customH, setCustomH] = useState(1080);
   const [sizeCategory, setSizeCategory] = useState(SIZE_CATEGORIES[0]);
   const [templateCategory, setTemplateCategory] = useState(validCategory);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const bgFileInputRef = useRef<HTMLInputElement>(null);
   const [pendingPhotoId, setPendingPhotoId] = useState<string | null>(null);
 
   const selectTemplate = (t: typeof POSTER_TEMPLATES[0]) => {
