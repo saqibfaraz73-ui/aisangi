@@ -26,7 +26,6 @@ const AppHeader = () => {
   const { canAccess } = useSectionAccess();
   const [open, setOpen] = useState(false);
   const [isNarrow, setIsNarrow] = useState(true);
-  const [isNarrow, setIsNarrow] = useState(true);
 
   useEffect(() => {
     const check = () => setIsNarrow(window.innerWidth < 1100);
