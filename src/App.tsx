@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import SectionGate from "@/components/SectionGate";
 import { usePageTracker } from "@/hooks/use-page-tracker";
 import Index from "./pages/Index.tsx";
 import AnimatePage from "./pages/AnimatePage.tsx";
