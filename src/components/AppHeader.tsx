@@ -1,7 +1,8 @@
-import { Wand2, LogOut, Shield, Menu } from "lucide-react";
+import { Wand2, LogOut, Shield, Menu, Crown } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { useSectionAccess } from "@/hooks/use-section-access";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
