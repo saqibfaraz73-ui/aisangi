@@ -6,9 +6,12 @@ After running `npx cap add android`, you need to add these permissions to:
 Add inside the `<manifest>` tag (before `<application>`):
 
 ```xml
-<!-- Internet access -->
+<!-- ====== MANDATORY PERMISSIONS FOR PLAY STORE ====== -->
+
+<!-- Internet access (required for all network calls) -->
 <uses-permission android:name="android.permission.INTERNET" />
 <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+<uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
 
 <!-- Camera (for OCR scan, photo capture) -->
 <uses-permission android:name="android.permission.CAMERA" />
@@ -38,8 +41,20 @@ Add inside the `<manifest>` tag (before `<application>`):
 <!-- Vibration (haptic feedback) -->
 <uses-permission android:name="android.permission.VIBRATE" />
 
-<!-- Foreground service (for long operations) -->
+<!-- Foreground service (for long operations like video processing) -->
 <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+
+<!-- Post notifications - Android 13+ (API 33+) -->
+<uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
+<!-- Install packages from unknown sources (for in-app updates if needed) -->
+<uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
+
+<!-- Wake lock (keep screen on during processing) -->
+<uses-permission android:name="android.permission.WAKE_LOCK" />
+
+<!-- Boot completed (for scheduled tasks if needed) -->
+<uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 ```
 
 Also add inside the `<application>` tag:
@@ -47,6 +62,22 @@ Also add inside the `<application>` tag:
 ```xml
 android:requestLegacyExternalStorage="true"
 android:usesCleartextTraffic="true"
+android:networkSecurityConfig="@xml/network_security_config"
+```
+
+## Network Security Config
+
+Create `android/app/src/main/res/xml/network_security_config.xml`:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
 ```
 
 ## File Provider Setup
@@ -77,6 +108,18 @@ Create `android/app/src/main/res/xml/file_paths.xml`:
 </paths>
 ```
 
+## Runtime Permission Requests
+
+The app MUST request these permissions at runtime before using the feature:
+
+| Feature | Permission(s) to Request |
+|---|---|
+| Camera / OCR Scan | `CAMERA` |
+| Save files | `WRITE_EXTERNAL_STORAGE` (API < 29) or `READ_MEDIA_IMAGES` (API 33+) |
+| Voice recording | `RECORD_AUDIO` |
+| Pick files from storage | `READ_EXTERNAL_STORAGE` (API < 33) or `READ_MEDIA_*` (API 33+) |
+| Push notifications | `POST_NOTIFICATIONS` (API 33+) |
+
 ## Permission Breakdown by Android Version
 
 | Permission | Android 6-9 | Android 10 | Android 11-12 | Android 13+ | Android 14+ |
@@ -88,6 +131,7 @@ Create `android/app/src/main/res/xml/file_paths.xml`:
 | READ_MEDIA_AUDIO | N/A | N/A | N/A | ✅ Required | ✅ Required |
 | READ_MEDIA_VISUAL_USER_SELECTED | N/A | N/A | N/A | N/A | ✅ Partial access |
 | CAMERA | ✅ Runtime | ✅ Runtime | ✅ Runtime | ✅ Runtime | ✅ Runtime |
+| POST_NOTIFICATIONS | N/A | N/A | N/A | ✅ Runtime | ✅ Runtime |
 
 ## After Setup
 
