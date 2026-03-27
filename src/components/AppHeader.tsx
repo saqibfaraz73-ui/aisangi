@@ -23,7 +23,9 @@ const NAV_ITEMS = [
 
 const AppHeader = () => {
   const { user, isAdmin, signOut } = useAuth();
+  const { canAccess } = useSectionAccess();
   const [open, setOpen] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(true);
   const [isNarrow, setIsNarrow] = useState(true);
 
   useEffect(() => {
