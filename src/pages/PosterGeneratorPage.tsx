@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { getImageCropRect } from "@/components/poster/draw-image-utils";
 import { useSearchParams } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import PosterCanvas from "@/components/poster/PosterCanvas";
