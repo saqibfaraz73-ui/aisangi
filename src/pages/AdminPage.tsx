@@ -20,6 +20,8 @@ import GlobalCapSection from "@/components/admin/GlobalCapSection";
 import LipSyncSection from "@/components/admin/LipSyncSection";
 import RateLimitSection from "@/components/admin/RateLimitSection";
 import TrafficStatsSection from "@/components/admin/TrafficStatsSection";
+import SectionVisibilitySection from "@/components/admin/SectionVisibilitySection";
+import PremiumUsersSection from "@/components/admin/PremiumUsersSection";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
