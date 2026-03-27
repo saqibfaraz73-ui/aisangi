@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 import { PosterTemplate, TemplateElement, PosterSize } from "./types";
+import { getImageCropRect } from "./draw-image-utils";
 
 interface PosterCanvasProps {
   template: PosterTemplate;
@@ -81,11 +82,7 @@ export default function PosterCanvas({
     // Draw background image if available
     const bgImg = bgImageRef.current;
     if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
-      const imgRatio = bgImg.width / bgImg.height;
-      const boxRatio = pw / ph;
-      let sx = 0, sy = 0, sw = bgImg.width, sh = bgImg.height;
-      if (imgRatio > boxRatio) { sw = bgImg.height * boxRatio; sx = (bgImg.width - sw) / 2; }
-      else { sh = bgImg.width / boxRatio; sy = (bgImg.height - sh) / 2; }
+      const { sx, sy, sw, sh } = getImageCropRect(bgImg.width, bgImg.height, pw, ph);
       ctx.drawImage(bgImg, sx, sy, sw, sh, 0, 0, pw, ph);
     }
 
@@ -127,16 +124,10 @@ export default function PosterCanvas({
             clipRoundRect(ctx, x, y, w, h, el.borderRadius);
           }
 
-          const imgRatio = photo.width / photo.height;
-          const boxRatio = w / h;
-          let sx = 0, sy = 0, sw = photo.width, sh = photo.height;
-          if (imgRatio > boxRatio) {
-            sw = photo.height * boxRatio;
-            sx = (photo.width - sw) / 2;
-          } else {
-            sh = photo.width / boxRatio;
-            sy = (photo.height - sh) / 2;
-          }
+          const { sx, sy, sw, sh } = getImageCropRect(
+            photo.width, photo.height, w, h,
+            el.imageOffsetX, el.imageOffsetY, el.imageScale
+          );
 
           ctx.drawImage(photo, sx, sy, sw, sh, x, y, w, h);
           ctx.restore();

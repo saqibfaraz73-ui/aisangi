@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { getImageCropRect } from "@/components/poster/draw-image-utils";
 import { useSearchParams } from "react-router-dom";
 import AppHeader from "@/components/AppHeader";
 import PosterCanvas from "@/components/poster/PosterCanvas";
@@ -214,11 +215,10 @@ export default function PosterGeneratorPage() {
             ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2);
             ctx.clip();
           }
-          const imgRatio = img.width / img.height;
-          const boxRatio = w / h;
-          let sx = 0, sy = 0, sw = img.width, sh = img.height;
-          if (imgRatio > boxRatio) { sw = img.height * boxRatio; sx = (img.width - sw) / 2; }
-          else { sh = img.width / boxRatio; sy = (img.height - sh) / 2; }
+          const { sx, sy, sw, sh } = getImageCropRect(
+            img.width, img.height, w, h,
+            el.imageOffsetX, el.imageOffsetY, el.imageScale
+          );
           ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h);
           ctx.restore();
         }

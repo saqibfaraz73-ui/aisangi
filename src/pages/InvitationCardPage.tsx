@@ -1,4 +1,5 @@
 import { useState, useRef, useCallback } from "react";
+import { getImageCropRect } from "@/components/poster/draw-image-utils";
 import AppHeader from "@/components/AppHeader";
 import PosterCanvas from "@/components/poster/PosterCanvas";
 import ElementEditor from "@/components/poster/ElementEditor";
@@ -157,10 +158,10 @@ export default function InvitationCardPage() {
         if (img) {
           ctx.save();
           if (el.borderRadius === 50) { ctx.beginPath(); ctx.ellipse(x + w / 2, y + h / 2, w / 2, h / 2, 0, 0, Math.PI * 2); ctx.clip(); }
-          const imgR = img.width / img.height, boxR = w / h;
-          let sx = 0, sy = 0, sw = img.width, sh = img.height;
-          if (imgR > boxR) { sw = img.height * boxR; sx = (img.width - sw) / 2; }
-          else { sh = img.width / boxR; sy = (img.height - sh) / 2; }
+          const { sx, sy, sw, sh } = getImageCropRect(
+            img.width, img.height, w, h,
+            el.imageOffsetX, el.imageOffsetY, el.imageScale
+          );
           ctx.drawImage(img, sx, sy, sw, sh, x, y, w, h); ctx.restore();
         }
       } else if (el.type === "text" && el.text) {
