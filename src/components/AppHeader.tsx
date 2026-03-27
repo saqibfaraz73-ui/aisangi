@@ -37,25 +37,35 @@ const AppHeader = () => {
 
   const navLinks = (
     <>
-      {NAV_ITEMS.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.to === "/"}
-          onClick={() => setOpen(false)}
-          className={({ isActive }) =>
-            cn(
-              "text-xs font-medium px-3 py-1.5 rounded-full transition-colors",
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted",
-              isNarrow && "text-sm px-4 py-2.5 w-full text-left"
-            )
-          }
-        >
-          {item.label}
-        </NavLink>
-      ))}
+      {NAV_ITEMS.filter((item) => {
+        if (!item.section) return true;
+        const access = canAccess(item.section);
+        return access !== "hidden";
+      }).map((item) => {
+        const access = item.section ? canAccess(item.section) : "allowed";
+        const isPremiumLocked = access === "premium_locked";
+        return (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === "/"}
+            onClick={() => setOpen(false)}
+            className={({ isActive }) =>
+              cn(
+                "text-xs font-medium px-3 py-1.5 rounded-full transition-colors flex items-center gap-1",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted",
+                isNarrow && "text-sm px-4 py-2.5 w-full text-left",
+                isPremiumLocked && "opacity-70"
+              )
+            }
+          >
+            {item.label}
+            {isPremiumLocked && <Crown className="h-3 w-3 text-yellow-500" />}
+          </NavLink>
+        );
+      })}
       {isAdmin && (
         <NavLink
           to="/admin"
