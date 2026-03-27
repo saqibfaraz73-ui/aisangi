@@ -230,6 +230,30 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_users: {
+        Row: {
+          granted_at: string
+          granted_by: string | null
+          id: string
+          source: string
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          source?: string
+          user_id: string
+        }
+        Update: {
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          source?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -304,6 +328,27 @@ export type Database = {
           daily_limit?: number
           enabled?: boolean
           id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      section_visibility: {
+        Row: {
+          id: string
+          section: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          section: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          section?: string
+          status?: string
           updated_at?: string
         }
         Relationships: []
