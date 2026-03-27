@@ -38,6 +38,28 @@ export default function ElementEditor({ element, onUpdate, onUploadPhoto }: Elem
           Upload Photo
         </Button>
 
+        {/* Image Pan & Zoom Controls */}
+        <div className="space-y-2">
+          <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
+            🔍 Fit Image / Move Face
+          </div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground">Zoom ({(element.imageScale || 1).toFixed(1)}x)</Label>
+            <Slider min={1} max={3} step={0.1} value={[element.imageScale || 1]} onValueChange={([v]) => onUpdate(element.id, { imageScale: v })} />
+          </div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground">Pan Left/Right ({element.imageOffsetX || 0}%)</Label>
+            <Slider min={-100} max={100} step={1} value={[element.imageOffsetX || 0]} onValueChange={([v]) => onUpdate(element.id, { imageOffsetX: v })} />
+          </div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground">Pan Up/Down ({element.imageOffsetY || 0}%)</Label>
+            <Slider min={-100} max={100} step={1} value={[element.imageOffsetY || 0]} onValueChange={([v]) => onUpdate(element.id, { imageOffsetY: v })} />
+          </div>
+          <Button size="sm" variant="ghost" className="text-xs w-full" onClick={() => onUpdate(element.id, { imageOffsetX: 0, imageOffsetY: 0, imageScale: 1 })}>
+            Reset Fit
+          </Button>
+        </div>
+
         {/* Position Controls */}
         <div className="space-y-2">
           <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground">

@@ -25,6 +25,9 @@ export interface TemplateElement {
   editable?: boolean;
   isPhoto?: boolean;
   lineHeight?: number;
+  imageOffsetX?: number; // -100 to 100, pan image inside slot
+  imageOffsetY?: number; // -100 to 100, pan image inside slot
+  imageScale?: number;   // 1 = fit, 2 = 2x zoom etc
 }
 
 export interface PosterTemplate {
