@@ -1,5 +1,6 @@
 import { useRef, useEffect, useCallback, useState } from "react";
 import { PosterTemplate, TemplateElement, PosterSize } from "./types";
+import { getImageCropRect } from "./draw-image-utils";
 
 interface PosterCanvasProps {
   template: PosterTemplate;
