@@ -1,20 +1,21 @@
-import { Wand2, LogOut, Shield, Menu } from "lucide-react";
+import { Wand2, LogOut, Shield, Menu, Crown } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/hooks/use-auth";
+import { useSectionAccess } from "@/hooks/use-section-access";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { useState, useEffect } from "react";
 
 const NAV_ITEMS = [
-  { to: "/", label: "Text to Image" },
-  { to: "/animate", label: "Image to Video" },
+  { to: "/", label: "Text to Image", section: "text_to_image" },
+  { to: "/animate", label: "Image to Video", section: "image_to_video" },
   { to: "/image-editor", label: "Image Editor" },
-  { to: "/lip-sync", label: "Lip-Sync" },
+  { to: "/lip-sync", label: "Lip-Sync", section: "lip_sync" },
   { to: "/overlay", label: "Audio Overlay" },
-  { to: "/script-generator", label: "Script AI" },
-  { to: "/voice-generator", label: "Voice AI" },
-  { to: "/music-generator", label: "Music AI" },
+  { to: "/script-generator", label: "Script AI", section: "script_ai" },
+  { to: "/voice-generator", label: "Voice AI", section: "voice_generator" },
+  { to: "/music-generator", label: "Music AI", section: "music_generator" },
   { to: "/poster-generator", label: "Poster" },
   { to: "/prompt-generator", label: "Prompt AI" },
   { to: "/tools", label: "Tools" },
@@ -22,6 +23,7 @@ const NAV_ITEMS = [
 
 const AppHeader = () => {
   const { user, isAdmin, signOut } = useAuth();
+  const { canAccess } = useSectionAccess();
   const [open, setOpen] = useState(false);
   const [isNarrow, setIsNarrow] = useState(true);
 
@@ -34,25 +36,35 @@ const AppHeader = () => {
 
   const navLinks = (
     <>
-      {NAV_ITEMS.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.to === "/"}
-          onClick={() => setOpen(false)}
-          className={({ isActive }) =>
-            cn(
-              "text-xs font-medium px-3 py-1.5 rounded-full transition-colors",
-              isActive
-                ? "bg-primary text-primary-foreground"
-                : "text-muted-foreground hover:bg-muted",
-              isNarrow && "text-sm px-4 py-2.5 w-full text-left"
-            )
-          }
-        >
-          {item.label}
-        </NavLink>
-      ))}
+      {NAV_ITEMS.filter((item) => {
+        if (!item.section) return true;
+        const access = canAccess(item.section);
+        return access !== "hidden";
+      }).map((item) => {
+        const access = item.section ? canAccess(item.section) : "allowed";
+        const isPremiumLocked = access === "premium_locked";
+        return (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === "/"}
+            onClick={() => setOpen(false)}
+            className={({ isActive }) =>
+              cn(
+                "text-xs font-medium px-3 py-1.5 rounded-full transition-colors flex items-center gap-1",
+                isActive
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:bg-muted",
+                isNarrow && "text-sm px-4 py-2.5 w-full text-left",
+                isPremiumLocked && "opacity-70"
+              )
+            }
+          >
+            {item.label}
+            {isPremiumLocked && <Crown className="h-3 w-3 text-yellow-500" />}
+          </NavLink>
+        );
+      })}
       {isAdmin && (
         <NavLink
           to="/admin"

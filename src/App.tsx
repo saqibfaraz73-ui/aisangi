@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/hooks/use-auth";
+import SectionGate from "@/components/SectionGate";
 import { usePageTracker } from "@/hooks/use-page-tracker";
 import Index from "./pages/Index.tsx";
 import AnimatePage from "./pages/AnimatePage.tsx";
@@ -58,14 +59,14 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-      <Route path="/animate" element={<ProtectedRoute><AnimatePage /></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><SectionGate section="text_to_image"><Index /></SectionGate></ProtectedRoute>} />
+      <Route path="/animate" element={<ProtectedRoute><SectionGate section="image_to_video"><AnimatePage /></SectionGate></ProtectedRoute>} />
       <Route path="/image-editor" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
       <Route path="/overlay" element={<ProtectedRoute><OverlayPage /></ProtectedRoute>} />
-      <Route path="/lip-sync" element={<ProtectedRoute><LipSyncPage /></ProtectedRoute>} />
-      <Route path="/script-generator" element={<ProtectedRoute><ScriptGeneratorPage /></ProtectedRoute>} />
-      <Route path="/voice-generator" element={<ProtectedRoute><VoiceGeneratorPage /></ProtectedRoute>} />
-      <Route path="/music-generator" element={<ProtectedRoute><MusicGeneratorPage /></ProtectedRoute>} />
+      <Route path="/lip-sync" element={<ProtectedRoute><SectionGate section="lip_sync"><LipSyncPage /></SectionGate></ProtectedRoute>} />
+      <Route path="/script-generator" element={<ProtectedRoute><SectionGate section="script_ai"><ScriptGeneratorPage /></SectionGate></ProtectedRoute>} />
+      <Route path="/voice-generator" element={<ProtectedRoute><SectionGate section="voice_generator"><VoiceGeneratorPage /></SectionGate></ProtectedRoute>} />
+      <Route path="/music-generator" element={<ProtectedRoute><SectionGate section="music_generator"><MusicGeneratorPage /></SectionGate></ProtectedRoute>} />
       <Route path="/poster-generator" element={<ProtectedRoute><PosterGeneratorPage /></ProtectedRoute>} />
       <Route path="/prompt-generator" element={<ProtectedRoute><PromptGeneratorPage /></ProtectedRoute>} />
       <Route path="/tools" element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
