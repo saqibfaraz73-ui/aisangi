@@ -82,11 +82,7 @@ export default function PosterCanvas({
     // Draw background image if available
     const bgImg = bgImageRef.current;
     if (bgImg && bgImg.complete && bgImg.naturalWidth > 0) {
-      const imgRatio = bgImg.width / bgImg.height;
-      const boxRatio = pw / ph;
-      let sx = 0, sy = 0, sw = bgImg.width, sh = bgImg.height;
-      if (imgRatio > boxRatio) { sw = bgImg.height * boxRatio; sx = (bgImg.width - sw) / 2; }
-      else { sh = bgImg.width / boxRatio; sy = (bgImg.height - sh) / 2; }
+      const { sx, sy, sw, sh } = getImageCropRect(bgImg.width, bgImg.height, pw, ph);
       ctx.drawImage(bgImg, sx, sy, sw, sh, 0, 0, pw, ph);
     }
 
