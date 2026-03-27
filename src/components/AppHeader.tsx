@@ -8,14 +8,14 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/s
 import { useState, useEffect } from "react";
 
 const NAV_ITEMS = [
-  { to: "/", label: "Text to Image" },
-  { to: "/animate", label: "Image to Video" },
+  { to: "/", label: "Text to Image", section: "text_to_image" },
+  { to: "/animate", label: "Image to Video", section: "image_to_video" },
   { to: "/image-editor", label: "Image Editor" },
-  { to: "/lip-sync", label: "Lip-Sync" },
+  { to: "/lip-sync", label: "Lip-Sync", section: "lip_sync" },
   { to: "/overlay", label: "Audio Overlay" },
-  { to: "/script-generator", label: "Script AI" },
-  { to: "/voice-generator", label: "Voice AI" },
-  { to: "/music-generator", label: "Music AI" },
+  { to: "/script-generator", label: "Script AI", section: "script_ai" },
+  { to: "/voice-generator", label: "Voice AI", section: "voice_generator" },
+  { to: "/music-generator", label: "Music AI", section: "music_generator" },
   { to: "/poster-generator", label: "Poster" },
   { to: "/prompt-generator", label: "Prompt AI" },
   { to: "/tools", label: "Tools" },
