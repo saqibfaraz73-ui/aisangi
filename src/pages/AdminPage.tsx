@@ -143,6 +143,10 @@ const AdminPage = () => {
 
         <RateLimitSection />
 
+        <SectionVisibilitySection />
+
+        <PremiumUsersSection users={users} />
+
         <WatermarkSection users={users} />
 
         <GlobalLimitsSection
