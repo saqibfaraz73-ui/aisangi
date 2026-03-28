@@ -12,13 +12,11 @@ const NAV_ITEMS = [
   { to: "/", label: "Tools" },
   { to: "/text-to-image", label: "Text to Image", section: "text_to_image" },
   { to: "/animate", label: "Image to Video", section: "image_to_video" },
-  { to: "/image-editor", label: "Image Editor" },
   { to: "/lip-sync", label: "Lip-Sync", section: "lip_sync" },
   { to: "/overlay", label: "Audio Overlay" },
   { to: "/script-generator", label: "Script AI", section: "script_ai" },
   { to: "/voice-generator", label: "Voice AI", section: "voice_generator" },
   { to: "/music-generator", label: "Music AI", section: "music_generator" },
-  { to: "/poster-generator", label: "Poster" },
   { to: "/prompt-generator", label: "Prompt AI", section: "prompt_generator" },
 ];
 
@@ -100,7 +98,7 @@ const AppHeader = () => {
   );
 
   const bottomLinks = (
-    <div className={cn("flex gap-1", isNarrow ? "flex-col mt-4 border-t border-border pt-4" : "items-center ml-2")}>
+    <div className={cn("flex gap-1", isNarrow ? "flex-col mt-2 border-t border-border pt-2" : "items-center ml-2")}>
       <NavLink
         to="/privacy"
         onClick={() => setOpen(false)}
@@ -108,7 +106,7 @@ const AppHeader = () => {
           cn(
             "text-xs px-3 py-1.5 rounded-full transition-colors",
             isActive ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted",
-            isNarrow && "text-sm px-4 py-2.5 w-full text-left"
+            isNarrow && "text-sm px-4 py-2 w-full text-left"
           )
         }
       >
@@ -121,7 +119,7 @@ const AppHeader = () => {
           cn(
             "text-xs px-3 py-1.5 rounded-full transition-colors flex items-center gap-1",
             isActive ? "bg-muted text-foreground" : "text-muted-foreground hover:bg-muted",
-            isNarrow && "text-sm px-4 py-2.5 w-full text-left"
+            isNarrow && "text-sm px-4 py-2 w-full text-left"
           )
         }
       >
@@ -135,7 +133,7 @@ const AppHeader = () => {
           onClick={() => setOpen(false)}
           className={cn(
             "text-xs font-medium px-3 py-1.5 rounded-full bg-gradient-to-r from-yellow-500 to-amber-500 text-white flex items-center gap-1 hover:opacity-90 transition-opacity",
-            isNarrow && "text-sm px-4 py-2.5 w-full justify-center"
+            isNarrow && "text-sm px-4 py-2 w-full justify-center"
           )}
         >
           <Crown className="h-3 w-3" /> Upgrade to Premium
@@ -148,7 +146,7 @@ const AppHeader = () => {
           onClick={() => { signOut(); setOpen(false); }}
           className={cn(
             "text-xs text-muted-foreground hover:text-foreground",
-            isNarrow ? "text-sm justify-start w-full mt-2" : "ml-1"
+            isNarrow ? "text-sm justify-start w-full px-4 py-2" : "ml-1"
           )}
         >
           <LogOut className="h-3.5 w-3.5 mr-1" />
@@ -177,12 +175,14 @@ const AppHeader = () => {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-64 bg-background">
+            <SheetContent side="right" className="w-64 bg-background flex flex-col">
               <SheetTitle className="font-display text-foreground">Menu</SheetTitle>
-              <nav className="flex flex-col gap-1 mt-4">
+              <nav className="flex flex-col gap-1 mt-4 flex-1 overflow-y-auto">
                 {navLinks}
-                {bottomLinks}
               </nav>
+              <div className="pb-4">
+                {bottomLinks}
+              </div>
             </SheetContent>
           </Sheet>
         ) : (

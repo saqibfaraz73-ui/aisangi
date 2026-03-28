@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   QrCode, FileDown, ArrowLeftRight, Palette, Type, FileText,
-  Droplets, LayoutGrid, PenTool, Layers, CropIcon, Scissors, ScanText, FileEdit, UtensilsCrossed, Heart
+  Droplets, LayoutGrid, PenTool, Layers, CropIcon, Scissors, ScanText, FileEdit, UtensilsCrossed, Heart, Image, ImagePlus
 } from "lucide-react";
 
 const TOOLS = [
@@ -23,6 +23,8 @@ const TOOLS = [
   { to: "/tools/pdf-editor", label: "PDF Reader & Editor", desc: "View, edit, merge, annotate PDF files", icon: FileEdit },
   { to: "/poster-generator?category=Menu+Card", label: "Menu Card Maker", desc: "Create restaurant menus & deal posters", icon: UtensilsCrossed },
   { to: "/invitation-card", label: "Invitation Card Maker", desc: "Wedding, Nikah, Walima, Mehndi, Party & Business cards", icon: Heart },
+  { to: "/poster-generator", label: "Poster Maker", desc: "Design posters with templates & custom sizes", icon: Image },
+  { to: "/image-editor", label: "Image Editor", desc: "Edit, resize & enhance your images", icon: ImagePlus },
 ];
 
 const ToolsPage = () => (
