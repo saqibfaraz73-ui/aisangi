@@ -70,7 +70,7 @@ const AuthPage = () => {
           password,
           options: {
             data: { full_name: fullName.trim() },
-            emailRedirectTo: window.location.origin,
+            emailRedirectTo: "https://ai.sangitech.com",
           },
         });
         if (error) throw error;
