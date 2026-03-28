@@ -21,6 +21,8 @@ import AdminPage from "./pages/AdminPage.tsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import ToolsPage from "./pages/ToolsPage.tsx";
+import PrivacyPage from "./pages/PrivacyPage.tsx";
+import AboutPage from "./pages/AboutPage.tsx";
 import QrCodeGeneratorPage from "./pages/tools/QrCodeGeneratorPage.tsx";
 import ImageCompressorPage from "./pages/tools/ImageCompressorPage.tsx";
 import FormatConverterPage from "./pages/tools/FormatConverterPage.tsx";
@@ -70,6 +72,8 @@ const AppRoutes = () => {
       <Route path="/music-generator" element={<ProtectedRoute><SectionGate section="music_generator"><MusicGeneratorPage /></SectionGate></ProtectedRoute>} />
       <Route path="/poster-generator" element={<ProtectedRoute><PosterGeneratorPage /></ProtectedRoute>} />
       <Route path="/prompt-generator" element={<ProtectedRoute><SectionGate section="prompt_generator"><PromptGeneratorPage /></SectionGate></ProtectedRoute>} />
+      <Route path="/privacy" element={<ProtectedRoute><PrivacyPage /></ProtectedRoute>} />
+      <Route path="/about" element={<ProtectedRoute><AboutPage /></ProtectedRoute>} />
       <Route path="/tools/qr-code" element={<ProtectedRoute><QrCodeGeneratorPage /></ProtectedRoute>} />
       <Route path="/tools/image-compressor" element={<ProtectedRoute><ImageCompressorPage /></ProtectedRoute>} />
       <Route path="/tools/format-converter" element={<ProtectedRoute><FormatConverterPage /></ProtectedRoute>} />
