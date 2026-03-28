@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   QrCode, FileDown, ArrowLeftRight, Palette, Type, FileText,
-  Droplets, LayoutGrid, PenTool, Layers, CropIcon, Scissors, ScanText, FileEdit, UtensilsCrossed, Heart
+  Droplets, LayoutGrid, PenTool, Layers, CropIcon, Scissors, ScanText, FileEdit, UtensilsCrossed, Heart, Image, ImagePlus
 } from "lucide-react";
 
 const TOOLS = [
