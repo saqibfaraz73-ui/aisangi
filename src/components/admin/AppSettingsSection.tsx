@@ -37,9 +37,16 @@ const AppSettingsSection = () => {
       for (const [key, value] of Object.entries(settings)) {
         await supabase
           .from("app_settings")
-          .update({ value, updated_at: new Date().toISOString() })
-          .eq("key", key);
+          .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
       }
+
+      // Call edge function to toggle email confirmation
+      if (settings.auto_confirm_email !== undefined) {
+        await supabase.functions.invoke("toggle-email-confirm", {
+          body: { auto_confirm: settings.auto_confirm_email === "true" },
+        });
+      }
+
       toast({ title: "App settings saved!" });
     } catch (err: any) {
       toast({ title: "Failed to save", description: err.message, variant: "destructive" });
