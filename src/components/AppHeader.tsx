@@ -12,13 +12,11 @@ const NAV_ITEMS = [
   { to: "/", label: "Tools" },
   { to: "/text-to-image", label: "Text to Image", section: "text_to_image" },
   { to: "/animate", label: "Image to Video", section: "image_to_video" },
-  { to: "/image-editor", label: "Image Editor" },
   { to: "/lip-sync", label: "Lip-Sync", section: "lip_sync" },
   { to: "/overlay", label: "Audio Overlay" },
   { to: "/script-generator", label: "Script AI", section: "script_ai" },
   { to: "/voice-generator", label: "Voice AI", section: "voice_generator" },
   { to: "/music-generator", label: "Music AI", section: "music_generator" },
-  { to: "/poster-generator", label: "Poster" },
   { to: "/prompt-generator", label: "Prompt AI", section: "prompt_generator" },
 ];
 
