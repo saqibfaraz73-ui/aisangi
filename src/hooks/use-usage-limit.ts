@@ -135,8 +135,16 @@ export function useUsageLimit(section: string) {
       limit = userLimitData.custom_limit;
       limitType = userLimitData.limit_type;
     } else if (isPremium) {
-      // Premium users without per-user limits have no global limit restriction
-      return true;
+      // Check premium-specific limits
+      const { data: premiumLimitData } = await supabase
+        .from("premium_usage_limits" as any)
+        .select("daily_limit, limit_type")
+        .eq("section", section)
+        .maybeSingle();
+
+      if (!premiumLimitData) return true;
+      limit = (premiumLimitData as any).daily_limit;
+      limitType = (premiumLimitData as any).limit_type || "per_day";
     } else {
       const { data: globalData } = await supabase
         .from("usage_limits")
