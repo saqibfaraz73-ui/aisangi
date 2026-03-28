@@ -149,6 +149,10 @@ const AdminPage = () => {
 
         <PremiumUsersSection users={users} />
 
+        <AdMobSection />
+
+        <AppSettingsSection />
+
         <WatermarkSection users={users} />
 
         <GlobalLimitsSection
