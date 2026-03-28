@@ -13,10 +13,20 @@ export function useUsageLimit(section: string) {
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
+    // Check if user is premium — premium users skip global limits
+    const { data: premiumData } = await supabase
+      .from("premium_users")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    const isPremium = !!premiumData;
+
     const clientOnlySections = ["image_to_video", "audio_overlay"];
     const usesGeminiCredits = !clientOnlySections.includes(section);
 
-    if (usesGeminiCredits) {
+    // Global limits only apply to FREE users
+    if (usesGeminiCredits && !isPremium) {
       // Check global daily cap
       const { data: capData } = await supabase
         .from("global_usage_cap")
@@ -68,47 +78,49 @@ export function useUsageLimit(section: string) {
       }
     }
 
-    // Check section-specific caps
-    const sectionCapMap: Record<string, string> = {
-      text_to_image: "image_generation_cap",
-      script_ai: "script_generation_cap",
-      voice_tts: "voice_generation_cap",
-      music_gen: "music_generation_cap",
-    };
+    // Check section-specific caps (still apply to free users only)
+    if (!isPremium) {
+      const sectionCapMap: Record<string, string> = {
+        text_to_image: "image_generation_cap",
+        script_ai: "script_generation_cap",
+        voice_tts: "voice_generation_cap",
+        music_gen: "music_generation_cap",
+      };
 
-    const capTable = sectionCapMap[section];
-    if (capTable) {
-      const { data: sectionCapData } = await supabase
-        .from(capTable as "image_generation_cap" | "script_generation_cap" | "voice_generation_cap" | "music_generation_cap")
-        .select("enabled, daily_limit")
-        .limit(1)
-        .maybeSingle();
+      const capTable = sectionCapMap[section];
+      if (capTable) {
+        const { data: sectionCapData } = await supabase
+          .from(capTable as "image_generation_cap" | "script_generation_cap" | "voice_generation_cap" | "music_generation_cap")
+          .select("enabled, daily_limit")
+          .limit(1)
+          .maybeSingle();
 
-      if (sectionCapData?.enabled) {
-        const { count: sectionCount } = await supabase
-          .from("usage_log")
-          .select("*", { count: "exact", head: true })
-          .eq("section", section)
-          .gte("used_at", todayStart.toISOString());
+        if (sectionCapData?.enabled) {
+          const { count: sectionCount } = await supabase
+            .from("usage_log")
+            .select("*", { count: "exact", head: true })
+            .eq("section", section)
+            .gte("used_at", todayStart.toISOString());
 
-        if ((sectionCount ?? 0) >= sectionCapData.daily_limit) {
-          const labels: Record<string, string> = {
-            text_to_image: "Image generation",
-            script_ai: "Script generation",
-            voice_tts: "Voice generation",
-            music_gen: "Music generation",
-          };
-          toast({
-            title: `${labels[section] || section} limit reached`,
-            description: `The platform has reached its daily limit of ${sectionCapData.daily_limit}. Try again tomorrow.`,
-            variant: "destructive",
-          });
-          return false;
+          if ((sectionCount ?? 0) >= sectionCapData.daily_limit) {
+            const labels: Record<string, string> = {
+              text_to_image: "Image generation",
+              script_ai: "Script generation",
+              voice_tts: "Voice generation",
+              music_gen: "Music generation",
+            };
+            toast({
+              title: `${labels[section] || section} limit reached`,
+              description: `The platform has reached its daily limit of ${sectionCapData.daily_limit}. Try again tomorrow.`,
+              variant: "destructive",
+            });
+            return false;
+          }
         }
       }
     }
 
-    // Check per-user limit
+    // Per-user limits always apply (even premium users have their own limits if set)
     const { data: userLimitData } = await supabase
       .from("user_usage_limits")
       .select("custom_limit, limit_type")
@@ -122,6 +134,9 @@ export function useUsageLimit(section: string) {
     if (userLimitData) {
       limit = userLimitData.custom_limit;
       limitType = userLimitData.limit_type;
+    } else if (isPremium) {
+      // Premium users without per-user limits have no global limit restriction
+      return true;
     } else {
       const { data: globalData } = await supabase
         .from("usage_limits")
@@ -180,7 +195,6 @@ export function useUsageLimit(section: string) {
     } as any);
   }, [user, section]);
 
-  /** Legacy: check + track in one call (no token info) */
   const checkAndTrack = useCallback(async (): Promise<boolean> => {
     const allowed = await checkLimit();
     if (!allowed) return false;
@@ -188,11 +202,16 @@ export function useUsageLimit(section: string) {
     return true;
   }, [checkLimit, trackUsage]);
 
-  /** Get remaining uses available for this user in the current window */
   const getRemainingUses = useCallback(async (): Promise<number> => {
     if (!user) return 0;
 
-    // Check per-user limit
+    // Premium users without specific limits get unlimited
+    const { data: premiumData } = await supabase
+      .from("premium_users")
+      .select("id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
     const { data: userLimitData } = await supabase
       .from("user_usage_limits")
       .select("custom_limit, limit_type")
@@ -206,6 +225,8 @@ export function useUsageLimit(section: string) {
     if (userLimitData) {
       limit = userLimitData.custom_limit;
       limitType = userLimitData.limit_type;
+    } else if (!!premiumData) {
+      return Infinity;
     } else {
       const { data: globalData } = await supabase
         .from("usage_limits")
