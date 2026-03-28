@@ -24,6 +24,7 @@ import SectionVisibilitySection from "@/components/admin/SectionVisibilitySectio
 import PremiumUsersSection from "@/components/admin/PremiumUsersSection";
 import AdMobSection from "@/components/admin/AdMobSection";
 import AppSettingsSection from "@/components/admin/AppSettingsSection";
+import PremiumLimitsSection from "@/components/admin/PremiumLimitsSection";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -148,6 +149,8 @@ const AdminPage = () => {
         <SectionVisibilitySection />
 
         <PremiumUsersSection users={users} />
+
+        <PremiumLimitsSection />
 
         <AdMobSection />
 

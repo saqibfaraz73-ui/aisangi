@@ -251,6 +251,30 @@ export type Database = {
         }
         Relationships: []
       }
+      premium_usage_limits: {
+        Row: {
+          daily_limit: number
+          id: string
+          limit_type: string
+          section: string
+          updated_at: string
+        }
+        Insert: {
+          daily_limit?: number
+          id?: string
+          limit_type?: string
+          section: string
+          updated_at?: string
+        }
+        Update: {
+          daily_limit?: number
+          id?: string
+          limit_type?: string
+          section?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       premium_users: {
         Row: {
           granted_at: string
