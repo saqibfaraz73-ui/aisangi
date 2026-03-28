@@ -175,12 +175,14 @@ const AppHeader = () => {
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-64 bg-background">
+            <SheetContent side="right" className="w-64 bg-background flex flex-col">
               <SheetTitle className="font-display text-foreground">Menu</SheetTitle>
-              <nav className="flex flex-col gap-1 mt-4">
+              <nav className="flex flex-col gap-1 mt-4 flex-1 overflow-y-auto">
                 {navLinks}
-                {bottomLinks}
               </nav>
+              <div className="pb-4">
+                {bottomLinks}
+              </div>
             </SheetContent>
           </Sheet>
         ) : (
