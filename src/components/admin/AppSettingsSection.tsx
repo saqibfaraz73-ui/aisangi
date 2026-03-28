@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const KEYS = ["play_store_url", "privacy_policy", "about_app"];
+const KEYS = ["play_store_url", "privacy_policy", "about_app", "auto_confirm_email"];
 
 const AppSettingsSection = () => {
   const { toast } = useToast();
