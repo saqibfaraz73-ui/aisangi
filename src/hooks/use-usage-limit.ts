@@ -234,7 +234,15 @@ export function useUsageLimit(section: string) {
       limit = userLimitData.custom_limit;
       limitType = userLimitData.limit_type;
     } else if (!!premiumData) {
-      return Infinity;
+      const { data: premiumLimitData } = await supabase
+        .from("premium_usage_limits" as any)
+        .select("daily_limit, limit_type")
+        .eq("section", section)
+        .maybeSingle();
+
+      if (!premiumLimitData) return Infinity;
+      limit = (premiumLimitData as any).daily_limit;
+      limitType = (premiumLimitData as any).limit_type || "per_day";
     } else {
       const { data: globalData } = await supabase
         .from("usage_limits")
