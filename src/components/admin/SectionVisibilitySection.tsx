@@ -18,6 +18,7 @@ const SECTION_LABELS: Record<string, string> = {
   voice_generator: "🎙️ Voice Generator",
   music_generator: "🎵 Music Generator",
   lip_sync: "👄 Lip Sync",
+  prompt_generator: "💡 Prompt AI",
 };
 
 const STATUS_LABELS: Record<string, { label: string; icon: React.ReactNode; color: string }> = {
