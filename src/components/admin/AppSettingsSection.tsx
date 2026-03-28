@@ -4,10 +4,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-const KEYS = ["play_store_url", "privacy_policy", "about_app"];
+const KEYS = ["play_store_url", "privacy_policy", "about_app", "auto_confirm_email"];
 
 const AppSettingsSection = () => {
   const { toast } = useToast();
@@ -36,9 +37,16 @@ const AppSettingsSection = () => {
       for (const [key, value] of Object.entries(settings)) {
         await supabase
           .from("app_settings")
-          .update({ value, updated_at: new Date().toISOString() })
-          .eq("key", key);
+          .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: "key" });
       }
+
+      // Call edge function to toggle email confirmation
+      if (settings.auto_confirm_email !== undefined) {
+        await supabase.functions.invoke("toggle-email-confirm", {
+          body: { auto_confirm: settings.auto_confirm_email === "true" },
+        });
+      }
+
       toast({ title: "App settings saved!" });
     } catch (err: any) {
       toast({ title: "Failed to save", description: err.message, variant: "destructive" });
@@ -57,6 +65,17 @@ const AppSettingsSection = () => {
       </div>
 
       <div className="space-y-4">
+        <div className="flex items-center justify-between rounded-lg border border-border p-3">
+          <div>
+            <Label className="text-sm font-medium">Disable Email Confirmation</Label>
+            <p className="text-xs text-muted-foreground mt-0.5">When enabled, new users can sign in without confirming their email</p>
+          </div>
+          <Switch
+            checked={settings.auto_confirm_email === "true"}
+            onCheckedChange={(checked) => setSettings((p) => ({ ...p, auto_confirm_email: checked ? "true" : "false" }))}
+          />
+        </div>
+
         <div>
           <Label className="text-xs">Play Store URL (for Upgrade to Premium button)</Label>
           <Input
