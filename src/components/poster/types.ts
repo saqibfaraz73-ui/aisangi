@@ -60,4 +60,14 @@ export const POSTER_SIZES: PosterSize[] = [
   { label: "5x3 ft Banner (Landscape)", width: 6000, height: 3600, category: "Flex/Pana" },
   { label: "6x4 ft Banner (Landscape)", width: 7200, height: 4800, category: "Flex/Pana" },
   { label: "2x5 ft Standee", width: 2400, height: 6000, category: "Flex/Pana" },
+  // Business Cards
+  { label: "Standard (3.5×2 in)", width: 1050, height: 600, category: "Business Card" },
+  { label: "Square Card", width: 750, height: 750, category: "Business Card" },
+  { label: "Mini Card (3×1 in)", width: 900, height: 300, category: "Business Card" },
+  { label: "EU Standard (3.35×2.17)", width: 1004, height: 650, category: "Business Card" },
+  // Business Pads / Letterheads
+  { label: "A4 Letterpad", width: 2480, height: 3508, category: "Business Pad" },
+  { label: "A5 Notepad", width: 1748, height: 2480, category: "Business Pad" },
+  { label: "Half Letter Pad", width: 1650, height: 2550, category: "Business Pad" },
+  { label: "Legal Pad", width: 2550, height: 4200, category: "Business Pad" },
 ];
