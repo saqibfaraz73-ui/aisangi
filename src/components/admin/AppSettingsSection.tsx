@@ -58,6 +58,17 @@ const AppSettingsSection = () => {
       </div>
 
       <div className="space-y-4">
+        <div className="flex items-center justify-between rounded-lg border border-border p-3">
+          <div>
+            <Label className="text-sm font-medium">Disable Email Confirmation</Label>
+            <p className="text-xs text-muted-foreground mt-0.5">When enabled, new users can sign in without confirming their email</p>
+          </div>
+          <Switch
+            checked={settings.auto_confirm_email === "true"}
+            onCheckedChange={(checked) => setSettings((p) => ({ ...p, auto_confirm_email: checked ? "true" : "false" }))}
+          />
+        </div>
+
         <div>
           <Label className="text-xs">Play Store URL (for Upgrade to Premium button)</Label>
           <Input
