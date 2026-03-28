@@ -212,149 +212,36 @@ export default function InvitationCardPage() {
           </p>
         </div>
 
-        {/* Canvas Preview - mobile */}
-        <div className="flex flex-col items-center gap-3 mb-4 lg:hidden overflow-hidden">
-          <div className="text-xs text-muted-foreground">
-            {selectedSize.label} — {selectedSize.width} × {selectedSize.height} px
-          </div>
-          <div className="w-full flex justify-center overflow-hidden">
-            <PosterCanvas
-              template={{ ...selectedTemplate, bgColor }}
-              size={selectedSize}
-              elements={elements}
-              selectedElement={selectedElement}
-              onSelectElement={setSelectedElement}
-              onUpdateElement={updateElement}
-              uploadedPhotos={uploadedPhotos}
-              bgImage={bgImage}
-            />
-          </div>
-          <div className="flex gap-2">
-            <Button size="sm" onClick={() => exportPoster("png")} className="gap-1.5 text-xs">
-              <Download className="h-3.5 w-3.5" /> PNG
-            </Button>
-            <Button size="sm" variant="outline" onClick={() => exportPoster("jpg")} className="gap-1.5 text-xs">
-              <Download className="h-3.5 w-3.5" /> JPG
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-          {/* Left Panel */}
-          <div className="space-y-3 sm:space-y-4 min-w-0">
-            {/* Template Selection */}
-            <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
-              <h3 className="font-semibold text-foreground mb-2 sm:mb-3 text-sm sm:text-base">💌 Card Templates</h3>
-              <div className="grid grid-cols-2 gap-2">
-                {INVITATION_TEMPLATES.map((t) => (
-                  <button
-                    key={t.id}
-                    onClick={() => selectTemplate(t)}
-                    className={`p-2 rounded-lg border text-left transition-all ${
-                      selectedTemplate.id === t.id
-                        ? "border-primary bg-primary/10"
-                        : "border-border hover:border-muted-foreground"
-                    }`}
-                  >
-                    <div
-                      className="h-12 sm:h-16 rounded mb-1"
-                      style={{ background: t.bgGradient || t.bgColor }}
-                    />
-                    <p className="text-[10px] sm:text-xs text-foreground truncate">{t.nameUrdu || t.name}</p>
-                    <p className="text-[9px] sm:text-[10px] text-muted-foreground truncate">{t.name}</p>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Size Selection */}
-            <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
-              <h3 className="font-semibold text-foreground mb-2 sm:mb-3 text-sm sm:text-base">📐 Size</h3>
-              <div className="flex flex-wrap gap-1 mb-2 sm:mb-3">
-                {[...SIZE_CATEGORIES, "Custom"].map((cat) => (
-                  <Button key={cat} variant={sizeCategory === cat ? "default" : "outline"} size="sm"
-                    className="text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3" onClick={() => setSizeCategory(cat)}>
-                    {cat}
-                  </Button>
-                ))}
-              </div>
-              {sizeCategory === "Custom" ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <div><Label className="text-xs">Width (px)</Label>
-                    <Input type="number" value={customW} onChange={(e) => setCustomW(+e.target.value)} className="h-8" /></div>
-                  <div><Label className="text-xs">Height (px)</Label>
-                    <Input type="number" value={customH} onChange={(e) => setCustomH(+e.target.value)} className="h-8" /></div>
-                  <Button className="col-span-2 text-xs" size="sm"
-                    onClick={() => setSelectedSize({ label: `Custom ${customW}x${customH}`, width: customW, height: customH, category: "Custom" })}>
-                    Apply Custom Size
-                  </Button>
-                </div>
-              ) : (
-                <div className="space-y-1 max-h-40 overflow-y-auto">
-                  {filteredSizes.map((s) => (
-                    <button key={s.label} onClick={() => setSelectedSize(s)}
-                      className={`w-full text-left px-3 py-1.5 sm:py-2 rounded text-xs transition-colors ${
-                        selectedSize.label === s.label ? "bg-primary text-primary-foreground" : "hover:bg-muted text-foreground"
-                      }`}>
-                      {s.label} ({s.width}×{s.height})
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Background */}
-            <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
-              <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2 text-sm sm:text-base">
-                <Palette className="h-4 w-4" /> Background
-              </h3>
-              <div className="flex gap-2 mb-2">
-                <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)}
-                  className="h-8 w-12 rounded border border-border cursor-pointer" />
-                <Input value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="h-8 text-xs" />
-              </div>
-              <div className="flex gap-2">
-                <Button size="sm" variant="outline" className="flex-1 gap-1.5 text-xs" onClick={() => bgFileInputRef.current?.click()}>
-                  <Upload className="h-3.5 w-3.5" /> {bgImage ? "Change BG Image" : "Upload BG Image"}
-                </Button>
-                {bgImage && (
-                  <Button size="sm" variant="ghost" className="text-xs text-destructive" onClick={() => setBgImage(null)}>Remove</Button>
-                )}
-              </div>
-              {bgImage && (
-                <div className="mt-2 rounded border border-border overflow-hidden">
-                  <img src={bgImage} alt="Background" className="w-full h-16 object-cover" />
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Center - Canvas Preview (desktop only) */}
-          <div className="hidden lg:flex flex-col items-center gap-4 min-w-0 overflow-hidden">
+        {/* Main Editor: Canvas + Editor side by side */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+          {/* Canvas Preview */}
+          <div className="flex flex-col items-center gap-3 overflow-hidden">
             <div className="text-xs text-muted-foreground">
               {selectedSize.label} — {selectedSize.width} × {selectedSize.height} px
             </div>
-            <PosterCanvas
-              template={{ ...selectedTemplate, bgColor }}
-              size={selectedSize}
-              elements={elements}
-              selectedElement={selectedElement}
-              onSelectElement={setSelectedElement}
-              onUpdateElement={updateElement}
-              uploadedPhotos={uploadedPhotos}
-              bgImage={bgImage}
-            />
+            <div className="w-full flex justify-center overflow-hidden">
+              <PosterCanvas
+                template={{ ...selectedTemplate, bgColor }}
+                size={selectedSize}
+                elements={elements}
+                selectedElement={selectedElement}
+                onSelectElement={setSelectedElement}
+                onUpdateElement={updateElement}
+                uploadedPhotos={uploadedPhotos}
+                bgImage={bgImage}
+              />
+            </div>
             <div className="flex gap-2">
-              <Button onClick={() => exportPoster("png")} className="gap-2">
-                <Download className="h-4 w-4" /> Download PNG
+              <Button size="sm" onClick={() => exportPoster("png")} className="gap-1.5 text-xs">
+                <Download className="h-3.5 w-3.5" /> PNG
               </Button>
-              <Button variant="outline" onClick={() => exportPoster("jpg")} className="gap-2">
-                <Download className="h-4 w-4" /> Download JPG
+              <Button size="sm" variant="outline" onClick={() => exportPoster("jpg")} className="gap-1.5 text-xs">
+                <Download className="h-3.5 w-3.5" /> JPG
               </Button>
             </div>
           </div>
 
-          {/* Right Panel - Element Editor */}
+          {/* Element Editor */}
           <div className="space-y-3 min-w-0">
             <h3 className="font-semibold text-foreground text-sm sm:text-base">✏️ Edit Elements</h3>
             <div className="flex gap-2">
@@ -382,6 +269,33 @@ export default function InvitationCardPage() {
                 👆 Click on a text or photo area in the card to start editing
               </div>
             )}
+
+            {/* Background */}
+            <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+              <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2 text-sm sm:text-base">
+                <Palette className="h-4 w-4" /> Background
+              </h3>
+              <div className="flex gap-2 mb-2">
+                <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)}
+                  className="h-8 w-12 rounded border border-border cursor-pointer" />
+                <Input value={bgColor} onChange={(e) => setBgColor(e.target.value)} className="h-8 text-xs" />
+              </div>
+              <div className="flex gap-2">
+                <Button size="sm" variant="outline" className="flex-1 gap-1.5 text-xs" onClick={() => bgFileInputRef.current?.click()}>
+                  <Upload className="h-3.5 w-3.5" /> {bgImage ? "Change BG Image" : "Upload BG Image"}
+                </Button>
+                {bgImage && (
+                  <Button size="sm" variant="ghost" className="text-xs text-destructive" onClick={() => setBgImage(null)}>Remove</Button>
+                )}
+              </div>
+              {bgImage && (
+                <div className="mt-2 rounded border border-border overflow-hidden">
+                  <img src={bgImage} alt="Background" className="w-full h-16 object-cover" />
+                </div>
+              )}
+            </div>
+
+            {/* All Elements List */}
             <div className="space-y-1">
               <h4 className="text-[10px] sm:text-xs font-medium text-muted-foreground uppercase tracking-wide">All Elements</h4>
               {elements.filter((e) => e.editable).map((el) => (
@@ -402,6 +316,66 @@ export default function InvitationCardPage() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+
+        {/* Bottom: Templates & Size */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+          {/* Card Templates */}
+          <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+            <h3 className="font-semibold text-foreground mb-2 sm:mb-3 text-sm sm:text-base">💌 Card Templates</h3>
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              {INVITATION_TEMPLATES.map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => selectTemplate(t)}
+                  className={`p-2 rounded-lg border text-left transition-all ${
+                    selectedTemplate.id === t.id
+                      ? "border-primary bg-primary/10"
+                      : "border-border hover:border-muted-foreground"
+                  }`}
+                >
+                  <div className="h-10 sm:h-14 rounded mb-1" style={{ background: t.bgGradient || t.bgColor }} />
+                  <p className="text-[9px] sm:text-xs text-foreground truncate">{t.nameUrdu || t.name}</p>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Size Selection */}
+          <div className="bg-card border border-border rounded-lg p-3 sm:p-4">
+            <h3 className="font-semibold text-foreground mb-2 sm:mb-3 text-sm sm:text-base">📐 Size</h3>
+            <div className="flex flex-wrap gap-1 mb-2 sm:mb-3">
+              {[...SIZE_CATEGORIES, "Custom"].map((cat) => (
+                <Button key={cat} variant={sizeCategory === cat ? "default" : "outline"} size="sm"
+                  className="text-[10px] sm:text-xs h-7 sm:h-8 px-2 sm:px-3" onClick={() => setSizeCategory(cat)}>
+                  {cat}
+                </Button>
+              ))}
+            </div>
+            {sizeCategory === "Custom" ? (
+              <div className="grid grid-cols-2 gap-2">
+                <div><Label className="text-xs">Width (px)</Label>
+                  <Input type="number" value={customW} onChange={(e) => setCustomW(+e.target.value)} className="h-8" /></div>
+                <div><Label className="text-xs">Height (px)</Label>
+                  <Input type="number" value={customH} onChange={(e) => setCustomH(+e.target.value)} className="h-8" /></div>
+                <Button className="col-span-2 text-xs" size="sm"
+                  onClick={() => setSelectedSize({ label: `Custom ${customW}x${customH}`, width: customW, height: customH, category: "Custom" })}>
+                  Apply Custom Size
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-1 max-h-40 overflow-y-auto">
+                {filteredSizes.map((s) => (
+                  <button key={s.label} onClick={() => setSelectedSize(s)}
+                    className={`w-full text-left px-3 py-1.5 sm:py-2 rounded text-xs transition-colors ${
+                      selectedSize.label === s.label ? "bg-primary text-primary-foreground" : "hover:bg-muted text-foreground"
+                    }`}>
+                    {s.label} ({s.width}×{s.height})
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </main>
