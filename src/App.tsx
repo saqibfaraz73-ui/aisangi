@@ -69,8 +69,7 @@ const AppRoutes = () => {
       <Route path="/voice-generator" element={<ProtectedRoute><SectionGate section="voice_generator"><VoiceGeneratorPage /></SectionGate></ProtectedRoute>} />
       <Route path="/music-generator" element={<ProtectedRoute><SectionGate section="music_generator"><MusicGeneratorPage /></SectionGate></ProtectedRoute>} />
       <Route path="/poster-generator" element={<ProtectedRoute><PosterGeneratorPage /></ProtectedRoute>} />
-      <Route path="/prompt-generator" element={<ProtectedRoute><PromptGeneratorPage /></ProtectedRoute>} />
-      <Route path="/tools" element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
+      <Route path="/prompt-generator" element={<ProtectedRoute><SectionGate section="prompt_generator"><PromptGeneratorPage /></SectionGate></ProtectedRoute>} />
       <Route path="/tools/qr-code" element={<ProtectedRoute><QrCodeGeneratorPage /></ProtectedRoute>} />
       <Route path="/tools/image-compressor" element={<ProtectedRoute><ImageCompressorPage /></ProtectedRoute>} />
       <Route path="/tools/format-converter" element={<ProtectedRoute><FormatConverterPage /></ProtectedRoute>} />
