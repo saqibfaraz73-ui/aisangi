@@ -59,7 +59,8 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/" element={<ProtectedRoute><SectionGate section="text_to_image"><Index /></SectionGate></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
+      <Route path="/text-to-image" element={<ProtectedRoute><SectionGate section="text_to_image"><Index /></SectionGate></ProtectedRoute>} />
       <Route path="/animate" element={<ProtectedRoute><SectionGate section="image_to_video"><AnimatePage /></SectionGate></ProtectedRoute>} />
       <Route path="/image-editor" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
       <Route path="/overlay" element={<ProtectedRoute><OverlayPage /></ProtectedRoute>} />
@@ -68,8 +69,7 @@ const AppRoutes = () => {
       <Route path="/voice-generator" element={<ProtectedRoute><SectionGate section="voice_generator"><VoiceGeneratorPage /></SectionGate></ProtectedRoute>} />
       <Route path="/music-generator" element={<ProtectedRoute><SectionGate section="music_generator"><MusicGeneratorPage /></SectionGate></ProtectedRoute>} />
       <Route path="/poster-generator" element={<ProtectedRoute><PosterGeneratorPage /></ProtectedRoute>} />
-      <Route path="/prompt-generator" element={<ProtectedRoute><PromptGeneratorPage /></ProtectedRoute>} />
-      <Route path="/tools" element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
+      <Route path="/prompt-generator" element={<ProtectedRoute><SectionGate section="prompt_generator"><PromptGeneratorPage /></SectionGate></ProtectedRoute>} />
       <Route path="/tools/qr-code" element={<ProtectedRoute><QrCodeGeneratorPage /></ProtectedRoute>} />
       <Route path="/tools/image-compressor" element={<ProtectedRoute><ImageCompressorPage /></ProtectedRoute>} />
       <Route path="/tools/format-converter" element={<ProtectedRoute><FormatConverterPage /></ProtectedRoute>} />
