@@ -22,6 +22,8 @@ import RateLimitSection from "@/components/admin/RateLimitSection";
 import TrafficStatsSection from "@/components/admin/TrafficStatsSection";
 import SectionVisibilitySection from "@/components/admin/SectionVisibilitySection";
 import PremiumUsersSection from "@/components/admin/PremiumUsersSection";
+import AdMobSection from "@/components/admin/AdMobSection";
+import AppSettingsSection from "@/components/admin/AppSettingsSection";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
