@@ -59,7 +59,8 @@ const AppRoutes = () => {
     <Routes>
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/reset-password" element={<ResetPasswordPage />} />
-      <Route path="/" element={<ProtectedRoute><SectionGate section="text_to_image"><Index /></SectionGate></ProtectedRoute>} />
+      <Route path="/" element={<ProtectedRoute><ToolsPage /></ProtectedRoute>} />
+      <Route path="/text-to-image" element={<ProtectedRoute><SectionGate section="text_to_image"><Index /></SectionGate></ProtectedRoute>} />
       <Route path="/animate" element={<ProtectedRoute><SectionGate section="image_to_video"><AnimatePage /></SectionGate></ProtectedRoute>} />
       <Route path="/image-editor" element={<ProtectedRoute><ImageEditorPage /></ProtectedRoute>} />
       <Route path="/overlay" element={<ProtectedRoute><OverlayPage /></ProtectedRoute>} />
