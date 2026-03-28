@@ -150,6 +150,8 @@ const AdminPage = () => {
 
         <PremiumUsersSection users={users} />
 
+        <PremiumLimitsSection />
+
         <AdMobSection />
 
         <AppSettingsSection />
