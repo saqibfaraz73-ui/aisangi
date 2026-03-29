@@ -37,6 +37,7 @@ import ImageCropperPage from "./pages/tools/ImageCropperPage.tsx";
 import VideoTrimmerPage from "./pages/tools/VideoTrimmerPage.tsx";
 import ImageToTextPage from "./pages/tools/ImageToTextPage.tsx";
 import PdfEditorPage from "./pages/tools/PdfEditorPage.tsx";
+import CvGeneratorPage from "./pages/tools/CvGeneratorPage.tsx";
 import InvitationCardPage from "./pages/InvitationCardPage.tsx";
 import { Loader2 } from "lucide-react";
 
