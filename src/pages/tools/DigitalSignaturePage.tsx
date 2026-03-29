@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "@/hooks/use-toast";
-import { Download, Trash2, Upload, Copy, PenTool, FileText, Image as ImageIcon, Undo2, Palette } from "lucide-react";
+import { Download, Trash2, Upload, Copy, PenTool, FileText, Image as ImageIcon, Undo2, Palette, Type } from "lucide-react";
 import jsPDF from "jspdf";
 
 const COLORS = [
