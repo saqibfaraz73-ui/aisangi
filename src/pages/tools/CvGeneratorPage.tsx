@@ -39,6 +39,8 @@ const TEMPLATES = [
   { id: "classic", name: "Classic", desc: "Traditional single-column" },
   { id: "modern", name: "Modern", desc: "Two-column sidebar layout" },
   { id: "minimal", name: "Minimal", desc: "Clean & whitespace-focused" },
+  { id: "europass", name: "Europass", desc: "EU standard Europass format" },
+  { id: "europass2", name: "Europass 2", desc: "Europass alternate layout" },
 ];
 
 // ── CV Preview Components ──────────────────────────
@@ -294,6 +296,230 @@ function MinimalPreview({ data }: { data: CvData }) {
           ))}
         </div>
       )}
+    </div>
+  );
+}
+
+// ── Europass helpers ──
+const EuroRow = ({ label, children }: { label: string; children: React.ReactNode }) => (
+  <div className="flex border-b border-gray-200">
+    <div className="w-[30%] py-1.5 pr-3 text-[10px] text-gray-500 text-right font-medium uppercase tracking-wider flex-shrink-0">{label}</div>
+    <div className="flex-1 py-1.5 pl-3 text-[10.5px] text-gray-800 border-l border-gray-200">{children}</div>
+  </div>
+);
+
+function EuropassPreview({ data }: { data: CvData }) {
+  return (
+    <div className="bg-white text-black p-6 w-full font-['Arial','Helvetica',sans-serif] text-[11px] leading-relaxed">
+      {/* Europass Header */}
+      <div className="flex items-center gap-3 mb-1">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-blue-800 flex items-center justify-center">
+            <span className="text-white text-[8px] font-bold">EU</span>
+          </div>
+          <div>
+            <span className="text-[10px] font-semibold text-blue-800 tracking-wide uppercase">Europass</span>
+            <p className="text-[8px] text-gray-400">Curriculum Vitae</p>
+          </div>
+        </div>
+      </div>
+      <div className="border-t-2 border-blue-800 mb-4" />
+
+      {/* Name + Photo */}
+      <div className="flex items-start gap-4 mb-4">
+        <div className="flex-1">
+          <h1 className="text-xl font-bold text-gray-900">{data.fullName || "Your Name"}</h1>
+          {data.jobTitle && <p className="text-sm text-blue-800 font-medium">{data.jobTitle}</p>}
+        </div>
+        {data.photo && <img src={data.photo} className="w-20 h-24 object-cover border border-gray-300" />}
+      </div>
+
+      {/* Personal Info Table */}
+      <div className="mb-4">
+        <h2 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-1 border-b-2 border-blue-800 pb-0.5">Personal Information</h2>
+        {data.address && <EuroRow label="Address">{data.address}</EuroRow>}
+        {data.phone && <EuroRow label="Telephone">{data.phone}</EuroRow>}
+        {data.email && <EuroRow label="Email"><a href={`mailto:${data.email}`} className="text-blue-700 underline">{data.email}</a></EuroRow>}
+        {data.links.length > 0 && <EuroRow label="Website / Links">{data.links.map(l => <span key={l.id} className="block"><a href={l.url} className="text-blue-700 underline">{l.label || l.url}</a></span>)}</EuroRow>}
+      </div>
+
+      {/* Work Experience */}
+      {data.experiences.length > 0 && (
+        <div className="mb-4">
+          <h2 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-1 border-b-2 border-blue-800 pb-0.5">Work Experience</h2>
+          {data.experiences.map(e => (
+            <div key={e.id} className="flex border-b border-gray-200">
+              <div className="w-[30%] py-1.5 pr-3 text-[10px] text-gray-500 text-right flex-shrink-0">{e.from} – {e.current ? "Present" : e.to}</div>
+              <div className="flex-1 py-1.5 pl-3 border-l border-gray-200">
+                <p className="font-semibold text-gray-900 text-[11px]">{e.title}</p>
+                <p className="text-[10px] text-gray-600">{e.company}{e.location ? `, ${e.location}` : ""}</p>
+                {e.description && <p className="text-[10px] text-gray-700 mt-0.5 whitespace-pre-line">{e.description}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Education */}
+      {data.education.length > 0 && (
+        <div className="mb-4">
+          <h2 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-1 border-b-2 border-blue-800 pb-0.5">Education and Training</h2>
+          {data.education.map(e => (
+            <div key={e.id} className="flex border-b border-gray-200">
+              <div className="w-[30%] py-1.5 pr-3 text-[10px] text-gray-500 text-right flex-shrink-0">{e.from} – {e.to}</div>
+              <div className="flex-1 py-1.5 pl-3 border-l border-gray-200">
+                <p className="font-semibold text-gray-900 text-[11px]">{e.degree}</p>
+                <p className="text-[10px] text-gray-600">{e.institution}{e.location ? `, ${e.location}` : ""}</p>
+                {e.grade && <p className="text-[10px] text-gray-500">Grade: {e.grade}</p>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Skills */}
+      {data.skills.length > 0 && (
+        <div className="mb-4">
+          <h2 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-1 border-b-2 border-blue-800 pb-0.5">Personal Skills</h2>
+          <EuroRow label="Job-related skills">
+            <div className="flex flex-wrap gap-1.5">
+              {data.skills.map(s => (
+                <span key={s.id} className="px-2 py-0.5 bg-blue-50 text-blue-800 text-[9px] rounded border border-blue-200">{s.name}</span>
+              ))}
+            </div>
+          </EuroRow>
+        </div>
+      )}
+
+      {/* Languages */}
+      {data.languages.length > 0 && (
+        <div className="mb-4">
+          <h2 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-1 border-b-2 border-blue-800 pb-0.5">Language Skills</h2>
+          <table className="w-full text-[10px] border-collapse">
+            <thead>
+              <tr className="bg-blue-50">
+                <th className="text-left py-1 px-2 font-semibold text-blue-800">Language</th>
+                <th className="text-center py-1 px-2 font-semibold text-blue-800">Level</th>
+              </tr>
+            </thead>
+            <tbody>
+              {data.languages.map(l => (
+                <tr key={l.id} className="border-b border-gray-200">
+                  <td className="py-1 px-2">{l.name}</td>
+                  <td className="py-1 px-2 text-center">{l.level}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {/* Certifications */}
+      {data.certifications.length > 0 && (
+        <div className="mb-4">
+          <h2 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-1 border-b-2 border-blue-800 pb-0.5">Additional Information</h2>
+          <EuroRow label="Certifications">
+            {data.certifications.map(c => <p key={c.id} className="text-[10px]">{c.name} — {c.issuer} ({c.year})</p>)}
+          </EuroRow>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function Europass2Preview({ data }: { data: CvData }) {
+  return (
+    <div className="bg-white text-black w-full font-['Arial','Helvetica',sans-serif] text-[11px] leading-relaxed">
+      {/* Top band */}
+      <div className="bg-gray-700 text-white px-6 py-4 flex items-center gap-4">
+        {data.photo && <img src={data.photo} className="w-20 h-20 rounded-full object-cover border-2 border-white flex-shrink-0" />}
+        <div>
+          <h1 className="text-xl font-bold">{data.fullName || "Your Name"}</h1>
+          {data.jobTitle && <p className="text-sm text-gray-300">{data.jobTitle}</p>}
+          <div className="flex flex-wrap gap-x-4 mt-1 text-[10px] text-gray-300">
+            {data.email && <span>✉ {data.email}</span>}
+            {data.phone && <span>☎ {data.phone}</span>}
+            {data.address && <span>📍 {data.address}</span>}
+          </div>
+        </div>
+      </div>
+      {/* Europass tag */}
+      <div className="flex items-center gap-2 px-6 py-1.5 bg-blue-800">
+        <span className="text-[9px] font-bold text-white tracking-widest uppercase">Europass Curriculum Vitae</span>
+      </div>
+
+      <div className="px-6 py-4">
+        {data.summary && (
+          <div className="mb-4">
+            <h2 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300 pb-0.5 mb-1">Personal Statement</h2>
+            <p className="text-[10.5px] text-gray-700 whitespace-pre-line">{data.summary}</p>
+          </div>
+        )}
+
+        {data.experiences.length > 0 && (
+          <div className="mb-4">
+            <h2 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300 pb-0.5 mb-1">Work Experience</h2>
+            {data.experiences.map(e => (
+              <div key={e.id} className="mb-2.5 pl-3 border-l-2 border-blue-800">
+                <p className="font-semibold text-gray-900">{e.title}</p>
+                <p className="text-[10px] text-gray-500">{e.from} – {e.current ? "Present" : e.to} | {e.company}{e.location ? `, ${e.location}` : ""}</p>
+                {e.description && <p className="text-[10px] text-gray-700 mt-0.5 whitespace-pre-line">{e.description}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {data.education.length > 0 && (
+          <div className="mb-4">
+            <h2 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300 pb-0.5 mb-1">Education and Training</h2>
+            {data.education.map(e => (
+              <div key={e.id} className="mb-2 pl-3 border-l-2 border-blue-800">
+                <p className="font-semibold text-gray-900">{e.degree}</p>
+                <p className="text-[10px] text-gray-500">{e.from} – {e.to} | {e.institution}{e.location ? `, ${e.location}` : ""}</p>
+                {e.grade && <p className="text-[10px] text-gray-500">Grade: {e.grade}</p>}
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4">
+          {data.skills.length > 0 && (
+            <div>
+              <h2 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300 pb-0.5 mb-1">Skills</h2>
+              {data.skills.map(s => (
+                <div key={s.id} className="mb-1">
+                  <div className="flex justify-between text-[10px]"><span>{s.name}</span><span className="text-gray-400">{s.level}%</span></div>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5"><div className="bg-blue-800 h-1.5 rounded-full" style={{ width: `${s.level}%` }} /></div>
+                </div>
+              ))}
+            </div>
+          )}
+          {data.languages.length > 0 && (
+            <div>
+              <h2 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300 pb-0.5 mb-1">Languages</h2>
+              {data.languages.map(l => (
+                <p key={l.id} className="text-[10px] text-gray-700 mb-0.5">• {l.name} — <span className="text-gray-500">{l.level}</span></p>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {data.certifications.length > 0 && (
+          <div className="mt-3">
+            <h2 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300 pb-0.5 mb-1">Certifications</h2>
+            {data.certifications.map(c => <p key={c.id} className="text-[10px]">{c.name} — {c.issuer} ({c.year})</p>)}
+          </div>
+        )}
+
+        {data.links.length > 0 && (
+          <div className="mt-3">
+            <h2 className="text-[11px] font-bold text-gray-700 uppercase tracking-wider border-b border-gray-300 pb-0.5 mb-1">Links</h2>
+            {data.links.map(l => (
+              <p key={l.id} className="text-[10px]"><a href={l.url} className="text-blue-700 underline">{l.label || "Link"}</a> — <span className="text-gray-400">{l.url}</span></p>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -559,6 +785,8 @@ export default function CvGeneratorPage() {
               {template === "classic" && <ClassicPreview data={data} />}
               {template === "modern" && <ModernPreview data={data} />}
               {template === "minimal" && <MinimalPreview data={data} />}
+              {template === "europass" && <EuropassPreview data={data} />}
+              {template === "europass2" && <Europass2Preview data={data} />}
             </div>
           </div>
         </div>
