@@ -16,7 +16,16 @@ const COLORS = [
   { label: "Green", value: "#166534" },
 ];
 
-const DigitalSignaturePage = () => {
+const SIGNATURE_FONTS = [
+  { label: "Cursive Classic", value: "'Dancing Script', cursive", import: "Dancing+Script" },
+  { label: "Elegant", value: "'Great Vibes', cursive", import: "Great+Vibes" },
+  { label: "Handwritten", value: "'Caveat', cursive", import: "Caveat" },
+  { label: "Formal", value: "'Parisienne', cursive", import: "Parisienne" },
+  { label: "Bold Script", value: "'Satisfy', cursive", import: "Satisfy" },
+  { label: "Artistic", value: "'Sacramento', cursive", import: "Sacramento" },
+];
+
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
