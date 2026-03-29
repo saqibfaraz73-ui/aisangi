@@ -152,12 +152,6 @@ function ModernPreview({ data }: { data: CvData }) {
           {data.phone && <p>{data.phone}</p>}
           {data.address && <p>{data.address}</p>}
         </div>
-        {data.links.length > 0 && (
-          <div className="text-[10px] space-y-1">
-            <p className="font-semibold text-white text-[11px] uppercase tracking-wider">Links</p>
-            {data.links.map(l => <a key={l.id} href={l.url} className="block text-sky-300 underline truncate">{l.label || l.url}</a>)}
-          </div>
-        )}
         {data.skills.length > 0 && (
           <div>
             <p className="font-semibold text-white text-[11px] uppercase tracking-wider mb-1">Skills</p>
