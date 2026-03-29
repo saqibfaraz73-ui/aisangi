@@ -543,7 +543,7 @@ export default function CvGeneratorPage() {
 
           {/* Preview */}
           <div className="border border-border rounded-lg overflow-auto max-h-[80vh] bg-muted/20">
-            <div ref={previewRef} className="w-[210mm] mx-auto shadow-lg" style={{ minHeight: "297mm" }}>
+            <div ref={previewRef} className="w-[210mm] max-w-full mx-auto shadow-lg">
               {template === "classic" && <ClassicPreview data={data} />}
               {template === "modern" && <ModernPreview data={data} />}
               {template === "minimal" && <MinimalPreview data={data} />}
