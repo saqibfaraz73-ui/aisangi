@@ -94,6 +94,8 @@ const AppRoutes = () => {
       <Route path="/tools/pdf-editor" element={<ProtectedRoute><PdfEditorPage /></ProtectedRoute>} />
       <Route path="/tools/cv-generator" element={<ProtectedRoute><CvGeneratorPage /></ProtectedRoute>} />
       <Route path="/tools/digital-signature" element={<ProtectedRoute><DigitalSignaturePage /></ProtectedRoute>} />
+      <Route path="/tools/citation-generator" element={<ProtectedRoute><CitationGeneratorPage /></ProtectedRoute>} />
+      <Route path="/tools/thesis-formatter" element={<ProtectedRoute><ThesisFormatterPage /></ProtectedRoute>} />
       <Route path="/invitation-card" element={<ProtectedRoute><InvitationCardPage /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
