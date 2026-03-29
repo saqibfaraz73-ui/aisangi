@@ -222,7 +222,7 @@ function ModernPreview({ data }: { data: CvData }) {
 
 function MinimalPreview({ data }: { data: CvData }) {
   return (
-    <div className="bg-white text-black p-10 min-h-[297mm] w-full font-['Helvetica','Arial',sans-serif] text-[11px] leading-relaxed">
+    <div className="bg-white text-black p-10 w-full font-['Helvetica','Arial',sans-serif] text-[11px] leading-relaxed">
       <div className="flex items-start gap-4 mb-6">
         {data.photo && (
           <img src={data.photo} alt="Profile" className="w-16 h-16 rounded object-cover flex-shrink-0" />
