@@ -40,12 +40,12 @@ const DigitalSignaturePage = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width = 600;
-    canvas.height = 200;
+    canvas.width = 900;
+    canvas.height = 400;
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, 600, 200);
+      ctx.fillRect(0, 0, 900, 400);
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
     }
@@ -157,7 +157,7 @@ const DigitalSignaturePage = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, 900, 400);
     setHasSignature(false);
     setSignatureDataUrl(null);
     setHistory([]);
@@ -387,7 +387,7 @@ const DigitalSignaturePage = () => {
                 <canvas
                   ref={canvasRef}
                   className="w-full cursor-crosshair"
-                  style={{ maxHeight: 200, aspectRatio: "3/1" }}
+                  style={{ minHeight: 300, aspectRatio: "9/4" }}
                   onMouseDown={startDraw}
                   onMouseMove={draw}
                   onMouseUp={endDraw}
