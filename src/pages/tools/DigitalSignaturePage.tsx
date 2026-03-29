@@ -26,6 +26,11 @@ const DigitalSignaturePage = () => {
   const [hasSignature, setHasSignature] = useState(false);
   const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null);
   const [history, setHistory] = useState<ImageData[]>([]);
+  // Typed signature state
+  const [typedName, setTypedName] = useState("");
+  const [selectedFont, setSelectedFont] = useState(SIGNATURE_FONTS[0].value);
+  const [typedColor, setTypedColor] = useState("#000000");
+  const [typedSize, setTypedSize] = useState(48);
 
   // Overlay state
   const [overlayTab, setOverlayTab] = useState("draw");
