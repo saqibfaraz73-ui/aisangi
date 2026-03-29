@@ -785,6 +785,8 @@ export default function CvGeneratorPage() {
               {template === "classic" && <ClassicPreview data={data} />}
               {template === "modern" && <ModernPreview data={data} />}
               {template === "minimal" && <MinimalPreview data={data} />}
+              {template === "europass" && <EuropassPreview data={data} />}
+              {template === "europass2" && <Europass2Preview data={data} />}
             </div>
           </div>
         </div>
