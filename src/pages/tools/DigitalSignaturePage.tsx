@@ -25,7 +25,7 @@ const SIGNATURE_FONTS = [
   { label: "Artistic", value: "'Sacramento', cursive", import: "Sacramento" },
 ];
 
-
+const DigitalSignaturePage = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const overlayCanvasRef = useRef<HTMLCanvasElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
