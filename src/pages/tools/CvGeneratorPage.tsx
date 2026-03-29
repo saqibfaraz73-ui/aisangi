@@ -123,6 +123,14 @@ function ClassicPreview({ data }: { data: CvData }) {
           ))}
         </>
       )}
+      {data.links.length > 0 && (
+        <>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-700 mb-1 mt-3">Links</h2>
+          {data.links.map(l => (
+            <p key={l.id} className="text-[10px]"><a href={l.url} className="text-blue-700 underline">{l.label || "Link"}</a> — <span className="text-gray-500">{l.url}</span></p>
+          ))}
+        </>
+      )}
     </div>
   );
 }
