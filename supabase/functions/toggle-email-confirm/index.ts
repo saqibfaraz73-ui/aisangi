@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    
+
     // Verify caller is admin
     const userClient = createClient(supabaseUrl, Deno.env.get("SUPABASE_ANON_KEY")!, {
       global: { headers: { Authorization: authHeader } },
@@ -36,14 +36,32 @@ Deno.serve(async (req) => {
 
     const { auto_confirm } = await req.json();
 
-    // Update Supabase Auth config via Management API
-    const projectRef = supabaseUrl.match(/https:\/\/([^.]+)/)?.[1];
-    
     // Update the app_settings table
     await adminClient
       .from("app_settings")
-      .update({ value: auto_confirm ? "true" : "false", updated_at: new Date().toISOString() })
-      .eq("key", "auto_confirm_email");
+      .upsert({ key: "auto_confirm_email", value: auto_confirm ? "true" : "false", updated_at: new Date().toISOString() }, { onConflict: "key" });
+
+    // Update Supabase Auth config via Management API
+    const projectRef = supabaseUrl.match(/https:\/\/([^.]+)/)?.[1];
+    if (projectRef) {
+      const mgmtResp = await fetch(
+        `https://api.supabase.com/v1/projects/${projectRef}/config/auth`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${serviceKey}`,
+            apikey: serviceKey,
+          },
+          body: JSON.stringify({
+            GOTRUE_MAILER_AUTOCONFIRM: auto_confirm,
+          }),
+        }
+      );
+      if (!mgmtResp.ok) {
+        console.warn("Management API call failed:", await mgmtResp.text());
+      }
+    }
 
     return new Response(
       JSON.stringify({ success: true, auto_confirm }),
