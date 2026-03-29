@@ -40,8 +40,8 @@ const DigitalSignaturePage = () => {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    canvas.width = 600;
-    canvas.height = 200;
+    canvas.width = 900;
+    canvas.height = 400;
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.fillStyle = "#ffffff";
