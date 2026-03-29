@@ -379,7 +379,8 @@ const DigitalSignaturePage = () => {
         <Tabs value={overlayTab} onValueChange={setOverlayTab}>
           <TabsList className="mb-4">
             <TabsTrigger value="draw">Draw Signature</TabsTrigger>
-            <TabsTrigger value="place" disabled={!hasSignature}>Place on Document</TabsTrigger>
+            <TabsTrigger value="type">Type Signature</TabsTrigger>
+            <TabsTrigger value="place" disabled={!hasSignature && !typedName}>Place on Document</TabsTrigger>
           </TabsList>
 
           <TabsContent value="draw">
