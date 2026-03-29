@@ -134,7 +134,7 @@ function ClassicPreview({ data }: { data: CvData }) {
 
 function ModernPreview({ data }: { data: CvData }) {
   return (
-    <div className="bg-white text-black flex min-h-[297mm] w-full text-[11px] leading-relaxed">
+    <div className="bg-white text-black flex w-full text-[11px] leading-relaxed">
       {/* Sidebar */}
       <div className="w-[35%] bg-slate-800 text-white p-5 flex flex-col gap-3">
         {data.photo && (
