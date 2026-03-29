@@ -39,6 +39,8 @@ import ImageToTextPage from "./pages/tools/ImageToTextPage.tsx";
 import PdfEditorPage from "./pages/tools/PdfEditorPage.tsx";
 import CvGeneratorPage from "./pages/tools/CvGeneratorPage.tsx";
 import DigitalSignaturePage from "./pages/tools/DigitalSignaturePage.tsx";
+import CitationGeneratorPage from "./pages/tools/CitationGeneratorPage.tsx";
+import ThesisFormatterPage from "./pages/tools/ThesisFormatterPage.tsx";
 import InvitationCardPage from "./pages/InvitationCardPage.tsx";
 import { Loader2 } from "lucide-react";
 
