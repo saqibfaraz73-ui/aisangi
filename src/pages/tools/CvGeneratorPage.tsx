@@ -58,11 +58,6 @@ function ClassicPreview({ data }: { data: CvData }) {
             {data.phone && <span>{data.phone}</span>}
             {data.address && <span>{data.address}</span>}
           </div>
-          {data.links.length > 0 && (
-            <div className="flex flex-wrap gap-x-3 mt-1 text-[10px] text-blue-700">
-              {data.links.map(l => <a key={l.id} href={l.url} className="underline">{l.label || l.url}</a>)}
-            </div>
-          )}
         </div>
       </div>
       <hr className="border-gray-400 mb-3" />
