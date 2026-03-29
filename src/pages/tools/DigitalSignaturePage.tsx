@@ -157,7 +157,7 @@ const DigitalSignaturePage = () => {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillRect(0, 0, 900, 400);
     setHasSignature(false);
     setSignatureDataUrl(null);
     setHistory([]);
