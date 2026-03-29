@@ -29,6 +29,8 @@ const TOOLS = [
   { to: "/poster-generator?category=Business+Pad", label: "Business Pad Maker", desc: "Create letterheads, notepads & letter pads", icon: NotebookPen },
   { to: "/tools/cv-generator", label: "CV / Resume Maker", desc: "Professional CV with photo, links & PDF export", icon: FileUser },
   { to: "/tools/digital-signature", label: "Digital Signature", desc: "Draw signature, save or place on documents", icon: Signature },
+  { to: "/tools/citation-generator", label: "Citation Generator", desc: "APA, MLA, Chicago, Harvard, IEEE references", icon: BookOpen },
+  { to: "/tools/thesis-formatter", label: "Thesis Formatter", desc: "Format thesis & synopsis with proper settings", icon: GraduationCap },
 ];
 
 const ToolsPage = () => (
