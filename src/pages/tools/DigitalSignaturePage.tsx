@@ -387,7 +387,7 @@ const DigitalSignaturePage = () => {
                 <canvas
                   ref={canvasRef}
                   className="w-full cursor-crosshair"
-                  style={{ maxHeight: 200, aspectRatio: "3/1" }}
+                  style={{ minHeight: 300, aspectRatio: "9/4" }}
                   onMouseDown={startDraw}
                   onMouseMove={draw}
                   onMouseUp={endDraw}
