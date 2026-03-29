@@ -286,6 +286,14 @@ function MinimalPreview({ data }: { data: CvData }) {
           {data.certifications.map(c => <p key={c.id} className="text-[10px] text-gray-600">{c.name} — {c.issuer} ({c.year})</p>)}
         </div>
       )}
+      {data.links.length > 0 && (
+        <div className="mt-4">
+          <h2 className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Links</h2>
+          {data.links.map(l => (
+            <p key={l.id} className="text-[10px]"><a href={l.url} className="text-gray-500 underline">{l.label || "Link"}</a> — <span className="text-gray-400">{l.url}</span></p>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
