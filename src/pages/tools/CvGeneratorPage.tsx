@@ -58,11 +58,6 @@ function ClassicPreview({ data }: { data: CvData }) {
             {data.phone && <span>{data.phone}</span>}
             {data.address && <span>{data.address}</span>}
           </div>
-          {data.links.length > 0 && (
-            <div className="flex flex-wrap gap-x-3 mt-1 text-[10px] text-blue-700">
-              {data.links.map(l => <a key={l.id} href={l.url} className="underline">{l.label || l.url}</a>)}
-            </div>
-          )}
         </div>
       </div>
       <hr className="border-gray-400 mb-3" />
@@ -128,6 +123,14 @@ function ClassicPreview({ data }: { data: CvData }) {
           ))}
         </>
       )}
+      {data.links.length > 0 && (
+        <>
+          <h2 className="text-xs font-bold uppercase tracking-widest text-gray-700 mb-1 mt-3">Links</h2>
+          {data.links.map(l => (
+            <p key={l.id} className="text-[10px]"><a href={l.url} className="text-blue-700 underline">{l.label || "Link"}</a> — <span className="text-gray-500">{l.url}</span></p>
+          ))}
+        </>
+      )}
     </div>
   );
 }
@@ -149,12 +152,6 @@ function ModernPreview({ data }: { data: CvData }) {
           {data.phone && <p>{data.phone}</p>}
           {data.address && <p>{data.address}</p>}
         </div>
-        {data.links.length > 0 && (
-          <div className="text-[10px] space-y-1">
-            <p className="font-semibold text-white text-[11px] uppercase tracking-wider">Links</p>
-            {data.links.map(l => <a key={l.id} href={l.url} className="block text-sky-300 underline truncate">{l.label || l.url}</a>)}
-          </div>
-        )}
         {data.skills.length > 0 && (
           <div>
             <p className="font-semibold text-white text-[11px] uppercase tracking-wider mb-1">Skills</p>
@@ -215,6 +212,14 @@ function ModernPreview({ data }: { data: CvData }) {
             ))}
           </div>
         )}
+        {data.links.length > 0 && (
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-700 border-b border-slate-300 pb-1 mb-2">Links</h2>
+            {data.links.map(l => (
+              <p key={l.id} className="text-[10px] mb-1"><a href={l.url} className="text-blue-700 underline">{l.label || "Link"}</a> — <span className="text-gray-500">{l.url}</span></p>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -236,7 +241,6 @@ function MinimalPreview({ data }: { data: CvData }) {
         {data.email && <span>{data.email}</span>}
         {data.phone && <span>{data.phone}</span>}
         {data.address && <span>{data.address}</span>}
-        {data.links.map(l => <a key={l.id} href={l.url} className="text-gray-500 underline">{l.label || l.url}</a>)}
       </div>
       {data.summary && <p className="text-[10.5px] text-gray-600 mb-6 max-w-[80%] whitespace-pre-line">{data.summary}</p>}
       {data.experiences.length > 0 && (
@@ -280,6 +284,14 @@ function MinimalPreview({ data }: { data: CvData }) {
         <div className="mt-4">
           <h2 className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Certifications</h2>
           {data.certifications.map(c => <p key={c.id} className="text-[10px] text-gray-600">{c.name} — {c.issuer} ({c.year})</p>)}
+        </div>
+      )}
+      {data.links.length > 0 && (
+        <div className="mt-4">
+          <h2 className="text-[10px] font-medium uppercase tracking-[0.2em] text-gray-400 mb-2">Links</h2>
+          {data.links.map(l => (
+            <p key={l.id} className="text-[10px]"><a href={l.url} className="text-gray-500 underline">{l.label || "Link"}</a> — <span className="text-gray-400">{l.url}</span></p>
+          ))}
         </div>
       )}
     </div>
