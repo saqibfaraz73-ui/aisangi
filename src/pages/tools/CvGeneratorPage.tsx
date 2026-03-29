@@ -44,7 +44,7 @@ const TEMPLATES = [
 // ── CV Preview Components ──────────────────────────
 function ClassicPreview({ data }: { data: CvData }) {
   return (
-    <div className="bg-white text-black p-8 min-h-[297mm] w-full font-['Georgia',serif] text-[11px] leading-relaxed">
+    <div className="bg-white text-black p-8 w-full font-['Georgia',serif] text-[11px] leading-relaxed">
       {/* Header */}
       <div className="flex items-start gap-4 mb-4">
         {data.photo && (
@@ -134,7 +134,7 @@ function ClassicPreview({ data }: { data: CvData }) {
 
 function ModernPreview({ data }: { data: CvData }) {
   return (
-    <div className="bg-white text-black flex min-h-[297mm] w-full text-[11px] leading-relaxed">
+    <div className="bg-white text-black flex w-full text-[11px] leading-relaxed">
       {/* Sidebar */}
       <div className="w-[35%] bg-slate-800 text-white p-5 flex flex-col gap-3">
         {data.photo && (
@@ -222,7 +222,7 @@ function ModernPreview({ data }: { data: CvData }) {
 
 function MinimalPreview({ data }: { data: CvData }) {
   return (
-    <div className="bg-white text-black p-10 min-h-[297mm] w-full font-['Helvetica','Arial',sans-serif] text-[11px] leading-relaxed">
+    <div className="bg-white text-black p-10 w-full font-['Helvetica','Arial',sans-serif] text-[11px] leading-relaxed">
       <div className="flex items-start gap-4 mb-6">
         {data.photo && (
           <img src={data.photo} alt="Profile" className="w-16 h-16 rounded object-cover flex-shrink-0" />
@@ -306,41 +306,40 @@ export default function CvGeneratorPage() {
 
   const downloadPdf = async () => {
     if (!previewRef.current) return;
-    const { default: jsPDF } = await import("jspdf");
-    const el = previewRef.current;
-    // Use html2canvas-like approach via canvas
-    const canvas = document.createElement("canvas");
-    const scale = 2;
-    canvas.width = el.scrollWidth * scale;
-    canvas.height = el.scrollHeight * scale;
-    const ctx = canvas.getContext("2d")!;
-    ctx.scale(scale, scale);
-    // Serialize to SVG foreignObject
-    const svgData = `
-      <svg xmlns="http://www.w3.org/2000/svg" width="${el.scrollWidth}" height="${el.scrollHeight}">
-        <foreignObject width="100%" height="100%">
-          <div xmlns="http://www.w3.org/1999/xhtml">${el.outerHTML}</div>
-        </foreignObject>
-      </svg>`;
-    const img = new Image();
-    const blob = new Blob([svgData], { type: "image/svg+xml;charset=utf-8" });
-    const url = URL.createObjectURL(blob);
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0);
-      URL.revokeObjectURL(url);
+    try {
+      const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+        import("jspdf"),
+        import("html2canvas"),
+      ]);
+      const canvas = await html2canvas(previewRef.current, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: "#ffffff",
+      });
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
-      const pdfW = pdf.internal.pageSize.getWidth();
-      const pdfH = pdf.internal.pageSize.getHeight();
-      pdf.addImage(imgData, "PNG", 0, 0, pdfW, pdfH);
+      const pdfW = 210;
+      const pdfH = 297;
+      const canvasRatio = canvas.width / canvas.height;
+      const margin = 5;
+      const availW = pdfW - margin * 2;
+      const availH = pdfH - margin * 2;
+      let imgW = availW;
+      let imgH = imgW / canvasRatio;
+      if (imgH > availH) {
+        imgH = availH;
+        imgW = imgH * canvasRatio;
+      }
+      const x = (pdfW - imgW) / 2;
+      const y = margin;
+      pdf.addImage(imgData, "PNG", x, y, imgW, imgH);
       pdf.save(`${data.fullName || "CV"}.pdf`);
       toast.success("CV downloaded as PDF");
-    };
-    img.onerror = () => {
-      // Fallback: direct print
+    } catch (err) {
+      console.error("PDF generation error:", err);
       toast.error("PDF generation failed. Try using browser print (Ctrl+P).");
-    };
-    img.src = url;
+    }
   };
 
   const TABS = [
@@ -544,7 +543,7 @@ export default function CvGeneratorPage() {
 
           {/* Preview */}
           <div className="border border-border rounded-lg overflow-auto max-h-[80vh] bg-muted/20">
-            <div ref={previewRef} className="w-[210mm] mx-auto shadow-lg" style={{ minHeight: "297mm" }}>
+            <div ref={previewRef} className="w-[210mm] max-w-full mx-auto shadow-lg">
               {template === "classic" && <ClassicPreview data={data} />}
               {template === "modern" && <ModernPreview data={data} />}
               {template === "minimal" && <MinimalPreview data={data} />}
