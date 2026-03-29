@@ -233,7 +233,6 @@ function MinimalPreview({ data }: { data: CvData }) {
         {data.email && <span>{data.email}</span>}
         {data.phone && <span>{data.phone}</span>}
         {data.address && <span>{data.address}</span>}
-        {data.links.map(l => <a key={l.id} href={l.url} className="text-gray-500 underline">{l.label || l.url}</a>)}
       </div>
       {data.summary && <p className="text-[10.5px] text-gray-600 mb-6 max-w-[80%] whitespace-pre-line">{data.summary}</p>}
       {data.experiences.length > 0 && (
