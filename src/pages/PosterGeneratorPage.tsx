@@ -327,11 +327,9 @@ export default function PosterGeneratorPage() {
             {currentElement ? (
               <div className="space-y-2">
                 <ElementEditor element={currentElement} onUpdate={updateElement} onUploadPhoto={handleUploadPhoto} />
-                {currentElement.id.startsWith("custom-") && (
-                  <Button size="sm" variant="destructive" onClick={() => deleteElement(currentElement.id)} className="w-full gap-1.5 text-xs">
-                    <Trash2 className="h-3.5 w-3.5" /> Remove Element
-                  </Button>
-                )}
+                <Button size="sm" variant="destructive" onClick={() => deleteElement(currentElement.id)} className="w-full gap-1.5 text-xs">
+                  <Trash2 className="h-3.5 w-3.5" /> Remove Element
+                </Button>
               </div>
             ) : (
               <div className="text-xs sm:text-sm text-muted-foreground bg-card border border-border rounded-lg p-3 sm:p-4">
