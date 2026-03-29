@@ -44,7 +44,7 @@ const TEMPLATES = [
 // ── CV Preview Components ──────────────────────────
 function ClassicPreview({ data }: { data: CvData }) {
   return (
-    <div className="bg-white text-black p-8 min-h-[297mm] w-full font-['Georgia',serif] text-[11px] leading-relaxed">
+    <div className="bg-white text-black p-8 w-full font-['Georgia',serif] text-[11px] leading-relaxed">
       {/* Header */}
       <div className="flex items-start gap-4 mb-4">
         {data.photo && (
