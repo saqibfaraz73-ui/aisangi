@@ -80,7 +80,7 @@ const AuthPage = () => {
           setLoading(false);
           return;
         }
-        const { error } = await supabase.auth.signUp({
+        const { error, data: signUpData } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -89,11 +89,16 @@ const AuthPage = () => {
           },
         });
         if (error) throw error;
-        toast({
-          title: "Account created!",
-          description: "Please check your email to verify your account before logging in.",
-        });
-        setIsLogin(true);
+        if (autoConfirm && signUpData.session) {
+          toast({ title: "Account created! Welcome!" });
+          navigate("/");
+        } else {
+          toast({
+            title: "Account created!",
+            description: "Please check your email to verify your account before logging in.",
+          });
+          setIsLogin(true);
+        }
       }
     } catch (err: any) {
       toast({
