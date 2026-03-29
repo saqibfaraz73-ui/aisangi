@@ -239,7 +239,7 @@ const DigitalSignaturePage = () => {
         c.width = viewport.width;
         c.height = viewport.height;
         const cCtx = c.getContext("2d")!;
-        await page.render({ canvasContext: cCtx, viewport }).promise;
+        await page.render({ canvasContext: cCtx, viewport, canvas: c } as any).promise;
         const img = new window.Image();
         img.onload = () => {
           setOverlayImage(img);
