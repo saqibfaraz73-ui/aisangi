@@ -3,7 +3,7 @@ import { NavLink } from "react-router-dom";
 import { motion } from "framer-motion";
 import {
   QrCode, FileDown, ArrowLeftRight, Palette, Type, FileText,
-  Droplets, LayoutGrid, PenTool, Layers, CropIcon, Scissors, ScanText, FileEdit, UtensilsCrossed, Heart, Image, ImagePlus, CreditCard, NotebookPen
+  Droplets, LayoutGrid, PenTool, Layers, CropIcon, Scissors, ScanText, FileEdit, UtensilsCrossed, Heart, Image, ImagePlus, CreditCard, NotebookPen, FileUser
 } from "lucide-react";
 
 const TOOLS = [
@@ -27,6 +27,7 @@ const TOOLS = [
   { to: "/image-editor", label: "Image Editor", desc: "Edit, resize & enhance your images", icon: ImagePlus },
   { to: "/poster-generator?category=Business+Card", label: "Business Card Maker", desc: "Design professional visiting & business cards", icon: CreditCard },
   { to: "/poster-generator?category=Business+Pad", label: "Business Pad Maker", desc: "Create letterheads, notepads & letter pads", icon: NotebookPen },
+  { to: "/tools/cv-generator", label: "CV / Resume Maker", desc: "Professional CV with photo, links & PDF export", icon: FileUser },
 ];
 
 const ToolsPage = () => (
