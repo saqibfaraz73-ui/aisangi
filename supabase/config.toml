@@ -2,7 +2,7 @@ project_id = "qxevmduydqbxdwdxyteq"
 
 [auth]
 site_url = "https://ai.sangitech.com"
-additional_redirect_urls = ["https://ai.sangitech.com", "https://aisangi.lovable.app"]
+additional_redirect_urls = ["https://ai.sangitech.com", "https://ai.sangitech.com/**", "https://aisangi.lovable.app", "https://aisangi.lovable.app/**"]
 
 [functions.generate-script]
 verify_jwt = false
