@@ -17,8 +17,15 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [autoConfirm, setAutoConfirm] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  useState(() => {
+    supabase.from("app_settings").select("value").eq("key", "auto_confirm_email").maybeSingle().then(({ data }) => {
+      if (data?.value === "true") setAutoConfirm(true);
+    });
+  });
 
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
