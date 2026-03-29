@@ -429,7 +429,7 @@ const DigitalSignaturePage = () => {
                 <div className="flex flex-wrap gap-2 justify-center">
                   <Button size="sm" onClick={saveAsImage}><ImageIcon className="h-4 w-4 mr-1" />Save PNG</Button>
                   <Button size="sm" onClick={saveAsPdf}><FileText className="h-4 w-4 mr-1" />Save PDF</Button>
-                  <Button size="sm" variant="outline" onClick={copyToClipboard}><Copy className="h-4 w-4 mr-1" />Copy</Button>
+                  <Button size="sm" variant="outline" onClick={copyToClipboard}><Copy className="h-4 w-4 mr-1" />Copy Image</Button>
                   <Button size="sm" variant="secondary" onClick={() => setOverlayTab("place")}>
                     <Upload className="h-4 w-4 mr-1" />Place on Document
                   </Button>
