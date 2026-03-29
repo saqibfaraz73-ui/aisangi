@@ -212,6 +212,14 @@ function ModernPreview({ data }: { data: CvData }) {
             ))}
           </div>
         )}
+        {data.links.length > 0 && (
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-slate-700 border-b border-slate-300 pb-1 mb-2">Links</h2>
+            {data.links.map(l => (
+              <p key={l.id} className="text-[10px] mb-1"><a href={l.url} className="text-blue-700 underline">{l.label || "Link"}</a> — <span className="text-gray-500">{l.url}</span></p>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
