@@ -448,6 +448,121 @@ const DigitalSignaturePage = () => {
             </Card>
           </TabsContent>
 
+          <TabsContent value="type">
+            <Card className="p-4 space-y-4">
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-foreground">Your Name</label>
+                <input
+                  type="text"
+                  value={typedName}
+                  onChange={(e) => setTypedName(e.target.value)}
+                  placeholder="Type your full name..."
+                  className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground text-lg"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">Font Style</label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {SIGNATURE_FONTS.map((f) => (
+                    <button
+                      key={f.value}
+                      onClick={() => setSelectedFont(f.value)}
+                      className={`p-3 border rounded-lg text-left transition-all ${selectedFont === f.value ? "border-primary bg-primary/10" : "border-border hover:border-muted-foreground"}`}
+                    >
+                      <span className="text-xs text-muted-foreground block mb-1">{f.label}</span>
+                      <span style={{ fontFamily: f.value, fontSize: 22, color: typedColor }} className="block truncate">
+                        {typedName || "Your Name"}
+                      </span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-1">
+                  <Palette className="h-4 w-4 text-muted-foreground" />
+                  {COLORS.map((c) => (
+                    <button
+                      key={c.value}
+                      onClick={() => setTypedColor(c.value)}
+                      className={`w-7 h-7 rounded-full border-2 transition-all ${typedColor === c.value ? "border-primary scale-110" : "border-border"}`}
+                      style={{ backgroundColor: c.value }}
+                      title={c.label}
+                    />
+                  ))}
+                </div>
+                <div className="flex items-center gap-2 min-w-[140px]">
+                  <span className="text-xs text-muted-foreground">Size</span>
+                  <Slider min={24} max={80} step={2} value={[typedSize]} onValueChange={([v]) => setTypedSize(v)} className="w-24" />
+                </div>
+              </div>
+
+              {/* Typed signature preview */}
+              {typedName && (
+                <>
+                  <div className="border border-border rounded-lg p-6 bg-white flex justify-center">
+                    <span
+                      style={{ fontFamily: selectedFont, fontSize: typedSize, color: typedColor, lineHeight: 1.2 }}
+                      className="select-all"
+                    >
+                      {typedName}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2 justify-center">
+                    <Button size="sm" onClick={() => {
+                      navigator.clipboard.writeText(typedName);
+                      toast({ title: "Name copied as text" });
+                    }}>
+                      <Copy className="h-4 w-4 mr-1" />Copy Text
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      // Render typed signature to canvas and save as PNG
+                      const c = document.createElement("canvas");
+                      const ctx = c.getContext("2d")!;
+                      ctx.font = `${typedSize * 2}px ${selectedFont}`;
+                      const metrics = ctx.measureText(typedName);
+                      const pad = 20;
+                      c.width = metrics.width + pad * 2;
+                      c.height = typedSize * 3 + pad * 2;
+                      ctx.font = `${typedSize * 2}px ${selectedFont}`;
+                      ctx.fillStyle = typedColor;
+                      ctx.textBaseline = "middle";
+                      ctx.fillText(typedName, pad, c.height / 2);
+                      const a = document.createElement("a");
+                      a.href = c.toDataURL("image/png");
+                      a.download = "signature.png";
+                      a.click();
+                      toast({ title: "Typed signature saved as PNG" });
+                    }}>
+                      <ImageIcon className="h-4 w-4 mr-1" />Save PNG
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      const c = document.createElement("canvas");
+                      const ctx = c.getContext("2d")!;
+                      ctx.font = `${typedSize * 2}px ${selectedFont}`;
+                      const metrics = ctx.measureText(typedName);
+                      const pad = 20;
+                      c.width = metrics.width + pad * 2;
+                      c.height = typedSize * 3 + pad * 2;
+                      ctx.font = `${typedSize * 2}px ${selectedFont}`;
+                      ctx.fillStyle = typedColor;
+                      ctx.textBaseline = "middle";
+                      ctx.fillText(typedName, pad, c.height / 2);
+                      const dataUrl = c.toDataURL("image/png");
+                      setSignatureDataUrl(dataUrl);
+                      setHasSignature(true);
+                      setOverlayTab("place");
+                      toast({ title: "Signature ready — upload a document to place it" });
+                    }}>
+                      <Upload className="h-4 w-4 mr-1" />Place on Document
+                    </Button>
+                  </div>
+                </>
+              )}
+            </Card>
+          </TabsContent>
+
           <TabsContent value="place">
             <Card className="p-4 space-y-4">
               {!uploadedFile ? (
