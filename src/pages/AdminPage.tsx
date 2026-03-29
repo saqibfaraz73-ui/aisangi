@@ -154,6 +154,10 @@ const AdminPage = () => {
 
         <PremiumLimitsSection />
 
+        <FreeToolLimitsSection />
+
+        <AiToolLimitsSection />
+
         <AdMobSection />
 
         <AppSettingsSection />

@@ -28,7 +28,17 @@ interface Props {
   onRefresh: () => void;
 }
 
-const SECTIONS = ["text_to_image", "image_to_video", "audio_overlay", "script_ai"];
+const SECTIONS = [
+  "text_to_image", "image_to_video", "audio_overlay", "script_ai",
+  "paraphrase", "summarizer", "presentation",
+  "word_counter", "bibliography", "citation", "thesis", "plagiarism",
+  "math_equation", "flashcards", "assignment", "csv_viewer", "survey",
+  "reference_mgr", "handwriting", "mindmap", "qr_code", "image_compressor",
+  "format_converter", "color_picker", "meme_gen", "screenshot_pdf",
+  "image_watermark", "photo_collage", "svg_editor", "text_behind",
+  "image_cropper", "video_trimmer", "image_to_text", "pdf_editor",
+  "cv_maker", "digital_signature",
+];
 
 const UserLimitsSection = ({ users, userLimits, onRefresh }: Props) => {
   const [selectedUser, setSelectedUser] = useState<string>("");
