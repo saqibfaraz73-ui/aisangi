@@ -45,7 +45,7 @@ const DigitalSignaturePage = () => {
     const ctx = canvas.getContext("2d");
     if (ctx) {
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, 600, 200);
+      ctx.fillRect(0, 0, 900, 400);
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
     }
