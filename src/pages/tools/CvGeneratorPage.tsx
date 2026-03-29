@@ -39,6 +39,8 @@ const TEMPLATES = [
   { id: "classic", name: "Classic", desc: "Traditional single-column" },
   { id: "modern", name: "Modern", desc: "Two-column sidebar layout" },
   { id: "minimal", name: "Minimal", desc: "Clean & whitespace-focused" },
+  { id: "europass", name: "Europass", desc: "EU standard Europass format" },
+  { id: "europass2", name: "Europass 2", desc: "Europass alternate layout" },
 ];
 
 // ── CV Preview Components ──────────────────────────
