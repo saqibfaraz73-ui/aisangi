@@ -42,6 +42,20 @@ import DigitalSignaturePage from "./pages/tools/DigitalSignaturePage.tsx";
 import CitationGeneratorPage from "./pages/tools/CitationGeneratorPage.tsx";
 import ThesisFormatterPage from "./pages/tools/ThesisFormatterPage.tsx";
 import InvitationCardPage from "./pages/InvitationCardPage.tsx";
+import ParaphraseToolPage from "./pages/tools/ParaphraseToolPage.tsx";
+import WordCounterPage from "./pages/tools/WordCounterPage.tsx";
+import BibliographyMakerPage from "./pages/tools/BibliographyMakerPage.tsx";
+import AiSummarizerPage from "./pages/tools/AiSummarizerPage.tsx";
+import PresentationMakerPage from "./pages/tools/PresentationMakerPage.tsx";
+import PlagiarismCheckerPage from "./pages/tools/PlagiarismCheckerPage.tsx";
+import MathEquationPage from "./pages/tools/MathEquationPage.tsx";
+import FlashcardGeneratorPage from "./pages/tools/FlashcardGeneratorPage.tsx";
+import AssignmentPlannerPage from "./pages/tools/AssignmentPlannerPage.tsx";
+import CsvViewerPage from "./pages/tools/CsvViewerPage.tsx";
+import SurveyBuilderPage from "./pages/tools/SurveyBuilderPage.tsx";
+import ReferenceManagerPage from "./pages/tools/ReferenceManagerPage.tsx";
+import TextToHandwritingPage from "./pages/tools/TextToHandwritingPage.tsx";
+import NotesToMindMapPage from "./pages/tools/NotesToMindMapPage.tsx";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -97,6 +111,20 @@ const AppRoutes = () => {
       <Route path="/tools/citation-generator" element={<ProtectedRoute><CitationGeneratorPage /></ProtectedRoute>} />
       <Route path="/tools/thesis-formatter" element={<ProtectedRoute><ThesisFormatterPage /></ProtectedRoute>} />
       <Route path="/invitation-card" element={<ProtectedRoute><InvitationCardPage /></ProtectedRoute>} />
+      <Route path="/tools/paraphrase" element={<ProtectedRoute><SectionGate section="paraphrase"><ParaphraseToolPage /></SectionGate></ProtectedRoute>} />
+      <Route path="/tools/word-counter" element={<ProtectedRoute><WordCounterPage /></ProtectedRoute>} />
+      <Route path="/tools/bibliography-maker" element={<ProtectedRoute><BibliographyMakerPage /></ProtectedRoute>} />
+      <Route path="/tools/ai-summarizer" element={<ProtectedRoute><SectionGate section="summarizer"><AiSummarizerPage /></SectionGate></ProtectedRoute>} />
+      <Route path="/tools/presentation-maker" element={<ProtectedRoute><SectionGate section="presentation"><PresentationMakerPage /></SectionGate></ProtectedRoute>} />
+      <Route path="/tools/plagiarism-checker" element={<ProtectedRoute><PlagiarismCheckerPage /></ProtectedRoute>} />
+      <Route path="/tools/math-equation" element={<ProtectedRoute><MathEquationPage /></ProtectedRoute>} />
+      <Route path="/tools/flashcard-generator" element={<ProtectedRoute><FlashcardGeneratorPage /></ProtectedRoute>} />
+      <Route path="/tools/assignment-planner" element={<ProtectedRoute><AssignmentPlannerPage /></ProtectedRoute>} />
+      <Route path="/tools/csv-viewer" element={<ProtectedRoute><CsvViewerPage /></ProtectedRoute>} />
+      <Route path="/tools/survey-builder" element={<ProtectedRoute><SurveyBuilderPage /></ProtectedRoute>} />
+      <Route path="/tools/reference-manager" element={<ProtectedRoute><ReferenceManagerPage /></ProtectedRoute>} />
+      <Route path="/tools/text-to-handwriting" element={<ProtectedRoute><TextToHandwritingPage /></ProtectedRoute>} />
+      <Route path="/tools/notes-to-mindmap" element={<ProtectedRoute><NotesToMindMapPage /></ProtectedRoute>} />
       <Route path="/admin" element={<ProtectedRoute><AdminPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>
