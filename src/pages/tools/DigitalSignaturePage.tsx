@@ -41,6 +41,16 @@ const DigitalSignaturePage = () => {
   const [isDragging, setIsDragging] = useState(false);
   const dragOffset = useRef({ x: 0, y: 0 });
 
+  // Load Google Fonts for typed signatures
+  useEffect(() => {
+    const families = SIGNATURE_FONTS.map(f => f.import).join("&family=");
+    const link = document.createElement("link");
+    link.href = `https://fonts.googleapis.com/css2?family=${families}&display=swap`;
+    link.rel = "stylesheet";
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, []);
+
   // Init canvas
   useEffect(() => {
     const canvas = canvasRef.current;
