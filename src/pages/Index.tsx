@@ -14,6 +14,14 @@ import AppHeader from "@/components/AppHeader";
 import { usePersistedState } from "@/hooks/use-persisted-state";
 
 const GENERAL_PROMPTS = [
+  // Trending AI
+  { category: "🔥 Trending AI", prompts: [
+    "A serene portrait of a woman with long dark wavy hair walking in a garden, wearing a light-colored off-the-shoulder top with puff sleeves, holding a white flower, surrounded by various flowers plants and roses, soft diffused lighting, high-resolution natural quality",
+    "A vibrant indoor lifestyle photo of a young female sitting in a circular wooden nook on wall with hanging plants and neon lights, wearing a colorful pink rose full sleeve sweatshirt, light white trousers, white Apple Watch, chunky white sports shoes, full body view, casual relaxed pose, bright soft lighting, cozy modern cafe vibe with flowers in background",
+    "A beautiful and elegant young woman with long dark straight hair with subtle curls, cascaded over one shoulder, wearing a flowing floor-length fancy red dress with long sleeves and matching blue high heels, sitting gracefully on an ornate shell-shaped swing decorated with interwoven white string lights and elegant gold accents, luxurious and festive feel",
+    "A hyper-realistic portrait captured in close-up at a tilted 45-degree angle, waist-length very long brown voluminous hair flowing freely, a few thin soft strands drifting across the face, long curled eyelashes, lips in a gentle deep red shade giving a dreamy sweetness, wearing a full traditional black net lehenga, cinematic lighting",
+    "Ultra-realistic 8K full-body portrait, wearing a clean pressed white dress shirt with turned-up collar and small lapel microphone, dark navy blue trousers, polished brown dress shoes, casually leaning against a smooth light gray studio wall, hands in pockets, one leg crossed over the other, relaxed and confident body language, minimalist modern style",
+  ]},
   // General
   { category: "🎨 General", prompts: [
     "A cyberpunk city at night with neon lights reflecting on wet streets",
