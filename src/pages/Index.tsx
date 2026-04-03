@@ -81,6 +81,15 @@ const GENERAL_PROMPTS = [
 ];
 
 const CHARACTER_PROMPTS = [
+  // Trending AI
+  { category: "🔥 Trending AI", prompts: [
+    "A serene portrait walking in a garden, wearing a light-colored off-the-shoulder top with puff sleeves, holding a white flower, surrounded by various flowers plants and roses, soft diffused lighting, high-resolution natural quality",
+    "Sitting in a circular wooden nook on wall with hanging plants and neon lights, wearing a colorful pink rose full sleeve sweatshirt, light white trousers, white Apple Watch, chunky white sports shoes, full body view, casual relaxed pose, bright soft lighting, cozy modern cafe vibe",
+    "Wearing a flowing floor-length fancy red dress with long sleeves and matching blue high heels, sitting gracefully on an ornate shell-shaped swing decorated with interwoven white string lights and elegant gold accents, luxurious and festive feel",
+    "Close-up at a tilted 45-degree angle, waist-length very long voluminous hair flowing freely, a few thin soft strands drifting across the face, long curled eyelashes, lips in a gentle deep red shade, wearing a full traditional black net lehenga, dreamy cinematic lighting",
+    "Ultra-realistic 8K full-body portrait, wearing a clean pressed white dress shirt with turned-up collar, dark navy blue trousers, polished brown dress shoes, casually leaning against a smooth light gray studio wall, hands in pockets, relaxed and confident body language",
+    "Create with a couple pic, stylish young boy wearing an oversized black tshirt and light-colored cargo pants, standing outdoors leaning against a metal railing, background features soft dark greenery and red-orange foliage, 16K hyper-realistic portrait, natural soft light",
+  ]},
   // Eid Mubarak - English
   { category: "🌙 Eid Mubarak (English)", prompts: [
     "Wearing elegant Eid attire, standing in front of a beautifully decorated mosque at sunset with golden lanterns, text 'Eid Mubarak' in elegant calligraphy",
