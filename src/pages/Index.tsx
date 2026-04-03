@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Sparkles, Loader2, Trash2, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { AspectRatio } from "@/components/ui/aspect-ratio";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useUsageLimit } from "@/hooks/use-usage-limit";
@@ -163,6 +164,114 @@ const CHARACTER_PROMPTS = [
     "Working at a sleek desk with a city skyline view through floor-to-ceiling windows",
   ]},
 ];
+
+type PromptCategory = {
+  category: string;
+  prompts: string[];
+};
+
+const TRENDING_GENERAL_PREVIEWS = [
+  "/prompt-previews/trending-01.jpg",
+  "/prompt-previews/trending-02.jpg",
+  "/prompt-previews/trending-03.jpg",
+  "/prompt-previews/trending-04.jpg",
+  "/prompt-previews/trending-05.jpg",
+  "/prompt-previews/trending-06.jpg",
+  "/prompt-previews/trending-07.jpg",
+  "/prompt-previews/trending-08.jpg",
+  "/prompt-previews/trending-09.jpg",
+  "/prompt-previews/trending-10.jpg",
+  "/prompt-previews/trending-11.jpg",
+  "/prompt-previews/trending-12.jpg",
+  "/prompt-previews/trending-13.jpg",
+  "/prompt-previews/trending-14.jpg",
+  "/prompt-previews/trending-15.jpg",
+  "/prompt-previews/trending-16.jpg",
+  "/prompt-previews/trending-17.jpg",
+  "/prompt-previews/trending-18.jpg",
+];
+
+const GENERAL_PROMPT_PREVIEWS: Record<string, string[]> = {
+  "🔥 Trending AI": TRENDING_GENERAL_PREVIEWS,
+};
+
+const CHARACTER_PROMPT_PREVIEWS: Record<string, string[]> = {
+  "🔥 Trending AI": TRENDING_GENERAL_PREVIEWS.slice(0, 6),
+};
+
+const CATEGORY_PREVIEW_FALLBACKS: Record<string, string> = {
+  "🎨 General": "/prompt-previews/category-general.jpg",
+  "🌙 Eid Mubarak (English)": "/prompt-previews/category-eid-english.jpg",
+  "🌙 عید مبارک (Urdu)": "/prompt-previews/category-eid-urdu.jpg",
+  "🎬 Cinematic": "/prompt-previews/category-cinematic.jpg",
+  "💒 Wedding": "/prompt-previews/category-wedding.jpg",
+  "🎉 Party & Celebration": "/prompt-previews/category-party.jpg",
+  "✈️ Travel": "/prompt-previews/category-travel.jpg",
+  "💼 Professional": "/prompt-previews/category-professional.jpg",
+};
+
+const getPromptPreview = (category: string, index: number, isCharacterMode: boolean) => {
+  const categoryImages = isCharacterMode
+    ? CHARACTER_PROMPT_PREVIEWS[category]
+    : GENERAL_PROMPT_PREVIEWS[category];
+
+  return categoryImages?.[index] ?? categoryImages?.[0] ?? CATEGORY_PREVIEW_FALLBACKS[category] ?? "/placeholder.svg";
+};
+
+const PromptGallery = ({
+  categories,
+  isCharacterMode,
+  onSelect,
+}: {
+  categories: PromptCategory[];
+  isCharacterMode: boolean;
+  onSelect: (value: string) => void;
+}) => (
+  <div className="space-y-6">
+    {categories.map((cat) => (
+      <section key={cat.category} className="space-y-3">
+        <p className="text-xs font-semibold text-foreground">{cat.category}</p>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          {cat.prompts.map((value, index) => (
+            <button
+              key={`${cat.category}-${index}`}
+              type="button"
+              onClick={() => onSelect(value)}
+              className="group w-full overflow-hidden rounded-2xl border border-border bg-card text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:bg-accent/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <AspectRatio ratio={4 / 5}>
+                <img
+                  src={getPromptPreview(cat.category, index, isCharacterMode)}
+                  alt={`${cat.category} prompt preview`}
+                  loading="lazy"
+                  width={832}
+                  height={1024}
+                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                />
+              </AspectRatio>
+              <div className="space-y-2 p-3 sm:p-4">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+                  Tap to use prompt
+                </p>
+                <p
+                  className="text-sm font-medium leading-6 text-foreground"
+                  style={{
+                    display: "-webkit-box",
+                    WebkitBoxOrient: "vertical",
+                    WebkitLineClamp: 4,
+                    overflow: "hidden",
+                  }}
+                >
+                  {value}
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+    ))}
+  </div>
+);
 
 interface ImageResult {
   imageUrl: string;
@@ -397,43 +506,17 @@ const Index = () => {
                 {characterImages.length > 0 ? "Try these scene prompts" : "Try these prompts"}
               </p>
               {characterImages.length > 0 ? (
-                <div className="space-y-2">
-                  {CHARACTER_PROMPTS.map((cat) => (
-                    <div key={cat.category}>
-                      <p className="text-xs font-semibold text-foreground mb-1">{cat.category}</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {cat.prompts.map((p, i) => (
-                          <button
-                            key={i}
-                            onClick={() => setPrompt(p)}
-                            className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors text-left"
-                          >
-                            {p}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <PromptGallery
+                  categories={CHARACTER_PROMPTS}
+                  isCharacterMode={true}
+                  onSelect={setPrompt}
+                />
               ) : (
-                <div className="space-y-2">
-                  {GENERAL_PROMPTS.map((cat) => (
-                    <div key={cat.category}>
-                      <p className="text-xs font-semibold text-foreground mb-1">{cat.category}</p>
-                      <div className="flex flex-wrap gap-1.5">
-                        {cat.prompts.map((p, i) => (
-                          <button
-                            key={i}
-                            onClick={() => setPrompt(p)}
-                            className="text-xs px-2.5 py-1 rounded-full bg-muted text-muted-foreground hover:bg-primary/20 hover:text-primary transition-colors text-left"
-                          >
-                            {p}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+                <PromptGallery
+                  categories={GENERAL_PROMPTS}
+                  isCharacterMode={false}
+                  onSelect={setPrompt}
+                />
               )}
             </div>
           </motion.div>
