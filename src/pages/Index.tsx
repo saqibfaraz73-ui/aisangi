@@ -12,6 +12,7 @@ import CharacterUpload from "@/components/CharacterUpload";
 import ImageResults from "@/components/ImageResults";
 import AppHeader from "@/components/AppHeader";
 import { usePersistedState } from "@/hooks/use-persisted-state";
+import { GENERAL_PROMPTS, CHARACTER_PROMPTS } from "@/data/prompts";
 
 const GENERAL_PROMPTS = [
   // Trending AI
