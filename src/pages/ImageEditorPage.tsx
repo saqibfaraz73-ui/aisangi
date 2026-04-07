@@ -290,20 +290,17 @@ const ImageEditorPage = () => {
     }, 50);
   };
 
-  const applyColorBackground = (color: string) => {
-    // Always use the transparent (bg-removed) version so colors can be swapped
-    const src = transparentCanvasRef.current || originalImgRef.current;
+  const applyColorToTransparent = (color: string) => {
+    const src = transparentCanvasRef.current;
     if (!src) return;
 
     const tempCanvas = document.createElement("canvas");
-    const w = src instanceof HTMLCanvasElement ? src.width : src.width;
-    const h = src instanceof HTMLCanvasElement ? src.height : src.height;
-    tempCanvas.width = w;
-    tempCanvas.height = h;
+    tempCanvas.width = src.width;
+    tempCanvas.height = src.height;
     const ctx = tempCanvas.getContext("2d")!;
 
     ctx.fillStyle = color;
-    ctx.fillRect(0, 0, w, h);
+    ctx.fillRect(0, 0, src.width, src.height);
     ctx.drawImage(src, 0, 0);
 
     processedCanvasRef.current = tempCanvas;
@@ -311,6 +308,49 @@ const ImageEditorPage = () => {
     setBgRemoved(false);
     setRenderKey(k => k + 1);
     toast({ title: "Background color applied" });
+  };
+
+  const applyColorBackground = async (color: string) => {
+    if (transparentCanvasRef.current) {
+      applyColorToTransparent(color);
+      return;
+    }
+
+    // Auto-remove background first
+    const img = originalImgRef.current;
+    if (!img || removing) return;
+
+    setRemoving(true);
+    toast({ title: "Removing background first..." });
+
+    try {
+      const blob = await fetch(img.src).then(r => r.blob());
+      const resultBlob = await removeBackground(blob, {
+        device: "cpu",
+        model: "isnet_fp16",
+        proxyToWorker: true,
+        output: { format: "image/png", quality: 1 },
+      });
+
+      const objectUrl = URL.createObjectURL(resultBlob);
+      const resultImage = await loadImageElement(objectUrl);
+
+      const tempCanvas = document.createElement("canvas");
+      tempCanvas.width = resultImage.width;
+      tempCanvas.height = resultImage.height;
+      const ctx = tempCanvas.getContext("2d")!;
+      ctx.clearRect(0, 0, tempCanvas.width, tempCanvas.height);
+      ctx.drawImage(resultImage, 0, 0);
+      URL.revokeObjectURL(objectUrl);
+
+      transparentCanvasRef.current = tempCanvas;
+      applyColorToTransparent(color);
+    } catch (err) {
+      console.error("BG removal error:", err);
+      toast({ title: "Background removal failed", description: "Try removing background manually first.", variant: "destructive" });
+    } finally {
+      setRemoving(false);
+    }
   };
 
   const applyImageBackground = (e: React.ChangeEvent<HTMLInputElement>) => {
