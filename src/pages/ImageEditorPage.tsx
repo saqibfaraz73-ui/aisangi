@@ -577,8 +577,8 @@ const ImageEditorPage = () => {
                   <p className="text-xs font-medium text-foreground">Add Color Background</p>
                   <div className="flex flex-wrap gap-2">
                     {BG_COLORS.map(c => (
-                      <button key={c} onClick={() => applyColorBackground(c)}
-                        className="h-7 w-7 rounded-full border-2 border-border hover:border-primary transition-colors"
+                      <button key={c} onClick={() => applyColorBackground(c)} disabled={removing}
+                        className="h-7 w-7 rounded-full border-2 border-border hover:border-primary transition-colors disabled:opacity-50"
                         style={{ backgroundColor: c }} />
                     ))}
                     <div className="flex items-center gap-1">
