@@ -163,6 +163,8 @@ const AdminPage = () => {
 
         <AppSettingsSection />
 
+        <BackupRestoreSection />
+
         <WatermarkSection users={users} />
 
         <GlobalLimitsSection
