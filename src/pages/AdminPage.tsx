@@ -28,6 +28,7 @@ import PremiumLimitsSection from "@/components/admin/PremiumLimitsSection";
 import FreeToolLimitsSection from "@/components/admin/FreeToolLimitsSection";
 import AiToolLimitsSection from "@/components/admin/AiToolLimitsSection";
 import BackupRestoreSection from "@/components/admin/BackupRestoreSection";
+import PromptBackupSection from "@/components/admin/PromptBackupSection";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -164,6 +165,7 @@ const AdminPage = () => {
         <AppSettingsSection />
 
         <BackupRestoreSection />
+        <PromptBackupSection />
 
         <WatermarkSection users={users} />
 
