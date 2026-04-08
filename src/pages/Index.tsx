@@ -43,6 +43,7 @@ const Index = () => {
   const [prompt, setPrompt] = usePersistedState("sangi_prompt", "");
   const [images, setImages] = usePersistedState<ImageResult[]>("sangi_images", []);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRewriting, setIsRewriting] = useState(false);
   const generationInFlightRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
   const [characterImages, setCharacterImages] = usePersistedState<string[]>("sangi_characters", []);
