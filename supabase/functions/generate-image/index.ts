@@ -137,10 +137,22 @@ function buildGeminiParts(
   const parts: any[] = [];
 
   if (allCharacterUrls.length > 0) {
-    parts.push({ text: CHARACTER_PRESERVATION_PROMPT });
+    const isMulti = allCharacterUrls.length > 1;
+    
+    if (isMulti) {
+      parts.push({ text: `${CHARACTER_PRESERVATION_PROMPT}\n\nMULTI-PERSON IDENTITY MAPPING (CRITICAL):
+You are given ${allCharacterUrls.length} SEPARATE reference photos. Each photo is a DIFFERENT person.
+- REFERENCE PHOTO 1 = "Person 1" in the scene prompt
+- REFERENCE PHOTO 2 = "Person 2" in the scene prompt
+${allCharacterUrls.length > 2 ? allCharacterUrls.slice(2).map((_, i) => `- REFERENCE PHOTO ${i + 3} = "Person ${i + 3}" in the scene prompt`).join("\n") : ""}
+You MUST include ALL ${allCharacterUrls.length} people in the final image. Do NOT merge them into one person. Do NOT skip any person. Each person must have their OWN distinct face from their OWN reference photo.
+If the prompt says "couple", "man and woman", "two people", etc., map Person 1 to the first character described and Person 2 to the second character described.` });
+    } else {
+      parts.push({ text: CHARACTER_PRESERVATION_PROMPT });
+    }
     
     allCharacterUrls.forEach((url, index) => {
-      parts.push({ text: `\n[REFERENCE PHOTO ${index + 1} — THIS IS THE FACE YOU MUST REPLICATE EXACTLY]:` });
+      parts.push({ text: `\n[REFERENCE PHOTO ${index + 1}${isMulti ? ` — PERSON ${index + 1}` : ""} — THIS IS THE FACE YOU MUST REPLICATE EXACTLY]:` });
       if (url.startsWith("data:")) {
         const [meta, b64] = url.split(",");
         const mime = meta.match(/data:(.*?);/)?.[1] || "image/png";
@@ -150,9 +162,15 @@ function buildGeminiParts(
       }
     });
 
-    parts.push({
-      text: `\nNow place this EXACT person (with the IDENTICAL face from the reference photos above — zero modifications) into the following scene:\n${prompt}${variationHint}${framingInstruction}${watermarkInstruction}\n\nREMINDER: The face in the output MUST be a perfect match to the reference. Do not create a "similar looking" person — it must be the SAME person.`,
-    });
+    if (isMulti) {
+      parts.push({
+        text: `\nNow generate an image with ALL ${allCharacterUrls.length} people together in the following scene. Person 1's face = REFERENCE PHOTO 1, Person 2's face = REFERENCE PHOTO 2${allCharacterUrls.length > 2 ? ", and so on for each person" : ""}. Both people MUST appear in the image with their EXACT faces from their respective reference photos:\n${prompt}${variationHint}${framingInstruction}${watermarkInstruction}\n\nFINAL CHECK: The output image MUST contain exactly ${allCharacterUrls.length} distinct people. Each person's face must be an EXACT match to their corresponding reference photo. Do NOT omit any person. Do NOT swap faces between people.`,
+      });
+    } else {
+      parts.push({
+        text: `\nNow place this EXACT person (with the IDENTICAL face from the reference photo above — zero modifications) into the following scene:\n${prompt}${variationHint}${framingInstruction}${watermarkInstruction}\n\nREMINDER: The face in the output MUST be a perfect match to the reference. Do not create a "similar looking" person — it must be the SAME person.`,
+      });
+    }
     return parts;
   }
 
