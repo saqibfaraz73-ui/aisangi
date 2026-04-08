@@ -219,7 +219,27 @@ const Index = () => {
             </div>
 
 
-            <div className="flex gap-3">
+            {characterImages.length > 0 && prompt.trim() && (
+              <Button
+                onClick={handleRewritePrompt}
+                disabled={isRewriting || isGenerating}
+                variant="outline"
+                className="w-full h-10 border-primary/30 text-primary hover:bg-primary/10 font-display font-semibold text-sm"
+              >
+                {isRewriting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Optimizing prompt...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    Smart Rewrite — Optimize for {characterImages.length} Character{characterImages.length > 1 ? "s" : ""}
+                  </>
+                )}
+              </Button>
+            )}
+
               <Button
                 onClick={handleGenerate}
                 disabled={isGenerating || !prompt.trim()}
