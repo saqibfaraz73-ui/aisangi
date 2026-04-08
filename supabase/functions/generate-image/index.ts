@@ -102,6 +102,38 @@ You are given one or more reference photographs. The generated image MUST depict
 - The result must pass as a real photo of the SAME person — anyone who knows this person must instantly recognize them.
 - If in doubt about any feature, match the reference photo EXACTLY rather than guessing.`;
 
+function buildMultiPersonIdentityInstruction(allCharacterUrls: string[], prompt: string) {
+  const mappings = allCharacterUrls
+    .map((_, index) => `- REFERENCE PHOTO ${index + 1} = Person ${index + 1}`)
+    .join("\n");
+
+  return `${CHARACTER_PRESERVATION_PROMPT}
+
+MULTI-PERSON IDENTITY LOCK — NON-NEGOTIABLE:
+You are given ${allCharacterUrls.length} SEPARATE reference photos. EACH photo is a different real person.
+${mappings}
+
+STRICT RULES:
+- You MUST include ALL ${allCharacterUrls.length} people in the final image.
+- Do NOT omit Person 2 or any later person even if the scene is complex.
+- Do NOT merge two faces together.
+- Do NOT make Person 2 resemble Person 1.
+- Do NOT copy Person 1's face onto Person 2's body.
+- Do NOT swap faces, genders, skin tones, or positions.
+- Each person's face, skin tone, bone structure, and features must come ONLY from that person's own reference photo.
+- If the prompt says couple, bride and groom, man and woman, two people, friends, family, etc., assign the first described role to Person 1 and the second described role to Person 2.
+- If clothing or pose details are ambiguous, preserve identity first and scene details second.
+
+SCENE REQUEST:
+${prompt}
+
+FINAL OUTPUT CONTRACT:
+- Output must show exactly ${allCharacterUrls.length} distinct people.
+- Person 1 must clearly match REFERENCE PHOTO 1.
+- Person 2 must clearly match REFERENCE PHOTO 2.
+${allCharacterUrls.length > 2 ? `- Every additional person must clearly match their own numbered reference photo.\n` : ""}- Before finishing, verify no person is missing and no face looks borrowed from another reference.`;
+}
+
 function buildFramingInstruction(outputSize?: RequestedOutputSize | null) {
   const width = Number(outputSize?.w || 0);
   const height = Number(outputSize?.h || 0);
@@ -138,15 +170,12 @@ function buildGeminiParts(
 
   if (allCharacterUrls.length > 0) {
     const isMulti = allCharacterUrls.length > 1;
+    const multiPersonInstruction = isMulti
+      ? buildMultiPersonIdentityInstruction(allCharacterUrls, prompt)
+      : "";
     
     if (isMulti) {
-      parts.push({ text: `${CHARACTER_PRESERVATION_PROMPT}\n\nMULTI-PERSON IDENTITY MAPPING (CRITICAL):
-You are given ${allCharacterUrls.length} SEPARATE reference photos. Each photo is a DIFFERENT person.
-- REFERENCE PHOTO 1 = "Person 1" in the scene prompt
-- REFERENCE PHOTO 2 = "Person 2" in the scene prompt
-${allCharacterUrls.length > 2 ? allCharacterUrls.slice(2).map((_, i) => `- REFERENCE PHOTO ${i + 3} = "Person ${i + 3}" in the scene prompt`).join("\n") : ""}
-You MUST include ALL ${allCharacterUrls.length} people in the final image. Do NOT merge them into one person. Do NOT skip any person. Each person must have their OWN distinct face from their OWN reference photo.
-If the prompt says "couple", "man and woman", "two people", etc., map Person 1 to the first character described and Person 2 to the second character described.` });
+      parts.push({ text: multiPersonInstruction });
     } else {
       parts.push({ text: CHARACTER_PRESERVATION_PROMPT });
     }
@@ -164,7 +193,7 @@ If the prompt says "couple", "man and woman", "two people", etc., map Person 1 t
 
     if (isMulti) {
       parts.push({
-        text: `\nNow generate an image with ALL ${allCharacterUrls.length} people together in the following scene. Person 1's face = REFERENCE PHOTO 1, Person 2's face = REFERENCE PHOTO 2${allCharacterUrls.length > 2 ? ", and so on for each person" : ""}. Both people MUST appear in the image with their EXACT faces from their respective reference photos:\n${prompt}${variationHint}${framingInstruction}${watermarkInstruction}\n\nFINAL CHECK: The output image MUST contain exactly ${allCharacterUrls.length} distinct people. Each person's face must be an EXACT match to their corresponding reference photo. Do NOT omit any person. Do NOT swap faces between people.`,
+        text: `\nGenerate the final image now using this locked mapping:\n${multiPersonInstruction}${variationHint}${framingInstruction}${watermarkInstruction}\n\nFINAL CHECK: The output image MUST contain exactly ${allCharacterUrls.length} distinct people. Person 1 must match REFERENCE PHOTO 1. Person 2 must match REFERENCE PHOTO 2${allCharacterUrls.length > 2 ? ", and each remaining person must match their own numbered reference" : ""}. Do NOT omit any person. Do NOT swap faces between people.`,
       });
     } else {
       parts.push({
@@ -499,7 +528,9 @@ serve(async (req) => {
         : "";
 
       const fullPrompt = allCharacterUrls.length > 0
-        ? `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image with the EXACT person(s) from the reference photo(s) in this scene: ${prompt}${variationHint}${framingInstruction}. The face must be identical to the reference - same features, same skin tone, same structure. Do NOT change or idealize the face.${watermarkInstruction}`
+        ? allCharacterUrls.length > 1
+          ? `${buildMultiPersonIdentityInstruction(allCharacterUrls, prompt)}${variationHint}${framingInstruction}\n\nPreserve every uploaded person exactly. Identity accuracy is more important than styling or outfit details.${watermarkInstruction}`
+          : `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image with the EXACT person(s) from the reference photo(s) in this scene: ${prompt}${variationHint}${framingInstruction}. The face must be identical to the reference - same features, same skin tone, same structure. Do NOT change or idealize the face.${watermarkInstruction}`
         : `${prompt}${variationHint}${framingInstruction}${watermarkInstruction}`;
 
       if (useDalle) {
@@ -525,11 +556,20 @@ serve(async (req) => {
 
       if (allCharacterUrls.length > 0 && apiConfig.provider !== "openai") {
         const contentParts: any[] = [];
+        const isMulti = allCharacterUrls.length > 1;
+        const multiPersonInstruction = isMulti
+          ? buildMultiPersonIdentityInstruction(allCharacterUrls, prompt)
+          : "";
         allCharacterUrls.forEach((url, i) => {
-          contentParts.push({ type: "text", text: `[Reference photo of Person ${i + 1} - PRESERVE THIS EXACT FACE]` });
+          contentParts.push({ type: "text", text: `[REFERENCE PHOTO ${i + 1} = PERSON ${i + 1} — PRESERVE ONLY THIS EXACT FACE FOR PERSON ${i + 1}]` });
           contentParts.push({ type: "image_url", image_url: { url } });
         });
-        contentParts.push({ type: "text", text: `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image placing this EXACT person (identical face from reference) in: ${prompt}${variationHint}${framingInstruction}${watermarkInstruction}` });
+        contentParts.push({
+          type: "text",
+          text: isMulti
+            ? `${multiPersonInstruction}${variationHint}${framingInstruction}${watermarkInstruction}\n\nGenerate the scene now and preserve ALL uploaded people. Person 2 must remain visually distinct from Person 1. Do not output a scene with only one matching face.`
+            : `${CHARACTER_PRESERVATION_PROMPT}\n\nGenerate an image placing this EXACT person (identical face from reference) in: ${prompt}${variationHint}${framingInstruction}${watermarkInstruction}`,
+        });
         messages = [{ role: "user", content: contentParts }];
       } else {
         messages = [{ role: "user", content: `Generate a high-quality image: ${fullPrompt}` }];
