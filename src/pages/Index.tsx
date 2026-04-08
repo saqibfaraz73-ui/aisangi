@@ -138,6 +138,28 @@ const Index = () => {
     toast({ title: "Cleared all data" });
   };
 
+  const handleRewritePrompt = async () => {
+    if (!prompt.trim() || isRewriting) return;
+    setIsRewriting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("rewrite-prompt", {
+        body: { prompt: prompt.trim(), characterCount: characterImages.length },
+      });
+      if (error) throw error;
+      if (data?.rewrittenPrompt) {
+        setPrompt(data.rewrittenPrompt);
+        toast({ title: "Prompt optimized!", description: "Review the rewritten prompt and generate when ready." });
+      } else {
+        throw new Error("No result");
+      }
+    } catch (err) {
+      const msg = await extractFunctionErrorMessage(err);
+      toast({ title: "Rewrite failed", description: msg, variant: "destructive" });
+    } finally {
+      setIsRewriting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
