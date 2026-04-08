@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, Trash2, Square } from "lucide-react";
+import { Sparkles, Loader2, Trash2, Square, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
@@ -43,6 +43,7 @@ const Index = () => {
   const [prompt, setPrompt] = usePersistedState("sangi_prompt", "");
   const [images, setImages] = usePersistedState<ImageResult[]>("sangi_images", []);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isRewriting, setIsRewriting] = useState(false);
   const generationInFlightRef = useRef(false);
   const abortRef = useRef<AbortController | null>(null);
   const [characterImages, setCharacterImages] = usePersistedState<string[]>("sangi_characters", []);
@@ -137,6 +138,28 @@ const Index = () => {
     toast({ title: "Cleared all data" });
   };
 
+  const handleRewritePrompt = async () => {
+    if (!prompt.trim() || isRewriting) return;
+    setIsRewriting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke("rewrite-prompt", {
+        body: { prompt: prompt.trim(), characterCount: characterImages.length },
+      });
+      if (error) throw error;
+      if (data?.rewrittenPrompt) {
+        setPrompt(data.rewrittenPrompt);
+        toast({ title: "Prompt optimized!", description: "Review the rewritten prompt and generate when ready." });
+      } else {
+        throw new Error("No result");
+      }
+    } catch (err) {
+      const msg = await extractFunctionErrorMessage(err);
+      toast({ title: "Rewrite failed", description: msg, variant: "destructive" });
+    } finally {
+      setIsRewriting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <AppHeader />
@@ -196,9 +219,29 @@ const Index = () => {
             </div>
 
 
+            {characterImages.length > 0 && prompt.trim() && (
+              <Button
+                onClick={handleRewritePrompt}
+                disabled={isRewriting || isGenerating}
+                variant="outline"
+                className="w-full h-10 border-primary/30 text-primary hover:bg-primary/10 font-display font-semibold text-sm"
+              >
+                {isRewriting ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Optimizing prompt...
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="h-4 w-4 mr-2" />
+                    Smart Rewrite — Optimize for {characterImages.length} Character{characterImages.length > 1 ? "s" : ""}
+                  </>
+                )}
+              </Button>
+            )}
+
             <div className="flex gap-3">
               <Button
-                onClick={handleGenerate}
                 disabled={isGenerating || !prompt.trim()}
                 className="flex-1 h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
               >
