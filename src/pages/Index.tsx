@@ -242,6 +242,7 @@ const Index = () => {
 
             <div className="flex gap-3">
               <Button
+                onClick={handleGenerate}
                 disabled={isGenerating || !prompt.trim()}
                 className="flex-1 h-12 gradient-accent text-accent-foreground font-display font-semibold text-base hover:opacity-90 transition-opacity disabled:opacity-40"
               >
