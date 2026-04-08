@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 import { motion } from "framer-motion";
-import { Sparkles, Loader2, Trash2, Square } from "lucide-react";
+import { Sparkles, Loader2, Trash2, Square, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
